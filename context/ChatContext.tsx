@@ -1,7 +1,7 @@
 "use client";
 
 import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from "react";
-import { createSession, listSessions, getSession, eventsToMessages, sessionPreview, ADKSession } from "@/lib/api";
+import { createSession, listSessions, getSession, deleteSession, eventsToMessages, sessionPreview, ADKSession } from "@/lib/api";
 import { getUsername, getOrCreateSession, newSession, setActiveSession } from "@/lib/session";
 import type { Msg } from "@/components/Message";
 
@@ -24,8 +24,11 @@ interface ChatContextValue {
   setLoading: (v: boolean) => void;
   setError: (v: string | null) => void;
   setSessionReady: (v: boolean) => void;
-  handleNewChat: () => Promise<void>;
+  ensureSession: () => Promise<boolean>;
+  handleNewChat: () => void;
   switchSession: (sessionId: string) => Promise<void>;
+  removeSession: (sessionId: string) => Promise<void>;
+  renameSession: (sessionId: string, newName: string) => void;
   refreshSessionList: () => Promise<void>;
   setUsername: (name: string) => void;
   logout: () => void;
@@ -33,12 +36,39 @@ interface ChatContextValue {
 
 const ChatContext = createContext<ChatContextValue | null>(null);
 
+// ── localStorage preview cache ────────────────────────────────────────────────
+export function savePreview(sessionId: string, text: string) {
+  try {
+    const raw = localStorage.getItem("hip_previews") ?? "{}";
+    const map = JSON.parse(raw);
+    map[sessionId] = text.slice(0, 60) + (text.length > 60 ? "…" : "");
+    localStorage.setItem("hip_previews", JSON.stringify(map));
+  } catch {}
+}
+
+function loadPreview(sid: string): string {
+  try {
+    const raw = localStorage.getItem("hip_previews") ?? "{}";
+    return JSON.parse(raw)[sid] ?? "";
+  } catch { return ""; }
+}
+
+function removePreview(sid: string) {
+  try {
+    const raw = localStorage.getItem("hip_previews") ?? "{}";
+    const map = JSON.parse(raw);
+    delete map[sid];
+    localStorage.setItem("hip_previews", JSON.stringify(map));
+  } catch {}
+}
+// ─────────────────────────────────────────────────────────────────────────────
+
 export function ChatProvider({ children }: { children: ReactNode }) {
   const [username, setUsernameState] = useState<string | null>(null);
   const [userId, setUserId] = useState("");
   const [sessionId, setSessionId] = useState("");
   const [messages, setMessages] = useState<Msg[]>([]);
-  const [sessionReady, setSessionReady] = useState(false);
+  const [sessionReady, setSessionReadyRaw] = useState<boolean | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [sessions, setSessions] = useState<ChatSessionMeta[]>([]);
@@ -47,26 +77,28 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     const id = uid || userId;
     if (!id) return;
     const list = await listSessions(id);
-    const sorted = [...list].sort((a, b) => b.lastUpdateTime - a.lastUpdateTime);
+    const withMessages = list.filter((s) => s.events && s.events.length > 0);
+    const sorted = [...withMessages].sort((a, b) => b.lastUpdateTime - a.lastUpdateTime);
     setSessions(sorted.map((s) => ({
       id: s.id,
-      preview: sessionPreview(s.events),
+      preview: loadPreview(s.id) || sessionPreview(s.events),
       lastUpdateTime: s.lastUpdateTime,
     })));
   }, [userId]);
 
-  const initSession = useCallback(async (uid: string, sid: string) => {
+  const ensureSession = useCallback(async (): Promise<boolean> => {
+    if (sessionReady === true) return true;
     try {
       setError(null);
-      await createSession(uid, sid);
-      setSessionReady(true);
-      await refreshSessionList(uid);
+      await createSession(userId, sessionId);
+      setSessionReadyRaw(true);
+      return true;
     } catch {
       setError("Could not connect to backend AI service.");
+      return false;
     }
-  }, [refreshSessionList]);
+  }, [sessionReady, userId, sessionId]);
 
-  // Boot: read username + session from localStorage
   useEffect(() => {
     const name = getUsername();
     if (name) {
@@ -74,9 +106,19 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       const { userId: uid, sessionId: sid } = getOrCreateSession();
       setUserId(uid);
       setSessionId(sid);
-      initSession(uid, sid);
+      getSession(uid, sid).then((existing) => {
+        if (existing && existing.events.length > 0) {
+          setMessages(eventsToMessages(existing.events));
+          setSessionReadyRaw(true);
+        } else if (existing) {
+          setSessionReadyRaw(true);
+        } else {
+          setSessionReadyRaw(null);
+        }
+      }).catch(() => setSessionReadyRaw(null));
+      refreshSessionList(uid);
     }
-  }, [initSession]);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const setUsername = useCallback((name: string) => {
     import("@/lib/session").then(({ setUsername: save }) => save(name));
@@ -85,8 +127,9 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     setUserId(name);
     setSessionId(sid);
     localStorage.setItem("hip_sessionId", sid);
-    initSession(name, sid);
-  }, [initSession]);
+    setSessionReadyRaw(null);
+    refreshSessionList(name);
+  }, [refreshSessionList]);
 
   const logout = useCallback(() => {
     localStorage.removeItem("hip_username");
@@ -97,39 +140,57 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     setSessionId("");
     setMessages([]);
     setSessions([]);
-    setSessionReady(false);
+    setSessionReadyRaw(null);
     setError(null);
   }, []);
 
-  const handleNewChat = useCallback(async () => {
+  const handleNewChat = useCallback(() => {
     if (!userId) return;
     const { sessionId: sid } = newSession(userId);
     setSessionId(sid);
     setMessages([]);
-    setSessionReady(false);
+    setSessionReadyRaw(null);
     setError(null);
-    await initSession(userId, sid);
-  }, [userId, initSession]);
+  }, [userId]);
 
   const switchSession = useCallback(async (sid: string) => {
     if (!userId) return;
     setActiveSession(sid);
     setSessionId(sid);
     setMessages([]);
-    setSessionReady(false);
     setError(null);
-
     try {
       const session: ADKSession | null = await getSession(userId, sid);
       if (session) {
-        const msgs = eventsToMessages(session.events);
-        setMessages(msgs);
+        setMessages(eventsToMessages(session.events));
+        const preview = sessionPreview(session.events);
+        if (preview && preview !== "New conversation") savePreview(sid, preview);
       }
-      setSessionReady(true);
+      setSessionReadyRaw(true);
     } catch {
       setError("Could not load conversation.");
     }
   }, [userId]);
+
+  const removeSession = useCallback(async (sid: string) => {
+    await deleteSession(userId, sid);
+    removePreview(sid);
+    // If deleting the active session, start a fresh new chat
+    if (sid === sessionId) {
+      const { sessionId: newSid } = newSession(userId);
+      setSessionId(newSid);
+      setMessages([]);
+      setSessionReadyRaw(null);
+    }
+    setSessions((prev) => prev.filter((s) => s.id !== sid));
+  }, [userId, sessionId]);
+
+  const renameSession = useCallback((sid: string, newName: string) => {
+    const trimmed = newName.trim();
+    if (!trimmed) return;
+    savePreview(sid, trimmed);
+    setSessions((prev) => prev.map((s) => s.id === sid ? { ...s, preview: trimmed } : s));
+  }, []);
 
   return (
     <ChatContext.Provider value={{
@@ -137,16 +198,19 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       userId,
       sessionId,
       messages,
-      sessionReady,
+      sessionReady: sessionReady === true,
       loading,
       error,
       sessions,
       setMessages,
       setLoading,
       setError,
-      setSessionReady,
+      setSessionReady: (v) => setSessionReadyRaw(v),
+      ensureSession,
       handleNewChat,
       switchSession,
+      removeSession,
+      renameSession,
       refreshSessionList,
       setUsername,
       logout,

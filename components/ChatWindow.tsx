@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useCallback } from "react";
 import { streamMessage } from "@/lib/api";
-import { useChatContext } from "@/context/ChatContext";
+import { useChatContext, savePreview } from "@/context/ChatContext";
 import Sidebar from "./Sidebar";
 import Message from "./Message";
 import ChatInput from "./ChatInput";
@@ -24,6 +24,7 @@ export default function ChatWindow() {
     setLoading,
     setError,
     handleNewChat,
+    ensureSession,
     refreshSessionList,
     setUsername,
   } = useChatContext();
@@ -39,7 +40,13 @@ export default function ChatWindow() {
     text: string,
     file?: { mimeType: string; data: string; name: string }
   ) => {
-    if (!sessionReady || loading) return;
+    if (loading) return;
+
+    // Lazily create the session on backend the first time a message is sent
+    const ready = await ensureSession();
+    if (!ready) return;
+
+    const isFirstMessage = messages.length === 0;
 
     setMessages((prev) => [...prev, { role: "user", text: file ? `${text}\n📎 ${file.name}` : text }]);
     setLoading(true);
@@ -74,7 +81,10 @@ export default function ChatWindow() {
         return prev;
       });
 
-      // refresh sidebar list so new chat appears
+      // Cache preview from first user message, then refresh sidebar
+      if (isFirstMessage) {
+        savePreview(sessionId, text);
+      }
       await refreshSessionList();
     } catch (err) {
       setMessages((prev) => {
@@ -86,7 +96,7 @@ export default function ChatWindow() {
     } finally {
       setLoading(false);
     }
-  }, [sessionReady, loading, userId, sessionId, setMessages, setLoading, setError, refreshSessionList]);
+  }, [loading, ensureSession, messages.length, userId, sessionId, setMessages, setLoading, setError, refreshSessionList]);
 
   // Show username modal if not set
   if (!username) {
@@ -180,7 +190,7 @@ export default function ChatWindow() {
 
         {/* Input */}
         <div className="shrink-0">
-          <ChatInput onSend={handleSend} disabled={loading || !sessionReady} />
+          <ChatInput onSend={handleSend} disabled={loading} />
         </div>
       </div>
     </div>
