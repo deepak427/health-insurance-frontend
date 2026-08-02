@@ -77,13 +77,31 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     const id = uid || userId;
     if (!id) return;
     const list = await listSessions(id);
-    const withMessages = list.filter((s) => s.events && s.events.length > 0);
-    const sorted = [...withMessages].sort((a, b) => b.lastUpdateTime - a.lastUpdateTime);
-    setSessions(sorted.map((s) => ({
-      id: s.id,
-      preview: loadPreview(s.id) || sessionPreview(s.events),
-      lastUpdateTime: s.lastUpdateTime,
-    })));
+    const sorted = [...list].sort((a, b) => b.lastUpdateTime - a.lastUpdateTime);
+
+    // ADK list endpoint returns sessions WITHOUT events populated (metadata only).
+    // Strategy:
+    //  1. If we have a cached preview for a session → show it immediately (fast path)
+    //  2. If no cache → fetch full session to check events (backfill for older sessions)
+    //  3. Sessions with no cache AND no events → blank/unused, skip them
+    const results = await Promise.all(
+      sorted.map(async (s) => {
+        const cached = loadPreview(s.id);
+        if (cached) return { id: s.id, preview: cached, lastUpdateTime: s.lastUpdateTime };
+
+        try {
+          const full = await getSession(id, s.id);
+          if (!full || !full.events || full.events.length === 0) return null;
+          const preview = sessionPreview(full.events);
+          if (preview && preview !== "New conversation") savePreview(s.id, preview);
+          return { id: s.id, preview: preview || "Conversation", lastUpdateTime: s.lastUpdateTime };
+        } catch {
+          return null;
+        }
+      })
+    );
+
+    setSessions(results.filter((s): s is ChatSessionMeta => s !== null));
   }, [userId]);
 
   const ensureSession = useCallback(async (): Promise<boolean> => {
