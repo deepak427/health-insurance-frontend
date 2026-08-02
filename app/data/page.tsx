@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Shield, ArrowLeft, Save, RefreshCw, CheckCircle, AlertCircle, Database, Menu, X, Code2 } from "lucide-react";
+import { ShieldCheck, ArrowLeft, Save, RefreshCw, CheckCircle, AlertCircle, Database, Code2, MessageSquare, Lock, Bell, MessageSquareMore } from "lucide-react";
 import Link from "next/link";
 import { fetchData, saveData, DataKey } from "@/lib/api";
 
@@ -17,7 +17,6 @@ export default function DataPage() {
   const [loaded, setLoaded] = useState(false);
   const [status, setStatus] = useState<"idle" | "loading" | "saving" | "saved" | "error">("idle");
   const [errorMsg, setErrorMsg] = useState("");
-  const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
 
   async function loadTab(key: DataKey) {
     setActiveTab(key);
@@ -55,191 +54,181 @@ export default function DataPage() {
 
   const activeInfo = TABS.find((t) => t.key === activeTab)!;
 
-  const sidebarContent = (
-    <div className="flex flex-col h-full w-full bg-[#f1efe9] text-[#2c2a29] border-r border-[#e2ded7]">
-      {/* Brand Header */}
-      <div className="flex items-center justify-between px-4 py-5 border-b border-[#e2ded7]">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full bg-[#5b7c72] flex items-center justify-center text-white shadow-sm">
-            <Shield size={20} />
-          </div>
-          <div>
-            <h1 className="text-2xl text-[#2c2a29] font-heading leading-none tracking-wide">
-              Dolphin Buddy
+  return (
+    <main className="min-h-screen flex flex-col p-4 sm:p-6 lg:p-8 bg-[#f4f7f9]">
+      {/* Top Outer Marketing Header (same as main page) */}
+      <header className="w-full max-w-[1600px] mx-auto flex flex-col xl:flex-row xl:items-start justify-between mb-8 pt-2">
+        <div className="flex flex-col">
+          <div className="flex items-center gap-2 mb-3">
+            <h1 className="text-[32px] font-bold tracking-tight flex items-center">
+              <span className="text-[#0a192f]">Dolphin</span>
+              <span className="text-[#00a86b] ml-2">Buddy</span>
             </h1>
-            <p className="text-[11px] font-bold text-[#797571] mt-1 tracking-wide uppercase">Knowledge Base</p>
+            <div className="w-10 h-10 mt-1 rounded-full bg-[#00a86b] text-white flex items-center justify-center shadow-sm">
+              <MessageSquareMore size={22} className="fill-current" />
+            </div>
+          </div>
+          <p className="text-[#1f2937] font-bold text-[16px] mb-1">
+            One Partner. One Login. All Travel Insurance Conversations.
+          </p>
+          <p className="text-[#6b7280] text-[13px] font-medium">
+            Dedicated hub for all Travel Insurance related communication.
+          </p>
+        </div>
+
+        <div className="flex flex-wrap xl:flex-nowrap items-start gap-4 xl:gap-5 mt-6 xl:mt-0">
+          <div className="flex flex-col items-center text-center w-[165px] bg-white/60 rounded-[14px] p-4 shadow-[0_2px_12px_rgb(0,0,0,0.02)] border border-[#e5e7eb]/60">
+            <ShieldCheck size={26} strokeWidth={1.5} className="text-[#00a86b] mb-3" />
+            <span className="text-[12px] font-bold text-[#1f2937] mb-1.5 leading-tight">Travel Insurance<br/>Focused</span>
+            <span className="text-[11px] text-[#6b7280] leading-[1.3] px-1">All interactions are strictly travel insurance related.</span>
+          </div>
+          <div className="flex flex-col items-center text-center w-[165px] bg-white/60 rounded-[14px] p-4 shadow-[0_2px_12px_rgb(0,0,0,0.02)] border border-[#e5e7eb]/60">
+            <MessageSquare size={26} strokeWidth={1.5} className="text-[#00a86b] mb-3" />
+            <span className="text-[12px] font-bold text-[#1f2937] mb-1.5 leading-tight">One Partner,<br/>One Space</span>
+            <span className="text-[11px] text-[#6b7280] leading-[1.3] px-1">Everything you need to serve your travelers better.</span>
+          </div>
+          <div className="flex flex-col items-center text-center w-[165px] bg-white/60 rounded-[14px] p-4 shadow-[0_2px_12px_rgb(0,0,0,0.02)] border border-[#e5e7eb]/60">
+            <Lock size={26} strokeWidth={1.5} className="text-[#00a86b] mb-3" />
+            <span className="text-[12px] font-bold text-[#1f2937] mb-1.5 leading-tight">Secure &<br/>Compliant</span>
+            <span className="text-[11px] text-[#6b7280] leading-[1.3] px-1">All travel insurance data stays safe inside Dolphin.</span>
+          </div>
+          <div className="flex flex-col items-center text-center w-[165px] bg-white/60 rounded-[14px] p-4 shadow-[0_2px_12px_rgb(0,0,0,0.02)] border border-[#e5e7eb]/60">
+            <Bell size={26} strokeWidth={1.5} className="text-[#00a86b] mb-3 fill-[#00a86b]/10" />
+            <span className="text-[12px] font-bold text-[#1f2937] mb-1.5 leading-tight">Instant<br/>Updates</span>
+            <span className="text-[11px] text-[#6b7280] leading-[1.3] px-1">Never miss an important policy or claim update.</span>
           </div>
         </div>
-        {mobileDrawerOpen && (
-          <button
-            onClick={() => setMobileDrawerOpen(false)}
-            className="md:hidden w-9 h-9 flex items-center justify-center rounded-full text-[#797571] hover:text-[#2c2a29]"
-            aria-label="Close menu"
-          >
-            <X size={20} />
-          </button>
-        )}
-      </div>
+      </header>
 
-      {/* Back to Chat button */}
-      <div className="px-4 pt-5">
-        <Link
-          href="/"
-          className="w-full flex items-center justify-center gap-2 px-4 py-3 min-h-[44px] rounded-[16px] text-sm font-bold text-[#5b7c72] bg-[#ffffff] hover:bg-[#e2ded7] transition-all border border-[#e2ded7] shadow-sm"
-        >
-          <ArrowLeft size={16} />
-          <span>Back to Direct Chat</span>
-        </Link>
-      </div>
+      {/* Main Multi-Pane Container */}
+      <div className="flex-1 flex w-full max-w-[1600px] mx-auto bg-white rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-[#e5e7eb] overflow-hidden min-h-[600px] h-[85vh]">
+        
+        {/* Navy Sidebar for Data Page */}
+        <aside className="hidden md:flex flex-col w-[220px] bg-[#0a192f] text-white shrink-0">
+          <div className="flex items-center gap-3 px-5 py-5">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="white" xmlns="http://www.w3.org/2000/svg">
+              <path d="M12.984 8.783c-1.332-1.936-3.792-3.14-6.425-3.14-1.295 0-2.527.31-3.626.866.52-2.316 2.584-4.062 5.067-4.062 2.85 0 5.161 2.31 5.161 5.16 0 .438-.057.863-.163 1.267a5.122 5.122 0 0 1-.014-.091zm9.324 7.64c-.958-3.325-3.418-5.748-6.685-6.683-.81-.233-1.666-.363-2.545-.38l-1.077-.021c.542.484 1.002 1.05 1.353 1.68l.215.385c.896 1.62 1.34 3.535 1.272 5.518l-.01.32c1.78-.184 3.393-1.052 4.544-2.355l1.636-1.848.067-1.127a5.534 5.534 0 0 0 .108-.501.996.996 0 0 1-.878.508c-.28 0-.546-.118-.737-.324l-2.072-2.222c-.383-.412-.358-1.055.054-1.439.412-.383 1.055-.357 1.439.055l1.838 1.973c.123.131.295.205.474.205h.001zm-5.75-8.52c-.615-.466-1.286-.867-1.998-1.196-1.293-.598-2.678-.897-4.113-.897-.992 0-1.97.16-2.91.468C3.896 7.425 1.155 9.775.228 12.87l-.147.494 2.112-2.348c.15-.167.315-.327.491-.478l.42-.355c.784-.663 1.678-1.168 2.657-1.498.412-.138.835-.23 1.264-.275l.435-.046c1.67-.176 3.336.262 4.673 1.233.15.108.297.22.441.336l.244.195c1.455 1.164 2.378 2.85 2.628 4.757.065.498.077 1.002.036 1.5l-.019.227c-.234 2.809-1.956 5.176-4.524 6.184l-2.028.794 3.385.163c2.72.13 5.37-1.195 6.953-3.488l2.257-3.265.172-.45c.162-.42.274-.858.337-1.309.055-.398-.016-.807-.205-1.158l-.946-1.745c-.464-.856-1.11-1.577-1.91-2.136z"/>
+            </svg>
+            <h1 className="text-[15px] font-bold tracking-tight text-white">
+              Dolphin <span className="text-[#00a86b]">Portal</span>
+            </h1>
+          </div>
+          
+          <div className="px-3 mt-4">
+             <Link href="/" className="flex items-center gap-3 px-4 py-3 rounded-lg text-sm text-[#94a3b8] hover:bg-[#132742] hover:text-white transition-colors">
+              <ArrowLeft size={18} />
+              <span>Back to Hub</span>
+            </Link>
+          </div>
 
-      {/* Dataset Tabs */}
-      <div className="px-3 mt-8 flex-1 overflow-y-auto">
-        <span className="text-[11px] font-bold uppercase tracking-wider text-[#797571] block px-2 mb-3">
-          Select Dataset
-        </span>
-        <div className="flex flex-col gap-1.5">
-          {TABS.map((tab) => (
-            <button
-              key={tab.key}
-              onClick={() => {
-                loadTab(tab.key);
-                setMobileDrawerOpen(false);
-              }}
-              className={`flex items-center justify-between px-4 py-3 rounded-[16px] text-sm text-left transition-all font-medium ${
-                activeTab === tab.key
-                  ? "bg-[#ffffff] text-[#5b7c72] border border-[#e2ded7] shadow-sm font-bold"
-                  : "text-[#797571] hover:text-[#2c2a29] hover:bg-[#e2ded7]/50 border border-transparent"
+          <div className="px-5 mt-8 mb-2">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-[#94a3b8]">
+              Knowledge Base
+            </span>
+          </div>
+          
+          <nav className="flex-1 px-3 flex flex-col gap-1.5 overflow-y-auto">
+            {TABS.map((tab) => (
+              <button
+                key={tab.key}
+                onClick={() => loadTab(tab.key)}
+                className={`flex items-center gap-3 px-4 py-3 rounded-lg text-sm transition-colors text-left ${
+                  activeTab === tab.key
+                    ? "bg-[#132742] text-white relative before:absolute before:left-0 before:top-2 before:bottom-2 before:w-1 before:bg-[#00a86b] before:rounded-r-md"
+                    : "text-[#94a3b8] hover:bg-[#132742] hover:text-white"
+                }`}
+              >
+                <Database size={16} />
+                <span className="truncate">{tab.label}</span>
+              </button>
+            ))}
+          </nav>
+        </aside>
+
+        {/* Main Editor View */}
+        <div className="flex flex-col flex-1 min-w-0 bg-white">
+          <header className="flex items-center justify-between px-6 py-4 border-b border-[#e5e7eb]">
+            <div>
+              <h2 className="text-sm font-bold text-[#1f2937] leading-tight">
+                {activeInfo.label}
+              </h2>
+              <p className="text-xs text-[#6b7280] mt-0.5">{activeInfo.description}</p>
+            </div>
+
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => loadTab(activeTab)}
+                className="flex items-center gap-1.5 text-xs font-semibold px-3 py-2 rounded bg-white hover:bg-gray-50 text-[#6b7280] transition-colors border border-[#e5e7eb]"
+              >
+                <RefreshCw size={14} />
+                <span>Reload</span>
+              </button>
+              <button
+                onClick={handleSave}
+                disabled={status === "saving" || !loaded}
+                className="flex items-center gap-2 text-xs font-semibold px-4 py-2 rounded bg-[#00a86b] hover:bg-[#008f5a] text-white transition-colors disabled:opacity-50"
+              >
+                <Save size={14} />
+                <span>{status === "saving" ? "Saving..." : "Save Changes"}</span>
+              </button>
+            </div>
+          </header>
+
+          {(status === "saved" || status === "error") && (
+            <div
+              className={`flex items-center gap-2 px-6 py-3 text-xs font-medium shrink-0 border-b ${
+                status === "saved"
+                  ? "bg-[#f0fdf4] text-[#166534] border-[#bbf7d0]"
+                  : "bg-red-50 text-red-700 border-red-200"
               }`}
             >
-              <div className="flex items-center gap-3">
-                <Database size={16} className={activeTab === tab.key ? "text-[#5b7c72]" : "text-[#9e9a95]"} />
-                <span>{tab.label}</span>
-              </div>
-              {activeTab === tab.key && <span className="w-2 h-2 rounded-full bg-[#e8a598]"></span>}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* Footer notice */}
-      <div className="px-5 py-4 border-t border-[#e2ded7] text-[11px] font-bold uppercase tracking-wider text-[#9e9a95]">
-        Changes sync instantly.
-      </div>
-    </div>
-  );
-
-  return (
-    <div className="flex h-screen overflow-hidden bg-[#f9f8f6]">
-      {/* Desktop Sidebar */}
-      <aside className="hidden md:flex flex-col w-[320px] shrink-0 h-full">
-        {sidebarContent}
-      </aside>
-
-      {/* Mobile Drawer */}
-      {mobileDrawerOpen && (
-        <div className="fixed inset-0 z-50 flex md:hidden">
-          <div className="fixed inset-0 bg-[#2c2a29]/40 backdrop-blur-sm" onClick={() => setMobileDrawerOpen(false)} />
-          <aside className="relative flex flex-col w-[85vw] max-w-[340px] h-full shadow-2xl z-10 animate-in slide-in-from-left duration-300">
-            {sidebarContent}
-          </aside>
-        </div>
-      )}
-
-      {/* Main Content View */}
-      <div className="flex flex-col flex-1 min-w-0 h-full bg-[#f9f8f6]">
-        {/* Top Header */}
-        <header className="flex items-center justify-between px-4 sm:px-8 py-4 border-b border-[#e2ded7] bg-[#f9f8f6]/90 backdrop-blur-md shrink-0">
-          <div className="flex items-center gap-3.5">
-            <button
-              onClick={() => setMobileDrawerOpen(true)}
-              className="md:hidden w-10 h-10 flex items-center justify-center rounded-full text-[#797571] hover:text-[#2c2a29] hover:bg-[#e2ded7]"
-              aria-label="Open datasets menu"
-            >
-              <Menu size={20} />
-            </button>
-            <div>
-              <div className="flex items-center gap-2.5">
-                <h2 className="text-[20px] font-bold text-[#2c2a29] font-heading leading-none">
-                  {activeInfo.label}
-                </h2>
-                <span className="text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-[8px] bg-[#e2ded7] text-[#797571]">
-                  Editor
-                </span>
-              </div>
-              <p className="text-[13px] font-medium text-[#797571] mt-1">{activeInfo.description}</p>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => loadTab(activeTab)}
-              className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider px-4 py-2.5 rounded-[16px] bg-[#ffffff] hover:bg-[#f1efe9] text-[#797571] transition-all border border-[#e2ded7] shadow-sm"
-              title="Reload dataset"
-            >
-              <RefreshCw size={14} />
-              <span className="hidden sm:inline">Reload</span>
-            </button>
-            <button
-              onClick={handleSave}
-              disabled={status === "saving" || !loaded}
-              className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider px-5 py-2.5 rounded-[16px] bg-[#5b7c72] hover:bg-[#4a665d] active:scale-95 text-white transition-all shadow-sm border border-[#4a665d]/20 disabled:opacity-40"
-            >
-              <Save size={15} />
-              <span>{status === "saving" ? "Saving..." : "Save Changes"}</span>
-            </button>
-          </div>
-        </header>
-
-        {/* Status Notification Banner */}
-        {(status === "saved" || status === "error") && (
-          <div
-            className={`flex items-center gap-2.5 px-6 py-3.5 text-sm font-bold shrink-0 ${
-              status === "saved"
-                ? "bg-[#ebf4f0] text-[#5b7c72] border-b border-[#5b7c72]/20"
-                : "bg-[#fff0ed] text-[#b34040] border-b border-[#e8a598]/40"
-            }`}
-          >
-            {status === "saved" ? (
-              <>
-                <CheckCircle size={18} className="text-[#5b7c72] shrink-0" />
-                <span>Dataset updated successfully — changes are live.</span>
-              </>
-            ) : (
-              <>
-                <AlertCircle size={18} className="text-[#b34040] shrink-0" />
-                <span>{errorMsg}</span>
-              </>
-            )}
-          </div>
-        )}
-
-        {/* JSON Editor Body */}
-        <div className="flex-1 overflow-hidden p-4 sm:p-6 flex flex-col">
-          {status === "loading" ? (
-            <div className="flex flex-col items-center justify-center h-full gap-3 text-[#797571] text-sm font-bold">
-              <RefreshCw size={24} className="animate-spin text-[#5b7c72]" />
-              <span>Loading dataset...</span>
-            </div>
-          ) : (
-            <div className="relative flex-1 rounded-[24px] bg-[#ffffff] border border-[#e2ded7] overflow-hidden flex flex-col shadow-sm">
-              <div className="flex items-center justify-between px-5 py-3 bg-[#f1efe9] border-b border-[#e2ded7] text-xs font-bold uppercase tracking-wider text-[#797571]">
-                <span className="flex items-center gap-2 text-[#5b7c72]">
-                  <Code2 size={16} />
-                  {activeTab}.json
-                </span>
-                <span>JSON</span>
-              </div>
-              <textarea
-                value={editorValue}
-                onChange={(e) => setEditorValue(e.target.value)}
-                spellCheck={false}
-                aria-label="JSON dataset editor"
-                className="w-full flex-1 p-5 text-[14px] font-mono bg-[#ffffff] text-[#2c2a29] resize-none outline-none leading-relaxed"
-              />
+              {status === "saved" ? (
+                <>
+                  <CheckCircle size={16} className="text-[#166534] shrink-0" />
+                  <span>Dataset updated successfully.</span>
+                </>
+              ) : (
+                <>
+                  <AlertCircle size={16} className="text-red-600 shrink-0" />
+                  <span>{errorMsg}</span>
+                </>
+              )}
             </div>
           )}
+
+          <div className="flex-1 p-6 flex flex-col bg-[#f8fafc]">
+            {status === "loading" ? (
+              <div className="flex flex-col items-center justify-center h-full gap-2 text-[#6b7280] text-sm font-semibold">
+                <RefreshCw size={24} className="animate-spin text-[#00a86b]" />
+                <span>Loading dataset...</span>
+              </div>
+            ) : (
+              <div className="flex-1 flex flex-col bg-white border border-[#e5e7eb] rounded-lg overflow-hidden shadow-sm">
+                <div className="flex items-center justify-between px-4 py-2 bg-gray-50 border-b border-[#e5e7eb] text-xs font-semibold text-[#6b7280]">
+                  <span className="flex items-center gap-2">
+                    <Code2 size={14} className="text-[#0369a1]" />
+                    {activeTab}.json
+                  </span>
+                </div>
+                <textarea
+                  value={editorValue}
+                  onChange={(e) => setEditorValue(e.target.value)}
+                  spellCheck={false}
+                  className="w-full flex-1 p-4 text-sm font-mono text-[#1f2937] resize-none outline-none"
+                />
+              </div>
+            )}
+          </div>
         </div>
       </div>
-    </div>
+
+      {/* Global Secure Footer */}
+      <div className="w-full max-w-[1600px] mx-auto flex justify-center mt-4">
+        <div className="bg-[#f0fdf4] border border-[#bbf7d0] text-[#166534] px-6 py-1.5 rounded-full flex items-center gap-2 text-[11px] font-medium shadow-sm">
+          <ShieldCheck size={14} className="text-[#00a86b]" />
+          <span>All travel insurance conversations stay within Dolphin. No personal WhatsApp. More security. Better tracking. Complete audit trail.</span>
+        </div>
+      </div>
+    </main>
   );
 }

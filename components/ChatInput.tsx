@@ -1,6 +1,6 @@
 "use client";
 import { useRef, useState, KeyboardEvent } from "react";
-import { Send, X, FileText, Plus } from "lucide-react";
+import { Send, Paperclip, X, FileText } from "lucide-react";
 
 interface Props {
   onSend: (text: string, file?: { mimeType: string; data: string; name: string }) => void;
@@ -50,34 +50,31 @@ export default function ChatInput({ onSend, disabled }: Props) {
   }
 
   return (
-    <div className="px-4 py-4 sm:py-5 border-t border-[#e2ded7] bg-[#f9f8f6]">
-      <div className="max-w-3xl mx-auto flex flex-col gap-2.5">
+    <div className="px-6 py-4 bg-white border-t border-[#e5e7eb]">
+      <div className="flex flex-col gap-2">
         {/* File Preview Badge */}
         {file && (
-          <div className="flex items-center gap-2 px-4 py-2 rounded-[16px] bg-[#ffffff] text-[#5b7c72] border border-[#e2ded7] self-start text-xs font-bold shadow-sm animate-in fade-in">
-            <FileText size={15} className="text-[#e8a598]" />
+          <div className="flex items-center gap-2 px-3 py-1.5 rounded bg-gray-100 text-[#1f2937] border border-[#e5e7eb] self-start text-xs shadow-sm">
+            <FileText size={14} className="text-red-500" />
             <span className="truncate max-w-xs">{file.name}</span>
             <button
               onClick={() => setFile(null)}
-              className="w-6 h-6 flex items-center justify-center rounded-full hover:bg-[#f1efe9] text-[#9e9a95]"
-              aria-label="Remove attached file"
+              className="w-5 h-5 flex items-center justify-center rounded hover:bg-gray-200 text-[#6b7280]"
             >
-              <X size={14} />
+              <X size={13} />
             </button>
           </div>
         )}
 
         {/* Input Bar */}
-        <div className="flex items-end gap-2 bg-[#ffffff] rounded-[24px] px-2.5 py-2.5 border border-[#e2ded7] focus-within:border-[#5b7c72] shadow-sm transition-all focus-within:shadow-md">
+        <div className="flex items-end gap-2 px-1">
           {/* Attach Button */}
           <button
             onClick={() => fileRef.current?.click()}
             disabled={disabled}
-            className="w-10 h-10 shrink-0 rounded-full bg-[#f1efe9] hover:bg-[#e2ded7] text-[#5b7c72] flex items-center justify-center transition-all disabled:opacity-30"
-            aria-label="Attach policy document"
-            title="Attach policy document (PDF or image)"
+            className="w-8 h-8 shrink-0 rounded flex items-center justify-center text-[#9ca3af] hover:text-[#6b7280] transition-colors disabled:opacity-50 mb-1"
           >
-            <Plus size={20} />
+            <Paperclip size={20} />
           </button>
           <input
             ref={fileRef}
@@ -85,7 +82,6 @@ export default function ChatInput({ onSend, disabled }: Props) {
             accept="application/pdf,image/*"
             className="hidden"
             onChange={handleFileChange}
-            aria-label="File input"
           />
 
           {/* Textarea */}
@@ -96,9 +92,8 @@ export default function ChatInput({ onSend, disabled }: Props) {
             onChange={handleTextChange}
             onKeyDown={handleKey}
             disabled={disabled}
-            placeholder="Message Dolphin Buddy..."
-            aria-label="Message prompt"
-            className="flex-1 resize-none bg-transparent text-[15px] font-medium text-[#2c2a29] placeholder-[#9e9a95] outline-none py-2.5 px-3 disabled:opacity-50 min-h-[44px]"
+            placeholder="Type a travel insurance message..."
+            className="flex-1 resize-none bg-transparent text-sm text-[#1f2937] placeholder-[#9ca3af] outline-none py-2 px-2 disabled:opacity-50 min-h-[36px]"
             style={{ maxHeight: "120px" }}
           />
 
@@ -106,10 +101,9 @@ export default function ChatInput({ onSend, disabled }: Props) {
           <button
             onClick={submit}
             disabled={disabled || (!text.trim() && !file)}
-            className="w-10 h-10 shrink-0 rounded-full bg-[#5b7c72] hover:bg-[#4a665d] text-[#ffffff] flex items-center justify-center transition-all disabled:opacity-30 shadow-sm"
-            aria-label="Send message"
+            className="w-8 h-8 shrink-0 rounded bg-[#00a86b] hover:bg-[#008f5a] text-white flex items-center justify-center transition-colors disabled:opacity-50 mb-1"
           >
-            <Send size={16} className="-ml-0.5" />
+            <Send size={14} className="-ml-0.5" />
           </button>
         </div>
       </div>

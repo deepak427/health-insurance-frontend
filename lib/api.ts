@@ -72,15 +72,29 @@ export async function deleteSession(userId: string, sessionId: string): Promise<
 /** Extract readable messages from ADK session events */
 export function eventsToMessages(events: ADKEvent[]): ChatMessage[] {
   const msgs: ChatMessage[] = [];
+  // Collect pending artifacts from tool-result events to attach to the NEXT agent message
+  const pendingArtifacts: string[] = [];
+
   for (const ev of events) {
-    if (!ev.content?.parts) continue;
-    const text = ev.content.parts.find((p) => p.text)?.text;
-    if (!text) continue;
-    const artifacts = ev.actions?.artifactDelta ? Object.keys(ev.actions.artifactDelta) : undefined;
-    if (ev.content.role === "user") {
-      msgs.push({ role: "user", text });
-    } else if (ev.content.role === "model") {
-      // merge consecutive model chunks
+    const artifactDelta = ev.actions?.artifactDelta;
+    if (artifactDelta && Object.keys(artifactDelta).length > 0) {
+      pendingArtifacts.push(...Object.keys(artifactDelta));
+    }
+
+    const parts = ev.content?.parts;
+    const text = parts?.find((p: Record<string, unknown>) => typeof p.text === "string")?.text as string | undefined;
+
+    if (ev.content?.role === "user" && text) {
+      // Skip tool/function response events — they aren't real user messages
+      const isFunctionResponse = parts?.some((p: Record<string, unknown>) => "functionResponse" in p);
+      if (!isFunctionResponse) {
+        msgs.push({ role: "user", text });
+      }
+    } else if (ev.content?.role === "model" && text) {
+      // Flush any pending artifacts onto this agent message
+      const artifacts = pendingArtifacts.length > 0 ? [...pendingArtifacts] : undefined;
+      pendingArtifacts.length = 0; // clear
+
       const last = msgs[msgs.length - 1];
       if (last?.role === "agent") {
         last.text += text;
@@ -90,6 +104,16 @@ export function eventsToMessages(events: ADKEvent[]): ChatMessage[] {
       }
     }
   }
+
+  // If there are still pending artifacts after all events (edge case),
+  // attach to the last agent message
+  if (pendingArtifacts.length > 0) {
+    const lastAgent = [...msgs].reverse().find((m) => m.role === "agent");
+    if (lastAgent) {
+      lastAgent.artifacts = [...(lastAgent.artifacts ?? []), ...pendingArtifacts];
+    }
+  }
+
   return msgs;
 }
 
@@ -97,7 +121,10 @@ export function eventsToMessages(events: ADKEvent[]): ChatMessage[] {
 export function sessionPreview(events: ADKEvent[]): string {
   for (const ev of events) {
     if (ev.content?.role === "user") {
-      const text = ev.content.parts.find((p) => p.text)?.text;
+      // Skip tool/function response events
+      const isFunctionResponse = ev.content.parts?.some((p: Record<string, unknown>) => p.functionResponse);
+      if (isFunctionResponse) continue;
+      const text = ev.content.parts?.find((p) => p.text)?.text;
       if (text) return text.slice(0, 60) + (text.length > 60 ? "…" : "");
     }
   }

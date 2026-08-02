@@ -1,15 +1,15 @@
 "use client";
 
-import { useEffect, useRef, useCallback } from "react";
+import { useEffect, useRef, useCallback, useState } from "react";
 import { streamMessage } from "@/lib/api";
 import { useChatContext, savePreview } from "@/context/ChatContext";
 import Sidebar from "./Sidebar";
+import ConversationList from "./ConversationList";
+import ConversationDetails from "./ConversationDetails";
 import Message from "./Message";
 import ChatInput from "./ChatInput";
-import WelcomeScreen from "./WelcomeScreen";
 import UsernameModal from "./UsernameModal";
-import { AlertCircle, RefreshCw, Menu, Shield, CheckCircle2 } from "lucide-react";
-import { useState } from "react";
+import { AlertCircle, Search, Phone, MoreVertical, ShieldCheck, Bell, ChevronDown } from "lucide-react";
 
 export default function ChatWindow() {
   const {
@@ -17,7 +17,6 @@ export default function ChatWindow() {
     userId,
     sessionId,
     messages,
-    sessionReady,
     loading,
     error,
     setMessages,
@@ -29,8 +28,9 @@ export default function ChatWindow() {
     setUsername,
   } = useChatContext();
 
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
+  // local mobile sidebar state (not needed for logic, kept for UI compat)
+  const [, setMobileOpen] = useState(false);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -42,7 +42,7 @@ export default function ChatWindow() {
   ) => {
     if (loading) return;
 
-    // Lazily create the session on backend the first time a message is sent
+    // Lazily create session on first message
     const ready = await ensureSession();
     if (!ready) return;
 
@@ -51,7 +51,6 @@ export default function ChatWindow() {
     setMessages((prev) => [...prev, { role: "user", text: file ? `${text}\n📎 ${file.name}` : text }]);
     setLoading(true);
     setError(null);
-
     setMessages((prev) => [...prev, { role: "agent", text: "", artifacts: [] }]);
 
     try {
@@ -81,10 +80,7 @@ export default function ChatWindow() {
         return prev;
       });
 
-      // Cache preview from first user message, then refresh sidebar
-      if (isFirstMessage) {
-        savePreview(sessionId, text);
-      }
+      if (isFirstMessage) savePreview(sessionId, text);
       await refreshSessionList();
     } catch (err) {
       setMessages((prev) => {
@@ -92,107 +88,137 @@ export default function ChatWindow() {
         if (last?.role === "agent" && last.text === "") return prev.slice(0, -1);
         return prev;
       });
-      setError(err instanceof Error ? err.message : "An error occurred. Please try again.");
+      setError(err instanceof Error ? err.message : "An error occurred.");
     } finally {
       setLoading(false);
     }
   }, [loading, ensureSession, messages.length, userId, sessionId, setMessages, setLoading, setError, refreshSessionList]);
 
-  // Show username modal if not set
+  // Show username modal if not logged in
   if (!username) {
     return <UsernameModal onSubmit={setUsername} />;
   }
 
   return (
-    <div className="flex h-screen overflow-hidden bg-[#f9f8f6]">
-      <Sidebar
-        onQuickPrompt={(p) => handleSend(p)}
-        isOpenMobile={mobileMenuOpen}
-        onCloseMobile={() => setMobileMenuOpen(false)}
-      />
+    <div className="flex h-[85vh] min-h-[600px] w-full bg-white relative">
+      {/* Column 1: Navy Sidebar */}
+      <Sidebar />
 
-      <div className="flex flex-col flex-1 min-w-0 h-full bg-[#f9f8f6]">
-        {/* Header */}
-        <header className="flex items-center justify-between px-4 sm:px-6 py-4 border-b border-[#e2ded7] bg-[#f9f8f6]/90 backdrop-blur-md shrink-0 z-10">
-          <div className="flex items-center gap-3.5">
-            <button
-              onClick={() => setMobileMenuOpen(true)}
-              className="md:hidden w-10 h-10 flex items-center justify-center rounded-full text-[#797571] hover:text-[#2c2a29] hover:bg-[#e2ded7]"
-              aria-label="Open messages list"
-            >
-              <Menu size={20} />
-            </button>
+      {/* Columns 2+3+4 wrapper with shared top bar */}
+      <div className="flex flex-col flex-1 min-w-0 h-full">
 
-            <div className="flex items-center gap-3">
-              <div className="relative shrink-0">
-                <div className="w-11 h-11 rounded-full bg-[#5b7c72] flex items-center justify-center text-white shadow-sm border border-[#e2ded7]">
-                  <Shield size={20} />
-                </div>
-                <span className="absolute bottom-0 right-0 w-3 h-3 rounded-full bg-[#e8a598] border-2 border-[#f9f8f6]"></span>
-              </div>
-              <div>
-                <div className="flex items-center gap-1.5">
-                  <h2 className="text-[17px] text-[#2c2a29] font-heading leading-none font-bold">
-                    Dolphin Buddy
-                  </h2>
-                  <CheckCircle2 size={16} className="text-[#5b7c72] fill-[#5b7c72]/10" />
-                </div>
-                <p className="text-[11px] font-bold text-[#e8a598] mt-1.5 flex items-center gap-1 uppercase tracking-widest">
-                  <span className="w-1.5 h-1.5 rounded-full bg-[#e8a598] animate-soft-pulse"></span>
-                  Active now
-                </p>
-              </div>
+        {/* Top bar: spans col 2+3+4 — Buddy on left, bell+avatar on right */}
+        <div className="flex items-center justify-between px-5 py-3 border-b border-[#e5e7eb] bg-white shrink-0">
+          <div className="flex items-center gap-3">
+            <svg width="30" height="28" viewBox="0 0 36 34" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <rect x="0" y="0" width="36" height="28" rx="8" fill="#00a86b"/>
+              <polygon points="8,28 4,34 16,28" fill="#00a86b"/>
+              <circle cx="11" cy="14" r="2.5" fill="white"/>
+              <circle cx="18" cy="14" r="2.5" fill="white"/>
+              <circle cx="25" cy="14" r="2.5" fill="white"/>
+            </svg>
+            <div>
+              <h2 className="font-bold text-[#1f2937] text-[19px] leading-tight">Buddy</h2>
+              <p className="text-[12px] text-[#6b7280]">Travel Insurance Communication Hub</p>
             </div>
           </div>
 
-          <div className="flex items-center gap-1 sm:gap-2">
-            <button
-              onClick={handleNewChat}
-              className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider px-4 py-2.5 rounded-[16px] bg-[#ffffff] hover:bg-[#f1efe9] text-[#5b7c72] transition-all border border-[#e2ded7] shadow-sm"
-              title="Start fresh conversation"
-            >
-              <RefreshCw size={14} className="text-[#e8a598]" />
-              <span className="hidden sm:inline">New Chat</span>
-            </button>
+          <div className="flex items-center gap-4">
+            <div className="relative">
+              <Bell size={20} className="text-[#6b7280]" />
+              <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center">3</span>
+            </div>
+            <div className="flex items-center gap-2 cursor-pointer">
+              <div className="w-8 h-8 rounded-full bg-gray-200 overflow-hidden shrink-0">
+                <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${username}`} alt="avatar" />
+              </div>
+              <div className="flex flex-col leading-tight">
+                <span className="text-[13px] font-semibold text-[#1f2937]">{username}</span>
+                <span className="text-[10px] text-[#6b7280]">Partner ID: PT12345</span>
+              </div>
+              <ChevronDown size={14} className="text-[#6b7280]" />
+            </div>
+          </div>
+        </div>
+
+        {/* Bottom row: col 2 + col 3 + col 4 */}
+        <div className="flex flex-1 min-h-0">
+
+      {/* Column 2: Conversation List */}
+      <ConversationList onNewChat={handleNewChat} />
+
+      {/* Column 3: Main Chat Stream */}
+      <div className="flex flex-col flex-1 min-w-0 h-full bg-white relative">
+        {/* Chat Header */}
+        <header className="flex items-center justify-between px-6 py-4 border-b border-[#e5e7eb]">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded border border-[#e5e7eb] text-[#00a86b] flex items-center justify-center bg-white">
+              <ShieldCheck size={18} />
+            </div>
+            <div>
+              <h2 className="font-bold text-[#1f2937] text-sm leading-tight">Travel Insurance Support</h2>
+              <p className="text-xs text-[#6b7280]">@{username} · AI Active</p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-4 text-[#6b7280]">
+            <button className="hover:text-[#1f2937]"><Search size={18} /></button>
+            <button className="hover:text-[#1f2937]"><Phone size={18} /></button>
+            <button className="hover:text-[#1f2937]"><MoreVertical size={18} /></button>
           </div>
         </header>
 
-        {/* Messages */}
-        <div className="flex-1 overflow-y-auto px-4 sm:px-8 py-6">
+        {/* Chat Messages */}
+        <div className="flex-1 overflow-y-auto px-6 py-4 bg-[#f8fafc]">
           {error && (
-            <div className="flex items-center gap-3 mx-auto mb-5 max-w-xl text-sm px-5 py-4 rounded-[20px] bg-[#fff0ed] text-[#b34040] border border-[#e8a598]/40 shadow-sm">
-              <AlertCircle size={18} className="shrink-0" />
+            <div className="flex items-center gap-2 mb-4 text-xs p-3 rounded bg-red-50 text-red-700 border border-red-200">
+              <AlertCircle size={16} />
               <span>{error}</span>
             </div>
           )}
 
-          {messages.length === 0 && !loading ? (
-            <WelcomeScreen onPrompt={(p) => handleSend(p)} />
-          ) : (
-            <div className="flex flex-col max-w-3xl mx-auto">
-              <div className="text-center my-4">
-                <span className="text-[10px] font-bold uppercase tracking-widest text-[#9e9a95]">Today</span>
-              </div>
-              {messages.map((msg, i) => (
-                <Message key={i} msg={msg} userId={userId} sessionId={sessionId} />
-              ))}
-              {loading && (
-                <div className="flex items-center gap-2 px-4 py-3 text-[#797571] text-sm">
-                  <span className="w-2 h-2 rounded-full bg-[#5b7c72] animate-bounce [animation-delay:0ms]"></span>
-                  <span className="w-2 h-2 rounded-full bg-[#5b7c72] animate-bounce [animation-delay:150ms]"></span>
-                  <span className="w-2 h-2 rounded-full bg-[#5b7c72] animate-bounce [animation-delay:300ms]"></span>
-                </div>
-              )}
+          <div className="flex flex-col max-w-3xl mx-auto">
+            <div className="text-center my-4">
+              <span className="text-[10px] font-semibold text-[#6b7280] bg-white px-3 py-1 rounded-full border border-[#e5e7eb]">
+                Today
+              </span>
             </div>
-          )}
+
+            {messages.length === 0 && !loading && (
+              <div className="flex items-start gap-3 my-4">
+                <div className="w-8 h-8 rounded-full bg-gray-200 shrink-0 overflow-hidden">
+                  <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Priya" alt="avatar" />
+                </div>
+                <div className="flex flex-col items-start">
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="text-xs font-bold text-[#1f2937]">Dolphin Buddy</span>
+                    <span className="text-xs text-[#6b7280]">| Insurance AI</span>
+                  </div>
+                  <div className="bg-white border border-[#e5e7eb] rounded-lg px-4 py-3 shadow-sm max-w-[85%]">
+                    <p className="text-sm text-[#1f2937]">Hi @{username}! How can I help you with your insurance today?</p>
+                  </div>
+                  <span className="text-[10px] text-[#6b7280] mt-1 ml-1">Just now</span>
+                </div>
+              </div>
+            )}
+
+            {messages.map((msg, i) => (
+              <Message key={i} msg={msg} userId={userId} sessionId={sessionId} />
+            ))}
+          </div>
           <div ref={bottomRef} />
         </div>
 
-        {/* Input */}
+        {/* Chat Input Dock */}
         <div className="shrink-0">
           <ChatInput onSend={handleSend} disabled={loading} />
         </div>
       </div>
+
+      {/* Column 4: Conversation Details Panel */}
+      <ConversationDetails />
+        </div>{/* end bottom row */}
+      </div>{/* end col 2+3+4 wrapper */}
     </div>
   );
 }

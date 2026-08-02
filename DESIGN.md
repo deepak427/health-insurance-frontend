@@ -1,43 +1,43 @@
 ---
-name: Dolphin Buddy
-description: Soft Coastal Sage FinTech aesthetic for high-trust consumer insurance apps
+name: Dolphin Portal
+description: Enterprise 4-column multi-pane layout for B2B/B2C insurance operations
 colors:
-  primary: "#5b7c72"
-  accent-hover: "#4a665d"
-  accent-coral: "#e8a598"
-  accent-sand: "#d4c5b9"
-  neutral-bg: "#f9f8f6"
-  surface-card: "#f1efe9"
-  surface-white: "#ffffff"
-  text-primary: "#2c2a29"
-  text-muted: "#797571"
-  border-subtle: "#e2ded7"
+  primary: "#0a192f"
+  accent-emerald: "#00a86b"
+  neutral-bg: "#f4f7f9"
+  surface-card: "#ffffff"
+  text-primary: "#1f2937"
+  text-muted: "#6b7280"
+  border-subtle: "#e5e7eb"
 typography:
   display:
-    fontFamily: "Instrument Serif, serif"
+    fontFamily: "Inter, sans-serif"
     fontSize: "1.5rem"
-    fontWeight: 400
+    fontWeight: 700
   body:
-    fontFamily: "Manrope, sans-serif"
-    fontSize: "0.95rem"
-    fontWeight: 500
+    fontFamily: "Inter, sans-serif"
+    fontSize: "0.875rem"
+    fontWeight: 400
 rounded:
   pill: "9999px"
-  bubble: "24px"
+  bubble: "8px"
   card: "16px"
 ---
 
-# Design System: Dolphin Buddy (Coastal Sage Edition)
+# Design System: Dolphin Portal (Enterprise Multi-Pane)
 
 ## Overview
 
-**Creative North Star: "Calm Consumer Wellness"**
+**Creative North Star: "The B2B Unified Workspace"**
 
-Dolphin Buddy completely discards the dark, neon, and aggressive aesthetic typical of AI applications. Instead, it adopts a highly approachable, warm, and elegant Coastal Sage palette inspired by modern FinTech and wellness consumer apps.
+Dolphin Buddy has evolved into **Dolphin Portal**, a complex enterprise application that mimics high-end CRMs, support desks (Zendesk), and unified communication tools (Slack/Teams).
 
-Key Characteristics:
-- Typography: Elegant **Instrument Serif** for headings and highly legible, friendly **Manrope** for body text.
-- Palette: Warm Oat canvas (`#f9f8f6`), soft Pebble sidebars (`#f1efe9`), and deep Coastal Sage (`#5b7c72`) actions.
-- Text Color: Espresso (`#2c2a29`) instead of harsh black, maximizing reading comfort.
-- Shapes: Softly rounded containers (`24px` bubbles, `16px` cards) with minimal drop shadows (`rgba(44, 42, 41, 0.04)`).
-- Details: Dusty Coral (`#e8a598`) indicator badges for active states instead of standard green.
+Key Layout Architecture:
+- **Outer Wrapper**: Marketing/Value props header on an off-white background (`#f4f7f9`).
+- **Column 1 (Sidebar)**: Slim, dark Navy (`#0a192f`) primary app navigation.
+- **Column 2 (Conversation List)**: Contextual list of active threads, filtered to "Travel Insurance".
+- **Column 3 (Chat Window)**: The main interaction stream, utilizing standard messaging paradigms. User bubbles are light green (`#dcf8c6`), agent bubbles are white with shadow.
+- **Column 4 (Conversation Details)**: Right-hand contextual accordion sidebar displaying metadata, documents, and pinned items.
+
+## Typography
+Clean, high-legibility sans-serif: **Inter**.

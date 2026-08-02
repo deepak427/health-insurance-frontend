@@ -1,360 +1,96 @@
 "use client";
-
-import { useState, useRef, useEffect } from "react";
-import {
-  Shield, MessageSquarePlus, Search, Database, X, Sparkles,
-  CheckCircle2, MessageCircle, Clock, LogOut, MoreHorizontal,
-  Pencil, Trash2, Check,
-} from "lucide-react";
+import { FilePlus, FileText, IndianRupee, BarChart3, MessageCircle, HeadphonesIcon, Database, LogOut } from "lucide-react";
 import Link from "next/link";
 import { useChatContext } from "@/context/ChatContext";
-import type { ChatSessionMeta } from "@/context/ChatContext";
 
 interface Props {
-  onQuickPrompt: (text: string) => void;
   isOpenMobile?: boolean;
   onCloseMobile?: () => void;
 }
 
-function timeAgo(ts: number): string {
-  const diff = Date.now() / 1000 - ts;
-  if (diff < 60) return "Just now";
-  if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
-  if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
-  return `${Math.floor(diff / 86400)}d ago`;
-}
-
-// Per-session row with rename/delete actions
-function SessionRow({
-  s,
-  isActive,
-  onSwitch,
-  onRename,
-  onDelete,
-}: {
-  s: ChatSessionMeta;
-  isActive: boolean;
-  onSwitch: () => void;
-  onRename: (name: string) => void;
-  onDelete: () => void;
-}) {
-  const [menuOpen, setMenuOpen] = useState(false);
-  const [renaming, setRenaming] = useState(false);
-  const [renameVal, setRenameVal] = useState(s.preview);
-  const [confirmDelete, setConfirmDelete] = useState(false);
-  const menuRef = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
-
-  // Close menu on outside click
-  useEffect(() => {
-    if (!menuOpen) return;
-    function handler(e: MouseEvent) {
-      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
-        setMenuOpen(false);
-        setConfirmDelete(false);
-      }
-    }
-    document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
-  }, [menuOpen]);
-
-  // Focus input when rename starts
-  useEffect(() => {
-    if (renaming) {
-      setRenameVal(s.preview);
-      setTimeout(() => inputRef.current?.select(), 0);
-    }
-  }, [renaming, s.preview]);
-
-  function submitRename() {
-    if (renameVal.trim()) onRename(renameVal.trim());
-    setRenaming(false);
-  }
-
-  return (
-    <div className={`group relative flex items-center gap-3 p-3 rounded-[20px] transition-all ${
-      isActive ? "bg-[#ffffff] border border-[#e2ded7] shadow-sm" : "hover:bg-[#ffffff]/60 border border-transparent hover:border-[#e2ded7]"
-    }`}>
-      {/* Avatar */}
-      <button onClick={onSwitch} className="relative shrink-0" tabIndex={-1} aria-label="Open conversation">
-        <div className={`w-12 h-12 rounded-full flex items-center justify-center text-white ${isActive ? "bg-[#5b7c72]" : "bg-[#9e9a95]"}`}>
-          <Shield size={20} />
-        </div>
-        {isActive && (
-          <span className="absolute bottom-0 right-0 w-3 h-3 rounded-full bg-[#e8a598] border-2 border-[#f1efe9]" />
-        )}
-      </button>
-
-      {/* Text area — click to switch */}
-      <button onClick={onSwitch} className="flex-1 min-w-0 text-left" aria-label={`Switch to: ${s.preview}`}>
-        <div className="flex items-center justify-between gap-1">
-          <span className={`text-sm truncate font-heading leading-none flex items-center gap-1 ${isActive ? "text-[#2c2a29] font-bold" : "text-[#2c2a29]"}`}>
-            Dolphin Buddy
-            {isActive && <CheckCircle2 size={12} className="text-[#5b7c72] shrink-0" />}
-          </span>
-          <span className="text-[10px] font-bold text-[#9e9a95] shrink-0 flex items-center gap-0.5 uppercase tracking-wider">
-            <Clock size={9} />
-            {timeAgo(s.lastUpdateTime)}
-          </span>
-        </div>
-
-        {renaming ? (
-          <input
-            ref={inputRef}
-            value={renameVal}
-            onChange={(e) => setRenameVal(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") submitRename();
-              if (e.key === "Escape") setRenaming(false);
-            }}
-            onClick={(e) => e.stopPropagation()}
-            maxLength={60}
-            className="mt-1 w-full text-xs font-medium bg-[#f1efe9] text-[#2c2a29] border border-[#5b7c72] rounded-[8px] px-2 py-1 outline-none"
-          />
-        ) : (
-          <p className="text-xs text-[#797571] truncate mt-1 font-medium">{s.preview}</p>
-        )}
-      </button>
-
-      {/* Rename confirm button */}
-      {renaming && (
-        <button
-          onClick={(e) => { e.stopPropagation(); submitRename(); }}
-          className="w-7 h-7 shrink-0 flex items-center justify-center rounded-full bg-[#5b7c72] text-white hover:bg-[#4a665d] transition-colors"
-          aria-label="Confirm rename"
-        >
-          <Check size={13} />
-        </button>
-      )}
-
-      {/* ··· menu button — visible on hover or when active */}
-      {!renaming && (
-        <div className="relative shrink-0" ref={menuRef}>
-          <button
-            onClick={(e) => { e.stopPropagation(); setMenuOpen((v) => !v); setConfirmDelete(false); }}
-            className={`w-7 h-7 flex items-center justify-center rounded-full transition-all text-[#9e9a95] hover:text-[#2c2a29] hover:bg-[#e2ded7] ${
-              menuOpen ? "opacity-100 bg-[#e2ded7]" : "opacity-0 group-hover:opacity-100"
-            }`}
-            aria-label="Session options"
-            aria-haspopup="true"
-          >
-            <MoreHorizontal size={15} />
-          </button>
-
-          {menuOpen && (
-            <div className="absolute right-0 top-8 z-50 w-44 bg-[#ffffff] rounded-[16px] border border-[#e2ded7] shadow-lg overflow-hidden py-1">
-              {/* Rename */}
-              <button
-                onClick={(e) => { e.stopPropagation(); setMenuOpen(false); setRenaming(true); }}
-                className="flex items-center gap-2.5 w-full px-4 py-2.5 text-sm font-medium text-[#2c2a29] hover:bg-[#f1efe9] transition-colors"
-              >
-                <Pencil size={14} className="text-[#5b7c72]" />
-                Rename
-              </button>
-
-              {/* Delete — two-step confirm */}
-              {!confirmDelete ? (
-                <button
-                  onClick={(e) => { e.stopPropagation(); setConfirmDelete(true); }}
-                  className="flex items-center gap-2.5 w-full px-4 py-2.5 text-sm font-medium text-[#797571] hover:bg-[#fff0ed] hover:text-[#b34040] transition-colors"
-                >
-                  <Trash2 size={14} />
-                  Delete
-                </button>
-              ) : (
-                <button
-                  onClick={(e) => { e.stopPropagation(); setMenuOpen(false); setConfirmDelete(false); onDelete(); }}
-                  className="flex items-center gap-2.5 w-full px-4 py-2.5 text-sm font-bold text-[#b34040] bg-[#fff0ed] hover:bg-[#ffe4df] transition-colors"
-                >
-                  <Trash2 size={14} />
-                  Confirm Delete
-                </button>
-              )}
-            </div>
-          )}
-        </div>
-      )}
-    </div>
-  );
-}
-
-const QUICK_TOPICS = [
-  { label: "Deductibles & Co-pay", prompt: "What is a deductible and how does it work?" },
-  { label: "Premium Calculator", prompt: "Estimate my health insurance premium, I'm 30." },
-  { label: "Health PDF Guide", prompt: "Give me a PDF guide on health insurance." },
-  { label: "Filing Claims", prompt: "How do I file an auto accident claim?" },
-];
-
-export default function Sidebar({ onQuickPrompt, isOpenMobile, onCloseMobile }: Props) {
-  const { username, sessionId, sessions, handleNewChat, switchSession, removeSession, renameSession, logout } = useChatContext();
-  const [searchVal, setSearchVal] = useState("");
-
-  const filtered: ChatSessionMeta[] = sessions.filter((s) =>
-    s.preview.toLowerCase().includes(searchVal.toLowerCase())
-  );
-
-  // Suggested topics only when user has fewer than 3 real chats
-  const showSuggestedTopics = !searchVal && sessions.length < 3;
-
-  function onNewChat() {
-    handleNewChat();
-    onCloseMobile?.();
-  }
+export default function Sidebar({ isOpenMobile, onCloseMobile }: Props) {
+  const { logout, username } = useChatContext();
 
   const content = (
-    <div className="flex flex-col h-full w-full bg-[#f1efe9] text-[#2c2a29] border-r border-[#e2ded7]">
-      {/* Header */}
-      <div className="flex items-center justify-between px-4 py-5 border-b border-[#e2ded7]">
-        <div className="flex items-center gap-3">
-          <div className="relative flex items-center justify-center w-10 h-10 rounded-full bg-[#5b7c72] text-white shadow-sm">
-            <Shield size={20} />
-            <span className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-[#e8a598] border-2 border-[#f1efe9]" />
-          </div>
-          <div>
-            <h1 className="text-2xl text-[#2c2a29] font-heading leading-none tracking-wide">
-              Dolphin Buddy
-            </h1>
-            <p className="text-[11px] font-medium text-[#797571] mt-1 tracking-wide uppercase">
-              {username ? `@${username}` : "Direct Messages"}
-            </p>
-          </div>
-        </div>
-        <div className="flex items-center gap-1">
-          <button
-            onClick={onNewChat}
-            className="w-9 h-9 flex items-center justify-center rounded-full bg-[#e2ded7] hover:bg-[#d1ccc4] text-[#5b7c72] transition-all"
-            title="Start new conversation"
-            aria-label="Start new chat"
-          >
-            <MessageSquarePlus size={18} />
-          </button>
-          {onCloseMobile && (
-            <button
-              onClick={onCloseMobile}
-              className="md:hidden w-9 h-9 flex items-center justify-center rounded-full text-[#797571] hover:text-[#2c2a29]"
-              aria-label="Close menu"
-            >
-              <X size={20} />
-            </button>
-          )}
-        </div>
+    <div className="flex flex-col h-full w-[220px] bg-[#0a192f] text-white">
+      {/* Brand Header */}
+      <div className="flex items-center gap-3 px-5 py-5">
+        {/* Proper dolphin SVG — white, swimming shape */}
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="white" xmlns="http://www.w3.org/2000/svg">
+          <path d="M12.984 8.783c-1.332-1.936-3.792-3.14-6.425-3.14-1.295 0-2.527.31-3.626.866.52-2.316 2.584-4.062 5.067-4.062 2.85 0 5.161 2.31 5.161 5.16 0 .438-.057.863-.163 1.267a5.122 5.122 0 0 1-.014-.091zm9.324 7.64c-.958-3.325-3.418-5.748-6.685-6.683-.81-.233-1.666-.363-2.545-.38l-1.077-.021c.542.484 1.002 1.05 1.353 1.68l.215.385c.896 1.62 1.34 3.535 1.272 5.518l-.01.32c1.78-.184 3.393-1.052 4.544-2.355l1.636-1.848.067-1.127a5.534 5.534 0 0 0 .108-.501.996.996 0 0 1-.878.508c-.28 0-.546-.118-.737-.324l-2.072-2.222c-.383-.412-.358-1.055.054-1.439.412-.383 1.055-.357 1.439.055l1.838 1.973c.123.131.295.205.474.205h.001zm-5.75-8.52c-.615-.466-1.286-.867-1.998-1.196-1.293-.598-2.678-.897-4.113-.897-.992 0-1.97.16-2.91.468C3.896 7.425 1.155 9.775.228 12.87l-.147.494 2.112-2.348c.15-.167.315-.327.491-.478l.42-.355c.784-.663 1.678-1.168 2.657-1.498.412-.138.835-.23 1.264-.275l.435-.046c1.67-.176 3.336.262 4.673 1.233.15.108.297.22.441.336l.244.195c1.455 1.164 2.378 2.85 2.628 4.757.065.498.077 1.002.036 1.5l-.019.227c-.234 2.809-1.956 5.176-4.524 6.184l-2.028.794 3.385.163c2.72.13 5.37-1.195 6.953-3.488l2.257-3.265.172-.45c.162-.42.274-.858.337-1.309.055-.398-.016-.807-.205-1.158l-.946-1.745c-.464-.856-1.11-1.577-1.91-2.136z"/>
+        </svg>
+        <h1 className="text-[15px] font-bold tracking-tight text-white">
+          Dolphin <span className="text-[#00a86b]">Portal</span>
+        </h1>
       </div>
 
-      {/* Search */}
-      <div className="px-4 pt-4 pb-2">
-        <div className="relative flex items-center bg-[#ffffff] rounded-2xl px-3 py-2.5 border border-[#e2ded7] focus-within:border-[#5b7c72] shadow-sm transition-all">
-          <Search size={16} className="text-[#9e9a95] shrink-0 mr-2" />
-          <input
-            type="text"
-            value={searchVal}
-            onChange={(e) => setSearchVal(e.target.value)}
-            placeholder="Search conversations..."
-            className="w-full bg-transparent text-sm text-[#2c2a29] placeholder-[#9e9a95] outline-none font-medium"
-          />
-          {searchVal && (
-            <button onClick={() => setSearchVal("")} className="text-[#9e9a95] hover:text-[#2c2a29]">
-              <X size={14} />
-            </button>
-          )}
-        </div>
-      </div>
-
-      {/* Section label */}
-      <div className="flex items-center justify-between px-5 pt-4 pb-2">
-        <span className="text-xs font-bold uppercase tracking-wider text-[#797571]">Messages</span>
-        <span className="text-[11px] font-bold text-[#e8a598] flex items-center gap-1 uppercase tracking-wider">
-          <Sparkles size={11} /> AI Active
-        </span>
-      </div>
-
-      {/* Chat list */}
-      <div className="px-3 flex-1 overflow-y-auto flex flex-col gap-1.5 py-1">
-        {filtered.length === 0 && !searchVal && (
-          <div className="flex flex-col items-center justify-center gap-2 py-6 text-[#9e9a95]">
-            <MessageCircle size={28} className="opacity-40" />
-            <p className="text-xs font-bold uppercase tracking-wider">No conversations yet</p>
-          </div>
-        )}
-
-        {filtered.length === 0 && searchVal && (
-          <div className="flex flex-col items-center justify-center gap-2 py-6 text-[#9e9a95]">
-            <Search size={22} className="opacity-40" />
-            <p className="text-xs font-bold uppercase tracking-wider">No results</p>
-          </div>
-        )}
-
-        {filtered.map((s) => (
-          <SessionRow
-            key={s.id}
-            s={s}
-            isActive={s.id === sessionId}
-            onSwitch={() => { switchSession(s.id); onCloseMobile?.(); }}
-            onRename={(name) => renameSession(s.id, name)}
-            onDelete={() => removeSession(s.id)}
-          />
-        ))}
-
-        {/* Suggested Topics — only for new users with < 3 chats */}
-        {showSuggestedTopics && (
-          <div className="mt-4 px-2">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-[#797571] block mb-3">
-              Suggested Topics
-            </span>
-            <div className="flex flex-col gap-1.5">
-              {QUICK_TOPICS.map(({ label, prompt }) => (
-                <button
-                  key={label}
-                  onClick={() => { onQuickPrompt(prompt); onCloseMobile?.(); }}
-                  className="flex items-center justify-between px-4 py-2.5 rounded-[16px] text-sm font-medium text-[#797571] hover:text-[#5b7c72] hover:bg-[#ffffff] transition-all text-left border border-transparent hover:border-[#e2ded7] hover:shadow-sm group"
-                >
-                  <span>{label}</span>
-                  <span className="text-[10px] text-[#e8a598] font-bold uppercase tracking-wider opacity-0 group-hover:opacity-100 transition-opacity">Ask →</span>
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* Footer */}
-      <div className="px-4 pb-4 border-t border-[#e2ded7] pt-4 flex flex-col gap-1">
-        <Link
-          href="/data"
-          onClick={() => onCloseMobile?.()}
-          className="flex items-center gap-3 px-4 py-3 rounded-[16px] text-sm font-bold text-[#5b7c72] hover:bg-[#ffffff] transition-all border border-transparent hover:border-[#e2ded7] hover:shadow-sm"
-        >
+      {/* Primary Navigation */}
+      <nav className="flex-1 px-3 mt-4 flex flex-col gap-1.5">
+        <Link href="#" className="flex items-center gap-3 px-4 py-3 rounded-lg text-sm text-[#94a3b8] hover:bg-[#132742] hover:text-white transition-colors">
+          <FilePlus size={18} />
+          <span>Create Policy</span>
+        </Link>
+        <Link href="#" className="flex items-center gap-3 px-4 py-3 rounded-lg text-sm text-[#94a3b8] hover:bg-[#132742] hover:text-white transition-colors">
+          <FileText size={18} />
+          <span>My Policies</span>
+        </Link>
+        <Link href="#" className="flex items-center gap-3 px-4 py-3 rounded-lg text-sm text-[#94a3b8] hover:bg-[#132742] hover:text-white transition-colors">
+          <IndianRupee size={18} />
+          <span>Claims</span>
+        </Link>
+        <Link href="#" className="flex items-center gap-3 px-4 py-3 rounded-lg text-sm text-[#94a3b8] hover:bg-[#132742] hover:text-white transition-colors">
+          <BarChart3 size={18} />
+          <span>Reports</span>
+        </Link>
+        <Link href="/data" onClick={() => onCloseMobile?.()} className="flex items-center gap-3 px-4 py-3 rounded-lg text-sm text-[#94a3b8] hover:bg-[#132742] hover:text-white transition-colors">
           <Database size={18} />
           <span>Knowledge Base</span>
         </Link>
-
-        <button
-          onClick={() => { logout(); onCloseMobile?.(); }}
-          className="flex items-center justify-between gap-3 px-4 py-3 rounded-[16px] text-sm font-bold text-[#797571] hover:text-[#b34040] hover:bg-[#fff0ed] transition-all border border-transparent hover:border-[#e8a598]/40 group"
-        >
-          <div className="flex items-center gap-3">
-            <LogOut size={16} className="group-hover:text-[#b34040] transition-colors" />
-            <span>Sign Out</span>
+        <Link href="/" className="flex items-center justify-between px-4 py-3 mt-2 rounded-lg bg-[#132742] text-white relative before:absolute before:left-0 before:top-2 before:bottom-2 before:w-1 before:bg-[#00a86b] before:rounded-r-md cursor-pointer">
+          <div className="flex items-center gap-3 text-sm font-semibold">
+            <MessageCircle size={18} />
+            <span>Buddy</span>
           </div>
-          {username && (
-            <span className="text-[10px] font-bold uppercase tracking-wider text-[#9e9a95] group-hover:text-[#b34040]/70 truncate max-w-[100px]">
-              @{username}
-            </span>
-          )}
+          <span className="text-[9px] font-bold bg-[#00a86b] px-1.5 py-0.5 rounded text-white">LIVE</span>
+        </Link>
+      </nav>
+
+      {/* Footer */}
+      <div className="px-3 py-4 flex flex-col gap-1 border-t border-[#132742]">
+        {/* Logout */}
+        <button
+          onClick={logout}
+          className="flex items-center gap-3 px-4 py-3 rounded-lg text-sm text-[#94a3b8] hover:bg-red-900/30 hover:text-red-400 transition-colors w-full text-left"
+          title="Sign out"
+        >
+          <LogOut size={18} />
+          <div className="flex flex-col items-start">
+            <span>Sign Out</span>
+            {username && <span className="text-[10px] text-[#94a3b8]/60">@{username}</span>}
+          </div>
         </button>
+
+        <div className="flex items-start gap-3 px-4 py-3 cursor-pointer group">
+          <HeadphonesIcon size={20} className="text-[#94a3b8] group-hover:text-white transition-colors" />
+          <div className="flex flex-col">
+            <span className="text-xs text-[#94a3b8] group-hover:text-white transition-colors">Need Help?</span>
+            <span className="text-xs font-semibold">Contact Support</span>
+          </div>
+        </div>
       </div>
     </div>
   );
 
   return (
     <>
-      <aside className="hidden md:flex flex-col w-[320px] shrink-0 h-full">
+      <aside className="hidden md:flex flex-col shrink-0 h-full border-r border-[#132742]">
         {content}
       </aside>
 
       {isOpenMobile && (
         <div className="fixed inset-0 z-50 flex md:hidden">
-          <div className="fixed inset-0 bg-[#2c2a29]/40 backdrop-blur-sm" onClick={onCloseMobile} />
-          <aside className="relative flex flex-col w-[85vw] max-w-[340px] h-full shadow-2xl z-10 animate-in slide-in-from-left duration-300">
+          <div className="fixed inset-0 bg-[#0a192f]/60 backdrop-blur-sm" onClick={onCloseMobile} />
+          <aside className="relative flex flex-col h-full shadow-2xl z-10 animate-in slide-in-from-left duration-200">
             {content}
           </aside>
         </div>

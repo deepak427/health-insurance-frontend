@@ -1,22 +1,23 @@
-import type { Metadata, Viewport } from "next";
+import type { Metadata } from "next";
 import "./globals.css";
 import { ChatProvider } from "@/context/ChatContext";
 
 export const metadata: Metadata = {
-  title: "Dolphin Buddy — AI Insurance Support Assistant",
-  description: "Instant AI insurance support, policy document PDF analysis, and downloadable guides.",
+  title: "Dolphin Portal — One Partner. One Login. All Conversations.",
+  description: "Enterprise Travel Insurance Support",
 };
 
-export const viewport: Viewport = {
+export const viewport = {
   width: "device-width",
   initialScale: 1,
-  viewportFit: "cover",
+  maximumScale: 1,
+  userScalable: false,
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
-      <body className="h-screen overflow-hidden" suppressHydrationWarning>
+      <body className="antialiased bg-[#f4f7f9] min-h-screen text-[#1f2937]">
         <ChatProvider>
           {children}
         </ChatProvider>

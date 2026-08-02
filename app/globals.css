@@ -1,33 +1,31 @@
-@import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Manrope:wght@400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 @import "tailwindcss";
 
 :root {
-  /* Calm Coastal & Soft Editorial Palette (Highly approachable, non-AI) */
-  --bg: #f9f8f6;          /* Warm Oat - Main background */
-  --bg-card: #f1efe9;     /* Pebble - Sidebar and panels */
-  --bg-card2: #e8e5de;    /* Slightly darker pebble */
-  --bg-white: #ffffff;    /* Pure white for chat bubbles/cards */
+  /* Dolphin Portal Enterprise Palette */
+  --bg-app: #f4f7f9;        /* Outer gray wrapper */
+  --bg-main: #ffffff;       /* Main white app container */
+  --bg-navy: #0b192c;       /* Leftmost sidebar */
+  --bg-hover-navy: #132742;
+  --bg-light: #f8fafc;      /* Chat stream background / sub-panels */
   
-  --accent: #5b7c72;      /* Deep Sage - Primary actions, user bubbles */
-  --accent-hover: #4a665d;
-  --accent-coral: #e8a598;/* Soft Coral - Highlights, badges */
-  --accent-sand: #d4c5b9; /* Warm Sand - Secondary elements */
-  --accent-sky: #8ba9b3;  /* Soft Slate Blue */
+  --accent-emerald: #00a86b; /* Vibrant green for primary actions/bubbles */
+  --accent-emerald-light: #dcf8c6; /* User message bubble green */
+  --accent-emerald-hover: #008f5a;
   
-  --text: #2c2a29;        /* Espresso - Main text */
-  --text-muted: #797571;  /* Warm Grey - Secondary text */
-  --text-dim: #9e9a95;    /* Lighter grey */
+  --text-main: #1f2937;     /* Standard dark text */
+  --text-muted: #6b7280;    /* Gray subtitle text */
+  --text-navy: #ffffff;     /* White text on navy sidebar */
+  --text-navy-muted: #94a3b8;
   
-  --border: #e2ded7;      /* Soft border */
-  --border-highlight: #d1ccc4;
+  --border-light: #e5e7eb;  /* Divider borders */
   
-  --user-bubble: #5b7c72;
-  --user-bubble-text: #ffffff;
+  --user-bubble: #dcf8c6;
+  --user-bubble-text: #1f2937;
   --agent-bubble: #ffffff;
-  --agent-bubble-text: #2c2a29;
+  --agent-bubble-text: #1f2937;
   
-  --font-sans: 'Manrope', system-ui, -apple-system, sans-serif;
-  --font-heading: 'Instrument Serif', serif;
+  --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
 }
 
 * {
@@ -37,78 +35,32 @@
 html, body {
   margin: 0;
   padding: 0;
-  background: var(--bg);
-  color: var(--text);
+  background: var(--bg-app);
+  color: var(--text-main);
   font-family: var(--font-sans);
   height: 100%;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-h1, h2, h3, h4, h5, h6 {
-  font-family: var(--font-heading);
-  font-weight: 400; /* Instrument Serif looks best at normal weight */
-}
-
-/* Soft UI Utilities */
-.glass-panel {
-  background: rgba(249, 248, 246, 0.85);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid var(--border);
-}
-
-.soft-card {
-  background: var(--bg-white);
-  border: 1px solid var(--border);
-  border-radius: 24px;
-  box-shadow: 0 4px 20px rgba(44, 42, 41, 0.03);
-  transition: all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
-}
-
-.soft-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 30px rgba(44, 42, 41, 0.06);
-  border-color: var(--accent-sand);
-}
-
-/* Custom Soft Scrollbar */
+/* Custom Scrollbar for Enterprise Panels */
 ::-webkit-scrollbar { width: 6px; height: 6px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: #d1ccc4; border-radius: 9999px; }
-::-webkit-scrollbar-thumb:hover { background: #5b7c72; }
-
-/* Pulsing Status Dot */
-@keyframes soft-pulse {
-  0%, 100% { opacity: 1; transform: scale(1); }
-  50% { opacity: 0.6; transform: scale(1.1); }
-}
-.animate-soft-pulse {
-  animation: soft-pulse 2.5s ease-in-out infinite;
-}
-
-/* Reduced Motion */
-@media (prefers-reduced-motion: reduce) {
-  *, ::before, ::after {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
-    scroll-behavior: auto !important;
-  }
-}
+::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 9999px; }
+::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
 
 /* Markdown prose inside agent messages */
-.prose p { margin: 0.5rem 0; line-height: 1.7; color: var(--text); font-size: 0.95rem; }
-.prose ul { padding-left: 1.25rem; margin: 0.5rem 0; }
-.prose ol { padding-left: 1.25rem; margin: 0.5rem 0; }
-.prose li { margin: 0.3rem 0; color: var(--text); line-height: 1.6; }
-.prose strong { color: var(--accent); font-weight: 700; }
+.prose p { margin: 0.5rem 0; line-height: 1.6; color: var(--text-main); font-size: 0.875rem; }
+.prose ul { padding-left: 1.25rem; margin: 0.5rem 0; font-size: 0.875rem; }
+.prose ol { padding-left: 1.25rem; margin: 0.5rem 0; font-size: 0.875rem; }
+.prose li { margin: 0.25rem 0; color: var(--text-main); line-height: 1.5; }
+.prose strong { color: #111827; font-weight: 600; }
 .prose code {
-  background: var(--bg-card);
-  color: var(--accent);
-  padding: 0.2rem 0.4rem;
-  border-radius: 8px;
+  background: #f1f5f9;
+  color: #0369a1;
+  padding: 0.15rem 0.35rem;
+  border-radius: 4px;
   font-size: 0.85em;
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-  border: 1px solid var(--border);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  border: 1px solid #e2e8f0;
 }
