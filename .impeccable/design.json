@@ -1,0 +1,72 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-08-02T18:11:00Z",
+  "title": "Design System: Dolphin Buddy",
+  "extensions": {
+    "colorMeta": {
+      "primary": {
+        "role": "primary",
+        "displayName": "Indigo Accent",
+        "canonical": "#6366f1",
+        "tonalRamp": ["#1e1b4b", "#312e81", "#3730a3", "#4338ca", "#4f46e5", "#6366f1", "#818cf8", "#a5b4fc"]
+      },
+      "neutral-bg": {
+        "role": "neutral",
+        "displayName": "Dark Canvas",
+        "canonical": "#0f1117",
+        "tonalRamp": ["#08090c", "#0f1117", "#161922", "#1e222d", "#282d3c", "#343b4e", "#444d64", "#57627e"]
+      }
+    },
+    "shadows": [],
+    "motion": [
+      {
+        "name": "transition-all",
+        "value": "all 150ms cubic-bezier(0.4, 0, 0.2, 1)",
+        "purpose": "Default hover state transitions"
+      }
+    ],
+    "breakpoints": [
+      { "name": "md", "value": "768px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "New Conversation Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Primary action button to initiate a new session",
+      "html": "<button class=\"ds-btn-primary\"><svg width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"><path d=\"M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z\"></path><path d=\"M12 8v8\"></path><path d=\"M8 12h8\"></path></svg><span>New Conversation</span></button>",
+      "css": ".ds-btn-primary { display: flex; align-items: center; gap: 8px; width: 100%; padding: 10px 12px; background: #6366f1; color: #ffffff; border: none; border-radius: 8px; font-size: 14px; font-weight: 500; cursor: pointer; transition: opacity 0.15s; } .ds-btn-primary:hover { opacity: 0.9; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Policy Sanctuary",
+    "overview": "Dolphin Buddy provides a calm, focused, dark-themed consumer messaging environment designed specifically for insurance policy guidance.",
+    "keyCharacteristics": [
+      "Rich dark palette (#0f1117 base) engineered for legibility.",
+      "Indigo accent hierarchy (#6366f1 primary).",
+      "Asymmetrical user (#312e81) and agent (#1e2235) chat bubbles.",
+      "Compact, scannable Inter typography."
+    ],
+    "rules": [
+      {
+        "name": "The Indigo Rarity Rule",
+        "body": "The primary indigo accent (#6366f1) is reserved for explicit interactive triggers and high-value feedback.",
+        "section": "colors"
+      },
+      {
+        "name": "The Tonal Depth Rule",
+        "body": "Depth is created by step-ups in surface lightness, not multi-layer drop shadows.",
+        "section": "elevation"
+      }
+    ],
+    "dos": [
+      "Do maintain distinct user (#312e81) vs agent (#1e2235) bubble backgrounds.",
+      "Do preserve 1px rgba(255,255,255,0.08) borders between dark panels."
+    ],
+    "donts": [
+      "Don't use pure light or white backgrounds for card containers.",
+      "Don't use heavy drop shadows on chat bubbles."
+    ]
+  }
+}

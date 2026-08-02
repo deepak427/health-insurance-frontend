@@ -2,7 +2,7 @@ import { ShieldPlus } from "lucide-react";
 
 export default function TypingIndicator() {
   return (
-    <div className="flex gap-3 items-start">
+    <div className="flex gap-3 items-start" aria-label="Dolphin Buddy is typing">
       <div
         className="w-8 h-8 rounded-full shrink-0 flex items-center justify-center mt-0.5"
         style={{ background: "var(--bg-card2)" }}
@@ -16,7 +16,7 @@ export default function TypingIndicator() {
         {[0, 1, 2].map((i) => (
           <span
             key={i}
-            className="w-2 h-2 rounded-full animate-bounce"
+            className="w-2 h-2 rounded-full animate-bounce motion-reduce:animate-none"
             style={{ background: "var(--accent2)", animationDelay: `${i * 0.15}s` }}
           />
         ))}

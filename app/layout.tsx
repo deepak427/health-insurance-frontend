@@ -1,9 +1,15 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "HIP — Health Insurance Assistant",
-  description: "AI-powered health insurance support agent",
+  title: "Dolphin Buddy — AI Insurance Support Assistant",
+  description: "Instant AI insurance support, policy document PDF analysis, and downloadable guides.",
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
