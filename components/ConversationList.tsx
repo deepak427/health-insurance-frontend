@@ -7,6 +7,7 @@ import type { ChatSessionMeta } from "@/context/ChatContext";
 
 interface Props {
   onNewChat?: () => void;
+  onQuickPrompt?: (text: string) => void;
 }
 
 function timeLabel(ts: number): string {
@@ -139,7 +140,7 @@ function SessionRow({ s, isActive, onSwitch, onRename, onDelete }: {
   );
 }
 
-export default function ConversationList({ onNewChat }: Props) {
+export default function ConversationList({ onNewChat, onQuickPrompt }: Props) {
   const { username, sessionId, sessions, switchSession, removeSession, renameSession } = useChatContext();
   const [showAll, setShowAll] = useState(false);
   const [search, setSearch] = useState("");
@@ -220,7 +221,11 @@ export default function ConversationList({ onNewChat }: Props) {
               "Estimate my health premium",
               "How do I file a claim?",
             ].map((t) => (
-              <div key={t} className="text-xs text-[#0369a1] py-1.5 border-b border-[#f3f4f6] hover:text-[#1d4ed8] cursor-pointer">
+              <div
+                key={t}
+                onClick={() => onQuickPrompt?.(t)}
+                className="text-xs text-[#0369a1] py-1.5 border-b border-[#f3f4f6] hover:text-[#1d4ed8] cursor-pointer"
+              >
                 {t}
               </div>
             ))}

@@ -145,7 +145,7 @@ export default function ChatWindow() {
         <div className="flex flex-1 min-h-0">
 
       {/* Column 2: Conversation List */}
-      <ConversationList onNewChat={handleNewChat} />
+      <ConversationList onNewChat={handleNewChat} onQuickPrompt={handleSend} />
 
       {/* Column 3: Main Chat Stream */}
       <div className="flex flex-col flex-1 min-w-0 h-full bg-white relative">
