@@ -9,7 +9,7 @@ import ConversationDetails from "./ConversationDetails";
 import Message from "./Message";
 import ChatInput from "./ChatInput";
 import UsernameModal from "./UsernameModal";
-import { AlertCircle, Search, Phone, MoreVertical, ShieldCheck, Bell, ChevronDown } from "lucide-react";
+import { AlertCircle, Search, Phone, MoreVertical, ShieldCheck, Bell, ChevronDown, Menu, Users, Info } from "lucide-react";
 
 export default function ChatWindow() {
   const {
@@ -29,8 +29,11 @@ export default function ChatWindow() {
   } = useChatContext();
 
   const bottomRef = useRef<HTMLDivElement>(null);
-  // local mobile sidebar state (not needed for logic, kept for UI compat)
-  const [, setMobileOpen] = useState(false);
+  
+  // Mobile responsive state
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [listOpen, setListOpen] = useState(false);
+  const [detailsOpen, setDetailsOpen] = useState(false);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -100,17 +103,20 @@ export default function ChatWindow() {
   }
 
   return (
-    <div className="flex h-[85vh] min-h-[600px] w-full bg-white relative">
+    <div className="flex h-[85vh] min-h-0 md:min-h-[600px] w-full bg-white relative">
       {/* Column 1: Navy Sidebar */}
-      <Sidebar />
+      <Sidebar isOpenMobile={sidebarOpen} onCloseMobile={() => setSidebarOpen(false)} />
 
       {/* Columns 2+3+4 wrapper with shared top bar */}
       <div className="flex flex-col flex-1 min-w-0 h-full">
 
         {/* Top bar: spans col 2+3+4 — Buddy on left, bell+avatar on right */}
-        <div className="flex items-center justify-between px-5 py-3 border-b border-[#e5e7eb] bg-white shrink-0">
+        <div className="flex items-center justify-between px-3 md:px-5 py-3 border-b border-[#e5e7eb] bg-white shrink-0">
           <div className="flex items-center gap-3">
-            <svg width="30" height="28" viewBox="0 0 36 34" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <button className="md:hidden p-1.5 -ml-1 text-[#6b7280] hover:bg-gray-100 rounded-md" onClick={() => setSidebarOpen(true)}>
+              <Menu size={22} />
+            </button>
+            <svg width="30" height="28" viewBox="0 0 36 34" fill="none" xmlns="http://www.w3.org/2000/svg" className="hidden sm:block">
               <rect x="0" y="0" width="36" height="28" rx="8" fill="#00a86b"/>
               <polygon points="8,28 4,34 16,28" fill="#00a86b"/>
               <circle cx="11" cy="14" r="2.5" fill="white"/>
@@ -123,7 +129,7 @@ export default function ChatWindow() {
             </div>
           </div>
 
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3 md:gap-4">
             <div className="relative">
               <Bell size={20} className="text-[#6b7280]" />
               <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center">3</span>
@@ -132,7 +138,7 @@ export default function ChatWindow() {
               <div className="w-8 h-8 rounded-full bg-gray-200 overflow-hidden shrink-0">
                 <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${username}`} alt="avatar" />
               </div>
-              <div className="flex flex-col leading-tight">
+              <div className="hidden sm:flex flex-col leading-tight">
                 <span className="text-[13px] font-semibold text-[#1f2937]">{username}</span>
                 <span className="text-[10px] text-[#6b7280]">Partner ID: PT12345</span>
               </div>
@@ -142,28 +148,39 @@ export default function ChatWindow() {
         </div>
 
         {/* Bottom row: col 2 + col 3 + col 4 */}
-        <div className="flex flex-1 min-h-0">
+        <div className="flex flex-1 min-h-0 relative">
 
       {/* Column 2: Conversation List */}
-      <ConversationList onNewChat={handleNewChat} onQuickPrompt={handleSend} />
+      <ConversationList 
+        onNewChat={handleNewChat} 
+        onQuickPrompt={handleSend} 
+        isOpenMobile={listOpen} 
+        onCloseMobile={() => setListOpen(false)} 
+      />
 
       {/* Column 3: Main Chat Stream */}
-      <div className="flex flex-col flex-1 min-w-0 h-full bg-white relative">
+      <div className="flex flex-col flex-1 min-w-0 h-full bg-white">
         {/* Chat Header */}
-        <header className="flex items-center justify-between px-6 py-4 border-b border-[#e5e7eb]">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded border border-[#e5e7eb] text-[#00a86b] flex items-center justify-center bg-white">
+        <header className="flex items-center justify-between px-3 md:px-6 py-3 md:py-4 border-b border-[#e5e7eb]">
+          <div className="flex items-center gap-2 md:gap-3">
+            <button className="lg:hidden p-1.5 -ml-1 text-[#6b7280] hover:bg-gray-100 rounded-md" onClick={() => setListOpen(true)}>
+              <Users size={20} />
+            </button>
+            <div className="w-8 h-8 rounded border border-[#e5e7eb] text-[#00a86b] flex items-center justify-center bg-white shrink-0">
               <ShieldCheck size={18} />
             </div>
-            <div>
-              <h2 className="font-bold text-[#1f2937] text-sm leading-tight">Travel Insurance Support</h2>
-              <p className="text-xs text-[#6b7280]">@{username} · AI Active</p>
+            <div className="min-w-0">
+              <h2 className="font-bold text-[#1f2937] text-sm leading-tight truncate">Travel Insurance Support</h2>
+              <p className="text-xs text-[#6b7280] truncate">@{username} · AI Active</p>
             </div>
           </div>
 
-          <div className="flex items-center gap-4 text-[#6b7280]">
-            <button className="hover:text-[#1f2937]"><Search size={18} /></button>
-            <button className="hover:text-[#1f2937]"><Phone size={18} /></button>
+          <div className="flex items-center gap-2 md:gap-4 text-[#6b7280] shrink-0">
+            <button className="hover:text-[#1f2937] hidden sm:block"><Search size={18} /></button>
+            <button className="hover:text-[#1f2937] hidden sm:block"><Phone size={18} /></button>
+            <button className="xl:hidden p-1.5 text-[#6b7280] hover:bg-gray-100 rounded-md" onClick={() => setDetailsOpen(true)}>
+              <Info size={20} />
+            </button>
             <button className="hover:text-[#1f2937]"><MoreVertical size={18} /></button>
           </div>
         </header>
@@ -216,7 +233,10 @@ export default function ChatWindow() {
       </div>
 
       {/* Column 4: Conversation Details Panel */}
-      <ConversationDetails />
+      <ConversationDetails 
+        isOpenMobile={detailsOpen} 
+        onCloseMobile={() => setDetailsOpen(false)} 
+      />
         </div>{/* end bottom row */}
       </div>{/* end col 2+3+4 wrapper */}
     </div>

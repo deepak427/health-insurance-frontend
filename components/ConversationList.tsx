@@ -8,6 +8,8 @@ import type { ChatSessionMeta } from "@/context/ChatContext";
 interface Props {
   onNewChat?: () => void;
   onQuickPrompt?: (text: string) => void;
+  isOpenMobile?: boolean;
+  onCloseMobile?: () => void;
 }
 
 function timeLabel(ts: number): string {
@@ -140,7 +142,7 @@ function SessionRow({ s, isActive, onSwitch, onRename, onDelete }: {
   );
 }
 
-export default function ConversationList({ onNewChat, onQuickPrompt }: Props) {
+export default function ConversationList({ onNewChat, onQuickPrompt, isOpenMobile, onCloseMobile }: Props) {
   const { username, sessionId, sessions, switchSession, removeSession, renameSession } = useChatContext();
   const [showAll, setShowAll] = useState(false);
   const [search, setSearch] = useState("");
@@ -151,8 +153,8 @@ export default function ConversationList({ onNewChat, onQuickPrompt }: Props) {
   const visible = showAll ? filtered : filtered.slice(0, 5);
   const showTopics = sessions.length < 3 && !search;
 
-  return (
-    <div className="flex flex-col h-full w-[340px] bg-white border-r border-[#e5e7eb]">
+  const content = (
+    <div className="flex flex-col h-full w-full lg:w-[340px] bg-white border-r border-[#e5e7eb]">
       {/* User card */}
       <div className="px-5 py-6">
         <p className="text-[10px] font-bold text-[#1f2937] mb-3">Your Partner</p>
@@ -243,5 +245,22 @@ export default function ConversationList({ onNewChat, onQuickPrompt }: Props) {
         </div>
       </div>
     </div>
+  );
+
+  return (
+    <>
+      <aside className="hidden lg:flex flex-col shrink-0 h-full">
+        {content}
+      </aside>
+
+      {isOpenMobile && (
+        <div className="fixed inset-0 z-40 flex lg:hidden">
+          <div className="fixed inset-0 bg-[#0a192f]/60 backdrop-blur-sm" onClick={onCloseMobile} />
+          <aside className="relative flex flex-col h-full shadow-2xl z-10 w-[85%] max-w-[340px] bg-white animate-in slide-in-from-left duration-200">
+            {content}
+          </aside>
+        </div>
+      )}
+    </>
   );
 }

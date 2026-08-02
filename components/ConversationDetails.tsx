@@ -3,20 +3,24 @@ import { useState } from "react";
 import { X, User, Calendar, FileText, Download, ChevronRight, ChevronDown } from "lucide-react";
 import { useChatContext } from "@/context/ChatContext";
 import { buildDownloadUrl } from "@/lib/api";
+interface Props {
+  isOpenMobile?: boolean;
+  onCloseMobile?: () => void;
+}
 
-export default function ConversationDetails() {
+export default function ConversationDetails({ isOpenMobile, onCloseMobile }: Props) {
   const { messages, userId, sessionId } = useChatContext();
   const [docsOpen, setDocsOpen] = useState(true);
 
   // Extract documents sent in the chat
   const documents = messages.flatMap(m => m.artifacts || []);
 
-  return (
-    <div className="flex flex-col h-full w-[280px] bg-white border-l border-[#e5e7eb]">
+  const content = (
+    <div className="flex flex-col h-full w-full xl:w-[280px] bg-white border-l border-[#e5e7eb]">
       {/* Header */}
       <div className="flex items-center justify-between px-5 py-4 border-b border-[#e5e7eb]">
         <h2 className="font-bold text-[#1f2937] text-sm">Conversation Details</h2>
-        <button className="text-[#6b7280] hover:text-[#1f2937]">
+        <button onClick={onCloseMobile} className="text-[#6b7280] hover:text-[#1f2937] xl:hidden">
           <X size={18} />
         </button>
       </div>
@@ -108,5 +112,22 @@ export default function ConversationDetails() {
         </button>
       </div>
     </div>
+  );
+
+  return (
+    <>
+      <aside className="hidden xl:flex flex-col shrink-0 h-full">
+        {content}
+      </aside>
+
+      {isOpenMobile && (
+        <div className="fixed inset-0 z-40 flex xl:hidden justify-end">
+          <div className="fixed inset-0 bg-[#0a192f]/60 backdrop-blur-sm" onClick={onCloseMobile} />
+          <aside className="relative flex flex-col h-full shadow-2xl z-10 w-[85%] max-w-[320px] bg-white animate-in slide-in-from-right duration-200">
+            {content}
+          </aside>
+        </div>
+      )}
+    </>
   );
 }
