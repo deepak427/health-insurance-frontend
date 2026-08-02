@@ -1,58 +1,51 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
-import { createSession, streamMessage } from "@/lib/api";
-import { getOrCreateSession, newSession } from "@/lib/session";
+import { useEffect, useRef, useCallback } from "react";
+import { streamMessage } from "@/lib/api";
+import { useChatContext } from "@/context/ChatContext";
 import Sidebar from "./Sidebar";
-import Message, { Msg } from "./Message";
+import Message from "./Message";
 import ChatInput from "./ChatInput";
 import WelcomeScreen from "./WelcomeScreen";
+import UsernameModal from "./UsernameModal";
 import { AlertCircle, RefreshCw, Menu, Shield, CheckCircle2 } from "lucide-react";
+import { useState } from "react";
 
 export default function ChatWindow() {
-  const [messages, setMessages] = useState<Msg[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [sessionReady, setSessionReady] = useState(false);
-  const [userId, setUserId] = useState("");
-  const [sessionId, setSessionId] = useState("");
+  const {
+    username,
+    userId,
+    sessionId,
+    messages,
+    sessionReady,
+    loading,
+    error,
+    setMessages,
+    setLoading,
+    setError,
+    handleNewChat,
+    refreshSessionList,
+    setUsername,
+  } = useChatContext();
+
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
-
-  const initSession = useCallback(async (uid: string, sid: string) => {
-    try {
-      setError(null);
-      await createSession(uid, sid);
-      setSessionReady(true);
-    } catch {
-      setError("Could not connect to backend AI service. Please check server connection.");
-    }
-  }, []);
-
-  useEffect(() => {
-    const { userId: uid, sessionId: sid } = getOrCreateSession();
-    setUserId(uid);
-    setSessionId(sid);
-    initSession(uid, sid);
-  }, [initSession]);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, loading]);
 
-  async function handleSend(
+  const handleSend = useCallback(async (
     text: string,
     file?: { mimeType: string; data: string; name: string }
-  ) {
+  ) => {
     if (!sessionReady || loading) return;
 
-    const userMsg: Msg = { role: "user", text: file ? `${text}\n📎 ${file.name}` : text };
-    setMessages((prev) => [...prev, userMsg]);
+    setMessages((prev) => [...prev, { role: "user", text: file ? `${text}\n📎 ${file.name}` : text }]);
     setLoading(true);
     setError(null);
 
-    const agentPlaceholder: Msg = { role: "agent", text: "", artifacts: [] };
-    setMessages((prev) => [...prev, agentPlaceholder]);
+    setMessages((prev) => [...prev, { role: "agent", text: "", artifacts: [] }]);
 
     try {
       const inlineData = file ? { mimeType: file.mimeType, data: file.data } : undefined;
@@ -62,25 +55,27 @@ export default function ChatWindow() {
           const updated = [...prev];
           const last = updated[updated.length - 1];
           if (last.role !== "agent") return prev;
-          const newText = chunk.text ? last.text + chunk.text : last.text;
-          const newArtifacts = chunk.artifacts
-            ? [...(last.artifacts ?? []), ...chunk.artifacts]
-            : last.artifacts;
-          updated[updated.length - 1] = { role: "agent", text: newText, artifacts: newArtifacts };
-          return updated;
+          return [
+            ...updated.slice(0, -1),
+            {
+              role: "agent",
+              text: chunk.text ? last.text + chunk.text : last.text,
+              artifacts: chunk.artifacts ? [...(last.artifacts ?? []), ...chunk.artifacts] : last.artifacts,
+            },
+          ];
         });
       }
 
       setMessages((prev) => {
         const last = prev[prev.length - 1];
         if (last?.role === "agent" && last.text === "" && !last.artifacts?.length) {
-          return [
-            ...prev.slice(0, -1),
-            { role: "agent", text: "I didn't receive a response. Please try sending your message again." },
-          ];
+          return [...prev.slice(0, -1), { role: "agent", text: "I didn't receive a response. Please try again." }];
         }
         return prev;
       });
+
+      // refresh sidebar list so new chat appears
+      await refreshSessionList();
     } catch (err) {
       setMessages((prev) => {
         const last = prev[prev.length - 1];
@@ -91,31 +86,23 @@ export default function ChatWindow() {
     } finally {
       setLoading(false);
     }
-  }
+  }, [sessionReady, loading, userId, sessionId, setMessages, setLoading, setError, refreshSessionList]);
 
-  async function handleNewChat() {
-    const { userId: uid, sessionId: sid } = newSession();
-    setUserId(uid);
-    setSessionId(sid);
-    setMessages([]);
-    setSessionReady(false);
-    setError(null);
-    await initSession(uid, sid);
+  // Show username modal if not set
+  if (!username) {
+    return <UsernameModal onSubmit={setUsername} />;
   }
 
   return (
     <div className="flex h-screen overflow-hidden bg-[#f9f8f6]">
-      {/* Sidebar / DM Inbox */}
       <Sidebar
-        onNewChat={handleNewChat}
         onQuickPrompt={(p) => handleSend(p)}
         isOpenMobile={mobileMenuOpen}
         onCloseMobile={() => setMobileMenuOpen(false)}
       />
 
-      {/* Main Chat Area */}
       <div className="flex flex-col flex-1 min-w-0 h-full bg-[#f9f8f6]">
-        {/* Top Header */}
+        {/* Header */}
         <header className="flex items-center justify-between px-4 sm:px-6 py-4 border-b border-[#e2ded7] bg-[#f9f8f6]/90 backdrop-blur-md shrink-0 z-10">
           <div className="flex items-center gap-3.5">
             <button
@@ -126,7 +113,6 @@ export default function ChatWindow() {
               <Menu size={20} />
             </button>
 
-            {/* DM Profile Header */}
             <div className="flex items-center gap-3">
               <div className="relative shrink-0">
                 <div className="w-11 h-11 rounded-full bg-[#5b7c72] flex items-center justify-center text-white shadow-sm border border-[#e2ded7]">
@@ -134,7 +120,6 @@ export default function ChatWindow() {
                 </div>
                 <span className="absolute bottom-0 right-0 w-3 h-3 rounded-full bg-[#e8a598] border-2 border-[#f9f8f6]"></span>
               </div>
-
               <div>
                 <div className="flex items-center gap-1.5">
                   <h2 className="text-[17px] text-[#2c2a29] font-heading leading-none font-bold">
@@ -150,7 +135,6 @@ export default function ChatWindow() {
             </div>
           </div>
 
-          {/* Action Buttons */}
           <div className="flex items-center gap-1 sm:gap-2">
             <button
               onClick={handleNewChat}
@@ -163,7 +147,7 @@ export default function ChatWindow() {
           </div>
         </header>
 
-        {/* Conversation Stream Area */}
+        {/* Messages */}
         <div className="flex-1 overflow-y-auto px-4 sm:px-8 py-6">
           {error && (
             <div className="flex items-center gap-3 mx-auto mb-5 max-w-xl text-sm px-5 py-4 rounded-[20px] bg-[#fff0ed] text-[#b34040] border border-[#e8a598]/40 shadow-sm">
@@ -177,19 +161,24 @@ export default function ChatWindow() {
           ) : (
             <div className="flex flex-col max-w-3xl mx-auto">
               <div className="text-center my-4">
-                <span className="text-[10px] font-bold uppercase tracking-widest text-[#9e9a95]">
-                  Today
-                </span>
+                <span className="text-[10px] font-bold uppercase tracking-widest text-[#9e9a95]">Today</span>
               </div>
               {messages.map((msg, i) => (
                 <Message key={i} msg={msg} userId={userId} sessionId={sessionId} />
               ))}
+              {loading && (
+                <div className="flex items-center gap-2 px-4 py-3 text-[#797571] text-sm">
+                  <span className="w-2 h-2 rounded-full bg-[#5b7c72] animate-bounce [animation-delay:0ms]"></span>
+                  <span className="w-2 h-2 rounded-full bg-[#5b7c72] animate-bounce [animation-delay:150ms]"></span>
+                  <span className="w-2 h-2 rounded-full bg-[#5b7c72] animate-bounce [animation-delay:300ms]"></span>
+                </div>
+              )}
             </div>
           )}
           <div ref={bottomRef} />
         </div>
 
-        {/* Input Dock */}
+        {/* Input */}
         <div className="shrink-0">
           <ChatInput onSend={handleSend} disabled={loading || !sessionReady} />
         </div>

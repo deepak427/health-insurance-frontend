@@ -27,6 +27,84 @@ export interface ChatMessage {
   artifacts?: string[]; // filenames
 }
 
+// ── Session list & history ────────────────────────────────────────────────────
+export interface SessionSummary {
+  id: string;
+  lastUpdateTime: number;
+  preview: string; // first user message text
+}
+
+export interface ADKEvent {
+  id: string;
+  author: string;
+  content?: { role: string; parts: { text?: string }[] };
+  actions?: { artifactDelta?: Record<string, number> };
+  timestamp: number;
+}
+
+export interface ADKSession {
+  id: string;
+  appName: string;
+  userId: string;
+  state: Record<string, unknown>;
+  events: ADKEvent[];
+  lastUpdateTime: number;
+}
+
+export async function listSessions(userId: string): Promise<ADKSession[]> {
+  const res = await fetch(`${BASE_URL}/apps/${APP_NAME}/users/${userId}/sessions`);
+  if (!res.ok) return [];
+  const data = await res.json();
+  // ADK returns either an array directly or { sessions: [...] }
+  return Array.isArray(data) ? data : (data.sessions ?? []);
+}
+
+export async function getSession(userId: string, sessionId: string): Promise<ADKSession | null> {
+  const res = await fetch(`${BASE_URL}/apps/${APP_NAME}/users/${userId}/sessions/${sessionId}`);
+  if (!res.ok) return null;
+  return res.json();
+}
+
+export async function deleteSession(userId: string, sessionId: string): Promise<void> {
+  await fetch(`${BASE_URL}/apps/${APP_NAME}/users/${userId}/sessions/${sessionId}`, { method: "DELETE" });
+}
+
+/** Extract readable messages from ADK session events */
+export function eventsToMessages(events: ADKEvent[]): ChatMessage[] {
+  const msgs: ChatMessage[] = [];
+  for (const ev of events) {
+    if (!ev.content?.parts) continue;
+    const text = ev.content.parts.find((p) => p.text)?.text;
+    if (!text) continue;
+    const artifacts = ev.actions?.artifactDelta ? Object.keys(ev.actions.artifactDelta) : undefined;
+    if (ev.content.role === "user") {
+      msgs.push({ role: "user", text });
+    } else if (ev.content.role === "model") {
+      // merge consecutive model chunks
+      const last = msgs[msgs.length - 1];
+      if (last?.role === "agent") {
+        last.text += text;
+        if (artifacts) last.artifacts = [...(last.artifacts ?? []), ...artifacts];
+      } else {
+        msgs.push({ role: "agent", text, artifacts });
+      }
+    }
+  }
+  return msgs;
+}
+
+/** Get first user message as a preview title */
+export function sessionPreview(events: ADKEvent[]): string {
+  for (const ev of events) {
+    if (ev.content?.role === "user") {
+      const text = ev.content.parts.find((p) => p.text)?.text;
+      if (text) return text.slice(0, 60) + (text.length > 60 ? "…" : "");
+    }
+  }
+  return "New conversation";
+}
+// ─────────────────────────────────────────────────────────────────────────────
+
 // ── Dynamic data API ──────────────────────────────────────────────────────────
 export type DataKey = "faqs" | "claims" | "premium_config";
 
