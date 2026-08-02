@@ -5,6 +5,9 @@ import { ChatProvider } from "@/context/ChatContext";
 export const metadata: Metadata = {
   title: "Dolphin Portal — One Partner. One Login. All Conversations.",
   description: "Enterprise Travel Insurance Support",
+  icons: {
+    icon: "/favicon.svg",
+  },
 };
 
 export const viewport = {
