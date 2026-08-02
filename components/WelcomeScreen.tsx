@@ -1,5 +1,5 @@
 "use client";
-import { Shield, CheckCircle2, MessageCircle, Sparkles, ArrowUpRight } from "lucide-react";
+import { Shield, CheckCircle2, MessageCircle, Sparkles, ArrowRight } from "lucide-react";
 
 const quickPrompts = [
   { label: "Deductible & Co-pay", prompt: "What is a deductible and how does it work?" },
@@ -12,53 +12,55 @@ interface Props { onPrompt: (text: string) => void; }
 
 export default function WelcomeScreen({ onPrompt }: Props) {
   return (
-    <div className="flex flex-col items-center justify-center min-h-full px-4 text-center py-8 my-auto">
-      {/* Instagram Profile DM Header */}
-      <div className="flex flex-col items-center gap-3 max-w-sm">
+    <div className="flex flex-col items-center justify-center min-h-full px-4 text-center py-10 my-auto">
+      {/* Profile Header */}
+      <div className="flex flex-col items-center gap-4 max-w-sm">
         <div className="relative">
-          <div className="w-24 h-24 rounded-full bg-gradient-to-tr from-emerald-600 via-teal-500 to-emerald-400 p-1 shadow-lg">
-            <div className="w-full h-full rounded-full bg-stone-900 flex items-center justify-center text-white border-2 border-stone-900">
-              <Shield size={42} className="text-emerald-400" />
+          <div className="w-[100px] h-[100px] rounded-full bg-[#e2ded7] p-1.5 shadow-sm">
+            <div className="w-full h-full rounded-full bg-[#5b7c72] flex items-center justify-center text-white border-2 border-[#ffffff]">
+              <Shield size={44} />
             </div>
           </div>
-          <span className="absolute bottom-1 right-1 w-5 h-5 rounded-full bg-emerald-500 border-2 border-stone-900 flex items-center justify-center">
-            <span className="w-2 h-2 rounded-full bg-white"></span>
+          <span className="absolute bottom-2 right-2 w-6 h-6 rounded-full bg-[#e8a598] border-[3px] border-[#f9f8f6] flex items-center justify-center shadow-sm">
+            <span className="w-2.5 h-2.5 rounded-full bg-white animate-soft-pulse"></span>
           </span>
         </div>
 
         <div>
-          <div className="flex items-center justify-center gap-1.5">
-            <h1 className="text-xl font-extrabold text-white font-heading">Dolphin Buddy</h1>
-            <CheckCircle2 size={16} className="text-emerald-400 fill-emerald-400/20" />
+          <div className="flex items-center justify-center gap-2">
+            <h1 className="text-3xl font-heading text-[#2c2a29] tracking-wide">Dolphin Buddy</h1>
+            <CheckCircle2 size={18} className="text-[#5b7c72]" />
           </div>
-          <p className="text-xs text-stone-400 mt-0.5">Insurance Agent • AI Support Specialist</p>
-          <div className="inline-flex items-center gap-1 mt-2 px-3 py-1 rounded-full bg-stone-800 text-[11px] font-semibold text-emerald-400 border border-stone-700">
-            <Sparkles size={11} /> Active Now
+          <p className="text-xs font-bold uppercase tracking-widest text-[#797571] mt-2">Insurance AI Specialist</p>
+          <div className="inline-flex items-center gap-1.5 mt-3 px-4 py-1.5 rounded-full bg-[#ffffff] text-[11px] font-bold text-[#e8a598] border border-[#e2ded7] shadow-sm uppercase tracking-wider">
+            <Sparkles size={12} /> Active Now
           </div>
         </div>
       </div>
 
-      <p className="text-xs sm:text-sm text-stone-300 max-w-md mt-4 leading-relaxed">
-        Start messaging Dolphin Buddy to analyze policy documents, get instant answers to insurance questions, or generate PDF guides.
+      <p className="text-[15px] text-[#797571] max-w-md mt-6 leading-relaxed font-medium">
+        Start messaging Dolphin Buddy to safely analyze your policy documents, get instant answers to insurance questions, or generate PDF guides.
       </p>
 
-      {/* Instagram DM Quick Reply Options */}
-      <div className="w-full max-w-md mt-6">
-        <span className="text-[11px] font-bold uppercase tracking-wider text-stone-400 block mb-3">
-          Suggested Quick Messages
+      {/* Suggested Topics */}
+      <div className="w-full max-w-lg mt-10">
+        <span className="text-[11px] font-bold uppercase tracking-widest text-[#9e9a95] block mb-4">
+          Suggested Topics
         </span>
-        <div className="flex flex-col gap-2 text-left">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-left">
           {quickPrompts.map(({ label, prompt }) => (
             <button
               key={label}
               onClick={() => onPrompt(prompt)}
-              className="flex items-center justify-between px-4 py-3 rounded-2xl bg-stone-800/90 hover:bg-stone-800 text-stone-200 hover:text-white border border-stone-700/80 transition-all text-xs font-semibold group"
+              className="flex flex-col justify-between p-4 min-h-[96px] rounded-[24px] bg-[#ffffff] hover:bg-[#f1efe9] text-[#2c2a29] border border-[#e2ded7] transition-all group shadow-[0_4px_20px_rgba(44,42,41,0.03)] hover:shadow-md hover:-translate-y-0.5 hover:border-[#d1ccc4]"
             >
-              <div className="flex items-center gap-2.5">
-                <MessageCircle size={15} className="text-emerald-400 shrink-0" />
-                <span>{label}</span>
+              <div className="flex items-start justify-between gap-2 w-full">
+                <div className="w-8 h-8 rounded-full bg-[#f9f8f6] flex items-center justify-center text-[#5b7c72] group-hover:bg-[#ffffff]">
+                  <MessageCircle size={15} />
+                </div>
+                <ArrowRight size={16} className="text-[#d1ccc4] group-hover:text-[#5b7c72] group-hover:translate-x-1 transition-transform" />
               </div>
-              <ArrowUpRight size={14} className="text-stone-400 group-hover:text-emerald-400 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
+              <span className="text-sm font-bold text-[#2c2a29] mt-2">{label}</span>
             </button>
           ))}
         </div>

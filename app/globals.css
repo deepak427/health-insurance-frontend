@@ -1,30 +1,33 @@
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,300..800;1,300..800&family=Outfit:wght@400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Manrope:wght@400;500;600;700;800&display=swap');
 @import "tailwindcss";
 
 :root {
-  /* Warm Editorial & Luxury Palette (Non-AI, High-Trust Executive Aesthetic) */
-  --bg: #fbf9f5;
-  --bg-card: #f3efe6;
-  --bg-card2: #eae4d7;
-  --bg-white: #ffffff;
-  --accent: #0f5132;
-  --accent-hover: #0a3822;
-  --accent-emerald: #13795b;
-  --accent-terracotta: #c25e00;
-  --accent-amber: #b45309;
-  --accent-teal: #0f766e;
-  --accent-glow: rgba(15, 81, 50, 0.12);
-  --text: #1c1917;
-  --text-muted: #57534e;
-  --text-dim: #78716c;
-  --border: #e5dfd3;
-  --border-highlight: rgba(15, 81, 50, 0.3);
-  --user-bubble: #0f5132;
+  /* Calm Coastal & Soft Editorial Palette (Highly approachable, non-AI) */
+  --bg: #f9f8f6;          /* Warm Oat - Main background */
+  --bg-card: #f1efe9;     /* Pebble - Sidebar and panels */
+  --bg-card2: #e8e5de;    /* Slightly darker pebble */
+  --bg-white: #ffffff;    /* Pure white for chat bubbles/cards */
+  
+  --accent: #5b7c72;      /* Deep Sage - Primary actions, user bubbles */
+  --accent-hover: #4a665d;
+  --accent-coral: #e8a598;/* Soft Coral - Highlights, badges */
+  --accent-sand: #d4c5b9; /* Warm Sand - Secondary elements */
+  --accent-sky: #8ba9b3;  /* Soft Slate Blue */
+  
+  --text: #2c2a29;        /* Espresso - Main text */
+  --text-muted: #797571;  /* Warm Grey - Secondary text */
+  --text-dim: #9e9a95;    /* Lighter grey */
+  
+  --border: #e2ded7;      /* Soft border */
+  --border-highlight: #d1ccc4;
+  
+  --user-bubble: #5b7c72;
   --user-bubble-text: #ffffff;
   --agent-bubble: #ffffff;
-  --agent-bubble-text: #1c1917;
-  --font-sans: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
-  --font-heading: 'Outfit', 'Plus Jakarta Sans', system-ui, sans-serif;
+  --agent-bubble-text: #2c2a29;
+  
+  --font-sans: 'Manrope', system-ui, -apple-system, sans-serif;
+  --font-heading: 'Instrument Serif', serif;
 }
 
 * {
@@ -44,47 +47,47 @@ html, body {
 
 h1, h2, h3, h4, h5, h6 {
   font-family: var(--font-heading);
+  font-weight: 400; /* Instrument Serif looks best at normal weight */
 }
 
-/* Editorial Glass & Card Utilities */
+/* Soft UI Utilities */
 .glass-panel {
-  background: rgba(251, 249, 245, 0.88);
+  background: rgba(249, 248, 246, 0.85);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   border: 1px solid var(--border);
 }
 
-.editorial-card {
+.soft-card {
   background: var(--bg-white);
   border: 1px solid var(--border);
-  box-shadow: 0 1px 3px rgba(28, 25, 23, 0.04);
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  border-radius: 24px;
+  box-shadow: 0 4px 20px rgba(44, 42, 41, 0.03);
+  transition: all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
-.editorial-card:hover {
-  background: #ffffff;
-  border-color: rgba(15, 81, 50, 0.35);
-  box-shadow: 0 10px 25px -5px rgba(28, 25, 23, 0.08), 0 0 15px -3px rgba(15, 81, 50, 0.08);
-  transform: translateY(-1px);
+.soft-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 30px rgba(44, 42, 41, 0.06);
+  border-color: var(--accent-sand);
 }
 
-/* Custom Warm Scrollbar */
+/* Custom Soft Scrollbar */
 ::-webkit-scrollbar { width: 6px; height: 6px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: #d6cfc0; border-radius: 9999px; }
-::-webkit-scrollbar-thumb:hover { background: #0f5132; }
+::-webkit-scrollbar-thumb { background: #d1ccc4; border-radius: 9999px; }
+::-webkit-scrollbar-thumb:hover { background: #5b7c72; }
 
-/* Pulsing Emerald Dot */
-@keyframes pulse-dot {
+/* Pulsing Status Dot */
+@keyframes soft-pulse {
   0%, 100% { opacity: 1; transform: scale(1); }
-  50% { opacity: 0.5; transform: scale(1.15); }
+  50% { opacity: 0.6; transform: scale(1.1); }
+}
+.animate-soft-pulse {
+  animation: soft-pulse 2.5s ease-in-out infinite;
 }
 
-.animate-pulse-dot {
-  animation: pulse-dot 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-}
-
-/* Reduced Motion Override */
+/* Reduced Motion */
 @media (prefers-reduced-motion: reduce) {
   *, ::before, ::after {
     animation-duration: 0.01ms !important;
@@ -95,17 +98,17 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 /* Markdown prose inside agent messages */
-.prose p { margin: 0.5rem 0; line-height: 1.65; color: #f5f5f4; }
-.prose ul { padding-left: 1.25rem; margin: 0.45rem 0; }
-.prose ol { padding-left: 1.25rem; margin: 0.45rem 0; }
-.prose li { margin: 0.25rem 0; color: #e7e5e4; }
-.prose strong { color: #34d399; font-weight: 700; }
+.prose p { margin: 0.5rem 0; line-height: 1.7; color: var(--text); font-size: 0.95rem; }
+.prose ul { padding-left: 1.25rem; margin: 0.5rem 0; }
+.prose ol { padding-left: 1.25rem; margin: 0.5rem 0; }
+.prose li { margin: 0.3rem 0; color: var(--text); line-height: 1.6; }
+.prose strong { color: var(--accent); font-weight: 700; }
 .prose code {
-  background: rgba(16, 185, 129, 0.18);
-  color: #6ee7b7;
-  padding: 0.15rem 0.45rem;
-  border-radius: 6px;
+  background: var(--bg-card);
+  color: var(--accent);
+  padding: 0.2rem 0.4rem;
+  border-radius: 8px;
   font-size: 0.85em;
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-  border: 1px solid rgba(16, 185, 129, 0.3);
+  border: 1px solid var(--border);
 }

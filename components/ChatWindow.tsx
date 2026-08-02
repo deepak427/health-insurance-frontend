@@ -6,9 +6,8 @@ import { getOrCreateSession, newSession } from "@/lib/session";
 import Sidebar from "./Sidebar";
 import Message, { Msg } from "./Message";
 import ChatInput from "./ChatInput";
-import TypingIndicator from "./TypingIndicator";
 import WelcomeScreen from "./WelcomeScreen";
-import { AlertCircle, RefreshCw, Menu, Shield, CheckCircle2, Phone, Video, Info } from "lucide-react";
+import { AlertCircle, RefreshCw, Menu, Shield, CheckCircle2 } from "lucide-react";
 
 export default function ChatWindow() {
   const [messages, setMessages] = useState<Msg[]>([]);
@@ -105,7 +104,7 @@ export default function ChatWindow() {
   }
 
   return (
-    <div className="flex h-screen overflow-hidden bg-stone-950">
+    <div className="flex h-screen overflow-hidden bg-[#f9f8f6]">
       {/* Sidebar / DM Inbox */}
       <Sidebar
         onNewChat={handleNewChat}
@@ -114,14 +113,14 @@ export default function ChatWindow() {
         onCloseMobile={() => setMobileMenuOpen(false)}
       />
 
-      {/* Instagram DM Chat Area */}
-      <div className="flex flex-col flex-1 min-w-0 h-full bg-stone-900">
-        {/* Instagram DM Top Navigation Bar */}
-        <header className="flex items-center justify-between px-4 py-3 border-b border-stone-800 bg-stone-900/90 backdrop-blur-md shrink-0 z-10">
-          <div className="flex items-center gap-3">
+      {/* Main Chat Area */}
+      <div className="flex flex-col flex-1 min-w-0 h-full bg-[#f9f8f6]">
+        {/* Top Header */}
+        <header className="flex items-center justify-between px-4 sm:px-6 py-4 border-b border-[#e2ded7] bg-[#f9f8f6]/90 backdrop-blur-md shrink-0 z-10">
+          <div className="flex items-center gap-3.5">
             <button
               onClick={() => setMobileMenuOpen(true)}
-              className="md:hidden w-10 h-10 flex items-center justify-center rounded-full text-stone-400 hover:text-white hover:bg-stone-800"
+              className="md:hidden w-10 h-10 flex items-center justify-center rounded-full text-[#797571] hover:text-[#2c2a29] hover:bg-[#e2ded7]"
               aria-label="Open messages list"
             >
               <Menu size={20} />
@@ -130,21 +129,21 @@ export default function ChatWindow() {
             {/* DM Profile Header */}
             <div className="flex items-center gap-3">
               <div className="relative shrink-0">
-                <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-emerald-600 to-teal-500 flex items-center justify-center text-white shadow-xs">
-                  <Shield size={18} />
+                <div className="w-11 h-11 rounded-full bg-[#5b7c72] flex items-center justify-center text-white shadow-sm border border-[#e2ded7]">
+                  <Shield size={20} />
                 </div>
-                <span className="absolute bottom-0 right-0 w-3 h-3 rounded-full bg-emerald-500 border-2 border-stone-900"></span>
+                <span className="absolute bottom-0 right-0 w-3 h-3 rounded-full bg-[#e8a598] border-2 border-[#f9f8f6]"></span>
               </div>
 
               <div>
                 <div className="flex items-center gap-1.5">
-                  <h2 className="font-extrabold text-sm sm:text-base text-white font-heading leading-none">
+                  <h2 className="text-[17px] text-[#2c2a29] font-heading leading-none font-bold">
                     Dolphin Buddy
                   </h2>
-                  <CheckCircle2 size={14} className="text-emerald-400 fill-emerald-400/20" />
+                  <CheckCircle2 size={16} className="text-[#5b7c72] fill-[#5b7c72]/10" />
                 </div>
-                <p className="text-[11px] font-medium text-emerald-400 mt-0.5 flex items-center gap-1">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                <p className="text-[11px] font-bold text-[#e8a598] mt-1.5 flex items-center gap-1 uppercase tracking-widest">
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#e8a598] animate-soft-pulse"></span>
                   Active now
                 </p>
               </div>
@@ -155,20 +154,20 @@ export default function ChatWindow() {
           <div className="flex items-center gap-1 sm:gap-2">
             <button
               onClick={handleNewChat}
-              className="flex items-center gap-1.5 text-xs font-semibold px-3 py-2 rounded-full bg-stone-800 hover:bg-stone-700 text-white transition-all border border-stone-700"
+              className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider px-4 py-2.5 rounded-[16px] bg-[#ffffff] hover:bg-[#f1efe9] text-[#5b7c72] transition-all border border-[#e2ded7] shadow-sm"
               title="Start fresh conversation"
             >
-              <RefreshCw size={13} className="text-emerald-400" />
+              <RefreshCw size={14} className="text-[#e8a598]" />
               <span className="hidden sm:inline">New Chat</span>
             </button>
           </div>
         </header>
 
         {/* Conversation Stream Area */}
-        <div className="flex-1 overflow-y-auto px-3 sm:px-6 py-4">
+        <div className="flex-1 overflow-y-auto px-4 sm:px-8 py-6">
           {error && (
-            <div className="flex items-center gap-2.5 mx-auto mb-4 max-w-xl text-xs sm:text-sm px-4 py-3 rounded-2xl bg-rose-950/80 text-rose-200 border border-rose-800">
-              <AlertCircle size={16} className="shrink-0 text-rose-400" />
+            <div className="flex items-center gap-3 mx-auto mb-5 max-w-xl text-sm px-5 py-4 rounded-[20px] bg-[#fff0ed] text-[#b34040] border border-[#e8a598]/40 shadow-sm">
+              <AlertCircle size={18} className="shrink-0" />
               <span>{error}</span>
             </div>
           )}
@@ -177,8 +176,8 @@ export default function ChatWindow() {
             <WelcomeScreen onPrompt={(p) => handleSend(p)} />
           ) : (
             <div className="flex flex-col max-w-3xl mx-auto">
-              <div className="text-center my-3">
-                <span className="text-[10px] font-bold uppercase tracking-widest text-stone-500 bg-stone-800/60 px-3 py-1 rounded-full">
+              <div className="text-center my-4">
+                <span className="text-[10px] font-bold uppercase tracking-widest text-[#9e9a95]">
                   Today
                 </span>
               </div>
@@ -190,7 +189,7 @@ export default function ChatWindow() {
           <div ref={bottomRef} />
         </div>
 
-        {/* Instagram DM Floating Input Dock */}
+        {/* Input Dock */}
         <div className="shrink-0">
           <ChatInput onSend={handleSend} disabled={loading || !sessionReady} />
         </div>

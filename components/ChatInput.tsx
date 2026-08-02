@@ -1,6 +1,6 @@
 "use client";
 import { useRef, useState, KeyboardEvent } from "react";
-import { Send, Paperclip, X, FileText, Plus } from "lucide-react";
+import { Send, X, FileText, Plus } from "lucide-react";
 
 interface Props {
   onSend: (text: string, file?: { mimeType: string; data: string; name: string }) => void;
@@ -50,30 +50,30 @@ export default function ChatInput({ onSend, disabled }: Props) {
   }
 
   return (
-    <div className="px-3 sm:px-4 py-3 border-t border-stone-800 bg-stone-900">
-      <div className="max-w-3xl mx-auto flex flex-col gap-2">
+    <div className="px-4 py-4 sm:py-5 border-t border-[#e2ded7] bg-[#f9f8f6]">
+      <div className="max-w-3xl mx-auto flex flex-col gap-2.5">
         {/* File Preview Badge */}
         {file && (
-          <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-950/80 text-emerald-200 border border-emerald-700/60 self-start text-xs font-semibold animate-in fade-in">
-            <FileText size={14} className="text-emerald-400" />
+          <div className="flex items-center gap-2 px-4 py-2 rounded-[16px] bg-[#ffffff] text-[#5b7c72] border border-[#e2ded7] self-start text-xs font-bold shadow-sm animate-in fade-in">
+            <FileText size={15} className="text-[#e8a598]" />
             <span className="truncate max-w-xs">{file.name}</span>
             <button
               onClick={() => setFile(null)}
-              className="w-5 h-5 flex items-center justify-center rounded-full hover:bg-white/10 text-stone-300"
+              className="w-6 h-6 flex items-center justify-center rounded-full hover:bg-[#f1efe9] text-[#9e9a95]"
               aria-label="Remove attached file"
             >
-              <X size={13} />
+              <X size={14} />
             </button>
           </div>
         )}
 
-        {/* Instagram DM Pill Input Bar */}
-        <div className="flex items-end gap-2 bg-stone-800 rounded-full px-2 py-1.5 border border-stone-700/80 focus-within:border-emerald-500/60 shadow-md">
+        {/* Input Bar */}
+        <div className="flex items-end gap-2 bg-[#ffffff] rounded-[24px] px-2.5 py-2.5 border border-[#e2ded7] focus-within:border-[#5b7c72] shadow-sm transition-all focus-within:shadow-md">
           {/* Attach Button */}
           <button
             onClick={() => fileRef.current?.click()}
             disabled={disabled}
-            className="w-10 h-10 shrink-0 rounded-full bg-emerald-600 hover:bg-emerald-500 text-white flex items-center justify-center transition-all disabled:opacity-30"
+            className="w-10 h-10 shrink-0 rounded-full bg-[#f1efe9] hover:bg-[#e2ded7] text-[#5b7c72] flex items-center justify-center transition-all disabled:opacity-30"
             aria-label="Attach policy document"
             title="Attach policy document (PDF or image)"
           >
@@ -98,7 +98,7 @@ export default function ChatInput({ onSend, disabled }: Props) {
             disabled={disabled}
             placeholder="Message Dolphin Buddy..."
             aria-label="Message prompt"
-            className="flex-1 resize-none bg-transparent text-sm text-white placeholder-stone-400 outline-none py-2.5 px-2 disabled:opacity-50 min-h-[40px]"
+            className="flex-1 resize-none bg-transparent text-[15px] font-medium text-[#2c2a29] placeholder-[#9e9a95] outline-none py-2.5 px-3 disabled:opacity-50 min-h-[44px]"
             style={{ maxHeight: "120px" }}
           />
 
@@ -106,10 +106,10 @@ export default function ChatInput({ onSend, disabled }: Props) {
           <button
             onClick={submit}
             disabled={disabled || (!text.trim() && !file)}
-            className="w-10 h-10 shrink-0 rounded-full bg-emerald-600 hover:bg-emerald-500 text-white flex items-center justify-center transition-all disabled:opacity-30"
+            className="w-10 h-10 shrink-0 rounded-full bg-[#5b7c72] hover:bg-[#4a665d] text-[#ffffff] flex items-center justify-center transition-all disabled:opacity-30 shadow-sm"
             aria-label="Send message"
           >
-            <Send size={16} />
+            <Send size={16} className="-ml-0.5" />
           </button>
         </div>
       </div>
