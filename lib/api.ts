@@ -27,6 +27,25 @@ export interface ChatMessage {
   artifacts?: string[]; // filenames
 }
 
+// ── Dynamic data API ──────────────────────────────────────────────────────────
+export type DataKey = "faqs" | "claims" | "premium_config";
+
+export async function fetchData(key: DataKey): Promise<Record<string, unknown>> {
+  const res = await fetch(`${BASE_URL}/data/${key}`);
+  if (!res.ok) throw new Error(`Failed to load ${key}`);
+  return res.json();
+}
+
+export async function saveData(key: DataKey, data: Record<string, unknown>): Promise<void> {
+  const res = await fetch(`${BASE_URL}/data/${key}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) throw new Error(`Failed to save ${key}`);
+}
+// ─────────────────────────────────────────────────────────────────────────────
+
 export async function* streamMessage(
   userId: string,
   sessionId: string,

@@ -1,5 +1,6 @@
 "use client";
-import { ShieldPlus, MessageSquarePlus, FileText, CalculatorIcon, HelpCircle, FileSearch } from "lucide-react";
+import { ShieldPlus, MessageSquarePlus, FileText, CalculatorIcon, HelpCircle, FileSearch, Database } from "lucide-react";
+import Link from "next/link";
 
 interface Props {
   onNewChat: () => void;
@@ -68,7 +69,17 @@ export default function Sidebar({ onNewChat, onQuickPrompt }: Props) {
       </div>
 
       {/* Footer */}
-      <div className="px-5 py-4 border-t text-xs" style={{ borderColor: "var(--border)", color: "var(--text-muted)" }}>
+      <div className="px-3 pb-3 border-t pt-3" style={{ borderColor: "var(--border)" }}>
+        <Link
+          href="/data"
+          className="flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm transition-all hover:bg-white/5"
+          style={{ color: "var(--text-muted)" }}
+        >
+          <Database size={14} style={{ color: "var(--accent2)" }} />
+          Manage Data
+        </Link>
+      </div>
+      <div className="px-5 py-3 border-t text-xs" style={{ borderColor: "var(--border)", color: "var(--text-muted)" }}>
         Powered by Gemini 2.5 Flash
       </div>
     </aside>
