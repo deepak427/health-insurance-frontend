@@ -29,7 +29,7 @@ export default function ConversationDetails({ isOpenMobile, onCloseMobile }: Pro
         {/* About Box */}
         <div className="p-5 border-b border-[#e5e7eb]">
           <h3 className="text-xs font-bold text-[#1f2937] mb-2">About This Conversation</h3>
-          <p className="text-xs text-[#6b7280] leading-relaxed">
+          <p className="text-xs font-light text-[#6b7280] leading-relaxed">
             All communication in this conversation is related to Travel Insurance only.
           </p>
         </div>
@@ -40,7 +40,7 @@ export default function ConversationDetails({ isOpenMobile, onCloseMobile }: Pro
             <User size={16} className="text-[#6b7280] shrink-0 mt-0.5" />
             <div>
               <p className="text-xs font-bold text-[#1f2937]">Conversation Owner</p>
-              <p className="text-xs text-[#6b7280] mt-0.5">Dolphin Operations Team</p>
+              <p className="text-xs font-light text-[#6b7280] mt-0.5">Dolphin Operations Team</p>
             </div>
           </div>
           
@@ -48,7 +48,7 @@ export default function ConversationDetails({ isOpenMobile, onCloseMobile }: Pro
             <Calendar size={16} className="text-[#6b7280] shrink-0 mt-0.5" />
             <div>
               <p className="text-xs font-bold text-[#1f2937]">Created On</p>
-              <p className="text-xs text-[#6b7280] mt-0.5">21 Jun 2025, 09:15 AM</p>
+              <p className="text-xs font-light text-[#6b7280] mt-0.5">21 Jun 2025, 09:15 AM</p>
             </div>
           </div>
 
@@ -80,7 +80,7 @@ export default function ConversationDetails({ isOpenMobile, onCloseMobile }: Pro
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-xs font-bold text-[#1f2937] truncate" title={filename}>{filename}</p>
-                      <p className="text-[10px] text-[#6b7280]">PDF Document</p>
+                      <p className="text-[10px] font-light text-[#6b7280]">PDF Document</p>
                     </div>
                     <a
                       href={buildDownloadUrl(userId, sessionId, filename)}
@@ -98,7 +98,7 @@ export default function ConversationDetails({ isOpenMobile, onCloseMobile }: Pro
             
             {docsOpen && documents.length === 0 && (
               <div className="px-5 pb-4">
-                <p className="text-xs text-[#9ca3af] text-center">No documents in this chat yet.</p>
+                <p className="text-xs font-light text-[#9ca3af] text-center">No documents in this chat yet.</p>
               </div>
             )}
           </div>

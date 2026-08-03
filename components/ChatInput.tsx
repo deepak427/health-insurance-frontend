@@ -93,7 +93,7 @@ export default function ChatInput({ onSend, disabled }: Props) {
             onKeyDown={handleKey}
             disabled={disabled}
             placeholder="Type a travel insurance message..."
-            className="flex-1 resize-none bg-transparent text-sm text-[#1f2937] placeholder-[#9ca3af] outline-none py-2 px-2 disabled:opacity-50 min-h-[36px]"
+            className="flex-1 resize-none bg-transparent text-sm font-light text-[#1f2937] placeholder-[#9ca3af] outline-none py-2 px-2 disabled:opacity-50 min-h-[36px]"
             style={{ maxHeight: "120px" }}
           />
 

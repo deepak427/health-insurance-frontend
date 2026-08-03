@@ -95,7 +95,7 @@ function SessionRow({ s, isActive, onSwitch, onRename, onDelete }: {
             </button>
           </div>
         ) : (
-          <p className="text-xs text-[#6b7280] truncate mt-0.5">{s.preview}</p>
+          <p className="text-xs font-light text-[#6b7280] truncate mt-0.5">{s.preview}</p>
         )}
       </div>
 
@@ -151,13 +151,12 @@ export default function ConversationList({ onNewChat, onQuickPrompt, isOpenMobil
     s.preview.toLowerCase().includes(search.toLowerCase())
   );
   const visible = showAll ? filtered : filtered.slice(0, 5);
-  const showTopics = sessions.length < 3 && !search;
 
   const content = (
     <div className="flex flex-col h-full w-full lg:w-[340px] bg-white border-r border-[#e5e7eb]">
       {/* User card */}
       <div className="px-5 py-6">
-        <p className="text-[10px] font-bold text-[#1f2937] mb-3">Your Partner</p>
+        <p className="text-[10px] font-bold text-[#1f2937] mb-3 tracking-[0.08em] uppercase">Your Partner</p>
         <div className="flex items-start justify-between">
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 flex items-center justify-center bg-[#f3f4f6] text-[#6b7280] rounded">
@@ -165,7 +164,7 @@ export default function ConversationList({ onNewChat, onQuickPrompt, isOpenMobil
             </div>
             <div>
               <p className="text-sm font-bold text-[#1f2937]">SOTC Travel Limited</p>
-              <p className="text-[11px] text-[#6b7280] mt-0.5">Partner ID: PT12345</p>
+              <p className="text-[11px] font-light text-[#6b7280] mt-0.5">Partner ID: PT12345</p>
             </div>
           </div>
           <span className="text-xs font-bold text-[#00a86b]">Active</span>
@@ -174,7 +173,7 @@ export default function ConversationList({ onNewChat, onQuickPrompt, isOpenMobil
 
       {/* Conversations List Header */}
       <div className="flex items-center justify-between px-5 py-3 border-t border-[#e5e7eb]">
-        <h3 className="text-xs font-bold text-[#1f2937]">Travel Insurance Conversations</h3>
+        <h3 className="text-xs font-bold text-[#1f2937] tracking-[0.04em]">Travel Insurance Conversations</h3>
         <button
           onClick={onNewChat}
           className="flex items-center gap-1 px-2 py-1 bg-white border border-[#00a86b] rounded text-[10px] font-semibold text-[#00a86b] hover:bg-[#f0fdf4]"
@@ -214,36 +213,10 @@ export default function ConversationList({ onNewChat, onQuickPrompt, isOpenMobil
           )}
         </div>
 
-        {/* Suggested topics for new users */}
-        {showTopics && (
-          <div className="px-5 mt-4">
-            <p className="text-[10px] font-bold text-[#6b7280] uppercase mb-2">Suggested Topics</p>
-            {[
-              "What is a deductible?",
-              "Estimate my health premium",
-              "How do I file a claim?",
-            ].map((t) => (
-              <div
-                key={t}
-                onClick={() => onQuickPrompt?.(t)}
-                className="text-xs text-[#0369a1] py-1.5 border-b border-[#f3f4f6] hover:text-[#1d4ed8] cursor-pointer"
-              >
-                {t}
-              </div>
-            ))}
-          </div>
-        )}
+
       </div>
 
-      {/* Footer Info */}
-      <div className="p-4 border-t border-[#e5e7eb]">
-        <div className="bg-[#f0fdf4] border border-[#bbf7d0] rounded-lg p-3 flex items-start gap-3">
-          <ShieldCheck size={16} className="text-[#00a86b] shrink-0 mt-0.5" />
-          <p className="text-[11px] text-[#166534] leading-tight font-medium">
-            Only travel insurance related conversations are allowed here.
-          </p>
-        </div>
-      </div>
+
     </div>
   );
 

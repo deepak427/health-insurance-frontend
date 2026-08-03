@@ -28,23 +28,23 @@ export default function WelcomeScreen({ onPrompt }: Props) {
 
         <div>
           <div className="flex items-center justify-center gap-2">
-            <h1 className="text-3xl font-heading text-[#2c2a29] tracking-wide">Dolphin Buddy</h1>
+            <h1 className="text-3xl font-black text-[#2c2a29] tracking-[-0.03em] leading-none">Dolphin Buddy</h1>
             <CheckCircle2 size={18} className="text-[#5b7c72]" />
           </div>
-          <p className="text-xs font-bold uppercase tracking-widest text-[#797571] mt-2">Insurance AI Specialist</p>
+          <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-[#797571] mt-2">Insurance AI Specialist</p>
           <div className="inline-flex items-center gap-1.5 mt-3 px-4 py-1.5 rounded-full bg-[#ffffff] text-[11px] font-bold text-[#e8a598] border border-[#e2ded7] shadow-sm uppercase tracking-wider">
             <Sparkles size={12} /> Active Now
           </div>
         </div>
       </div>
 
-      <p className="text-[15px] text-[#797571] max-w-md mt-6 leading-relaxed font-medium">
+      <p className="text-[15px] text-[#797571] max-w-md mt-6 leading-relaxed font-[450]">
         Start messaging Dolphin Buddy to safely analyze your policy documents, get instant answers to insurance questions, or generate PDF guides.
       </p>
 
       {/* Suggested Topics */}
       <div className="w-full max-w-lg mt-10">
-        <span className="text-[11px] font-bold uppercase tracking-widest text-[#9e9a95] block mb-4">
+        <span className="text-[11px] font-bold uppercase tracking-[0.1em] text-[#9e9a95] block mb-4">
           Suggested Topics
         </span>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-left">
@@ -60,7 +60,7 @@ export default function WelcomeScreen({ onPrompt }: Props) {
                 </div>
                 <ArrowRight size={16} className="text-[#d1ccc4] group-hover:text-[#5b7c72] group-hover:translate-x-1 transition-transform" />
               </div>
-              <span className="text-sm font-bold text-[#2c2a29] mt-2">{label}</span>
+              <span className="text-sm font-bold text-[#2c2a29] mt-2 tracking-[-0.01em]">{label}</span>
             </button>
           ))}
         </div>

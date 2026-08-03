@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { ShieldCheck, ArrowLeft, Save, RefreshCw, CheckCircle, AlertCircle, Database, Code2, MessageSquare, Lock, Bell, MessageSquareMore } from "lucide-react";
+import { ShieldCheck, ArrowLeft, Save, RefreshCw, CheckCircle, AlertCircle, Database, Code2 } from "lucide-react";
 import Link from "next/link";
 import { fetchData, saveData, DataKey } from "@/lib/api";
 
@@ -55,53 +55,9 @@ export default function DataPage() {
   const activeInfo = TABS.find((t) => t.key === activeTab)!;
 
   return (
-    <main className="min-h-screen flex flex-col p-4 sm:p-6 lg:p-8 bg-[#f4f7f9]">
-      {/* Top Outer Marketing Header (same as main page) */}
-      <header className="w-full max-w-[1600px] mx-auto flex flex-col xl:flex-row xl:items-start justify-between mb-8 pt-2">
-        <div className="flex flex-col">
-          <div className="flex items-center gap-2 mb-3">
-            <h1 className="text-[32px] font-bold tracking-tight flex items-center">
-              <span className="text-[#0a192f]">Dolphin</span>
-              <span className="text-[#00a86b] ml-2">Buddy</span>
-            </h1>
-            <div className="w-10 h-10 mt-1 rounded-full bg-[#00a86b] text-white flex items-center justify-center shadow-sm">
-              <MessageSquareMore size={22} className="fill-current" />
-            </div>
-          </div>
-          <p className="text-[#1f2937] font-bold text-[16px] mb-1">
-            One Partner. One Login. All Travel Insurance Conversations.
-          </p>
-          <p className="text-[#6b7280] text-[13px] font-medium">
-            Dedicated hub for all Travel Insurance related communication.
-          </p>
-        </div>
-
-        <div className="flex flex-wrap xl:flex-nowrap items-start gap-4 xl:gap-5 mt-6 xl:mt-0">
-          <div className="flex flex-col items-center text-center w-[165px] bg-white/60 rounded-[14px] p-4 shadow-[0_2px_12px_rgb(0,0,0,0.02)] border border-[#e5e7eb]/60">
-            <ShieldCheck size={26} strokeWidth={1.5} className="text-[#00a86b] mb-3" />
-            <span className="text-[12px] font-bold text-[#1f2937] mb-1.5 leading-tight">Travel Insurance<br/>Focused</span>
-            <span className="text-[11px] text-[#6b7280] leading-[1.3] px-1">All interactions are strictly travel insurance related.</span>
-          </div>
-          <div className="flex flex-col items-center text-center w-[165px] bg-white/60 rounded-[14px] p-4 shadow-[0_2px_12px_rgb(0,0,0,0.02)] border border-[#e5e7eb]/60">
-            <MessageSquare size={26} strokeWidth={1.5} className="text-[#00a86b] mb-3" />
-            <span className="text-[12px] font-bold text-[#1f2937] mb-1.5 leading-tight">One Partner,<br/>One Space</span>
-            <span className="text-[11px] text-[#6b7280] leading-[1.3] px-1">Everything you need to serve your travelers better.</span>
-          </div>
-          <div className="flex flex-col items-center text-center w-[165px] bg-white/60 rounded-[14px] p-4 shadow-[0_2px_12px_rgb(0,0,0,0.02)] border border-[#e5e7eb]/60">
-            <Lock size={26} strokeWidth={1.5} className="text-[#00a86b] mb-3" />
-            <span className="text-[12px] font-bold text-[#1f2937] mb-1.5 leading-tight">Secure &<br/>Compliant</span>
-            <span className="text-[11px] text-[#6b7280] leading-[1.3] px-1">All travel insurance data stays safe inside Dolphin.</span>
-          </div>
-          <div className="flex flex-col items-center text-center w-[165px] bg-white/60 rounded-[14px] p-4 shadow-[0_2px_12px_rgb(0,0,0,0.02)] border border-[#e5e7eb]/60">
-            <Bell size={26} strokeWidth={1.5} className="text-[#00a86b] mb-3 fill-[#00a86b]/10" />
-            <span className="text-[12px] font-bold text-[#1f2937] mb-1.5 leading-tight">Instant<br/>Updates</span>
-            <span className="text-[11px] text-[#6b7280] leading-[1.3] px-1">Never miss an important policy or claim update.</span>
-          </div>
-        </div>
-      </header>
-
+    <main className="h-screen w-screen flex flex-col bg-[#f4f7f9] overflow-hidden">
       {/* Main Multi-Pane Container */}
-      <div className="flex-1 flex w-full max-w-[1600px] mx-auto bg-white rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-[#e5e7eb] overflow-hidden min-h-[600px] h-[85vh]">
+      <div className="flex flex-1 w-full h-full bg-white overflow-hidden">
         
         {/* Navy Sidebar for Data Page */}
         <aside className="hidden md:flex flex-col w-[220px] bg-[#0a192f] text-white shrink-0">
@@ -109,7 +65,7 @@ export default function DataPage() {
             <svg width="24" height="24" viewBox="0 0 24 24" fill="white" xmlns="http://www.w3.org/2000/svg">
               <path d="M12.984 8.783c-1.332-1.936-3.792-3.14-6.425-3.14-1.295 0-2.527.31-3.626.866.52-2.316 2.584-4.062 5.067-4.062 2.85 0 5.161 2.31 5.161 5.16 0 .438-.057.863-.163 1.267a5.122 5.122 0 0 1-.014-.091zm9.324 7.64c-.958-3.325-3.418-5.748-6.685-6.683-.81-.233-1.666-.363-2.545-.38l-1.077-.021c.542.484 1.002 1.05 1.353 1.68l.215.385c.896 1.62 1.34 3.535 1.272 5.518l-.01.32c1.78-.184 3.393-1.052 4.544-2.355l1.636-1.848.067-1.127a5.534 5.534 0 0 0 .108-.501.996.996 0 0 1-.878.508c-.28 0-.546-.118-.737-.324l-2.072-2.222c-.383-.412-.358-1.055.054-1.439.412-.383 1.055-.357 1.439.055l1.838 1.973c.123.131.295.205.474.205h.001zm-5.75-8.52c-.615-.466-1.286-.867-1.998-1.196-1.293-.598-2.678-.897-4.113-.897-.992 0-1.97.16-2.91.468C3.896 7.425 1.155 9.775.228 12.87l-.147.494 2.112-2.348c.15-.167.315-.327.491-.478l.42-.355c.784-.663 1.678-1.168 2.657-1.498.412-.138.835-.23 1.264-.275l.435-.046c1.67-.176 3.336.262 4.673 1.233.15.108.297.22.441.336l.244.195c1.455 1.164 2.378 2.85 2.628 4.757.065.498.077 1.002.036 1.5l-.019.227c-.234 2.809-1.956 5.176-4.524 6.184l-2.028.794 3.385.163c2.72.13 5.37-1.195 6.953-3.488l2.257-3.265.172-.45c.162-.42.274-.858.337-1.309.055-.398-.016-.807-.205-1.158l-.946-1.745c-.464-.856-1.11-1.577-1.91-2.136z"/>
             </svg>
-            <h1 className="text-[15px] font-bold tracking-tight text-white">
+            <h1 className="text-[15px] font-black tracking-[-0.02em] text-white">
               Dolphin <span className="text-[#00a86b]">Portal</span>
             </h1>
           </div>
@@ -219,14 +175,6 @@ export default function DataPage() {
               </div>
             )}
           </div>
-        </div>
-      </div>
-
-      {/* Global Secure Footer */}
-      <div className="w-full max-w-[1600px] mx-auto flex justify-center mt-4">
-        <div className="bg-[#f0fdf4] border border-[#bbf7d0] text-[#166534] px-6 py-1.5 rounded-full flex items-center gap-2 text-[11px] font-medium shadow-sm">
-          <ShieldCheck size={14} className="text-[#00a86b]" />
-          <span>All travel insurance conversations stay within Dolphin. No personal WhatsApp. More security. Better tracking. Complete audit trail.</span>
         </div>
       </div>
     </main>

@@ -45,7 +45,7 @@ export default function UsernameModal({ onSubmit }: Props) {
         </div>
 
         {/* Title */}
-        <h2 className="text-[28px] font-bold text-[#1f2937] text-center leading-tight">
+        <h2 className="text-[28px] font-black text-[#1f2937] text-center leading-none tracking-[-0.03em]">
           Welcome to<br />Dolphin Buddy
         </h2>
 

@@ -38,7 +38,7 @@ export default function Message({ msg, userId, sessionId }: Props) {
 
         {/* Bubble */}
         <div
-          className={`px-4 py-3 text-sm relative ${
+          className={`px-4 py-3 text-sm font-light relative ${
             isUser
               ? "bg-[#dcf8c6] text-[#1f2937] rounded-lg rounded-tr-none"
               : "bg-white text-[#1f2937] rounded-lg rounded-tl-none border border-[#e5e7eb] shadow-sm"

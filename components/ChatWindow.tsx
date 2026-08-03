@@ -103,7 +103,7 @@ export default function ChatWindow() {
   }
 
   return (
-    <div className="flex h-[85vh] min-h-0 md:min-h-[600px] w-full bg-white relative">
+    <div className="flex h-full min-h-0 w-full bg-white relative">
       {/* Column 1: Navy Sidebar */}
       <Sidebar isOpenMobile={sidebarOpen} onCloseMobile={() => setSidebarOpen(false)} />
 
@@ -123,10 +123,10 @@ export default function ChatWindow() {
               <circle cx="18" cy="14" r="2.5" fill="white"/>
               <circle cx="25" cy="14" r="2.5" fill="white"/>
             </svg>
-            <div>
-              <h2 className="font-bold text-[#1f2937] text-[19px] leading-tight">Buddy</h2>
-              <p className="text-[12px] text-[#6b7280]">Travel Insurance Communication Hub</p>
-            </div>
+              <div>
+              <h2 className="font-black text-[#1f2937] text-[20px] leading-none tracking-[-0.03em]">Buddy</h2>
+                <p className="text-[12px] text-[#6b7280] font-light mt-0.5">Travel Insurance Communication Hub</p>
+              </div>
           </div>
 
           <div className="flex items-center gap-3 md:gap-4">
@@ -140,7 +140,7 @@ export default function ChatWindow() {
               </div>
               <div className="hidden sm:flex flex-col leading-tight">
                 <span className="text-[13px] font-semibold text-[#1f2937]">{username}</span>
-                <span className="text-[10px] text-[#6b7280]">Partner ID: PT12345</span>
+                <span className="text-[10px] font-light text-[#6b7280]">Partner ID: PT12345</span>
               </div>
               <ChevronDown size={14} className="text-[#6b7280]" />
             </div>
@@ -171,7 +171,7 @@ export default function ChatWindow() {
             </div>
             <div className="min-w-0">
               <h2 className="font-bold text-[#1f2937] text-sm leading-tight truncate">Travel Insurance Support</h2>
-              <p className="text-xs text-[#6b7280] truncate">@{username} · AI Active</p>
+              <p className="text-xs font-light text-[#6b7280] truncate">@{username} · AI Active</p>
             </div>
           </div>
 
@@ -209,10 +209,10 @@ export default function ChatWindow() {
                 <div className="flex flex-col items-start">
                   <div className="flex items-center gap-2 mb-1">
                     <span className="text-xs font-bold text-[#1f2937]">Dolphin Buddy</span>
-                    <span className="text-xs text-[#6b7280]">| Insurance AI</span>
+                    <span className="text-xs font-light text-[#6b7280]">| Insurance AI</span>
                   </div>
                   <div className="bg-white border border-[#e5e7eb] rounded-lg px-4 py-3 shadow-sm max-w-[85%]">
-                    <p className="text-sm text-[#1f2937]">Hi @{username}! How can I help you with your insurance today?</p>
+                    <p className="text-sm font-light text-[#1f2937]">Hi @{username}! How can I help you with your insurance today?</p>
                   </div>
                   <span className="text-[10px] text-[#6b7280] mt-1 ml-1">Just now</span>
                 </div>

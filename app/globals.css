@@ -1,4 +1,3 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 @import "tailwindcss";
 
 :root {
@@ -25,7 +24,7 @@
   --agent-bubble: #ffffff;
   --agent-bubble-text: #1f2937;
   
-  --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+  --font-sans: var(--font-epilogue), 'Epilogue', system-ui, -apple-system, sans-serif;
 }
 
 * {
@@ -38,9 +37,13 @@ html, body {
   background: var(--bg-app);
   color: var(--text-main);
   font-family: var(--font-sans);
+  font-size: 16px;
+  font-weight: 300;
+  line-height: 1.5;
   height: 100%;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  letter-spacing: 0.2px;
 }
 
 /* Custom Scrollbar for Enterprise Panels */
@@ -50,12 +53,12 @@ html, body {
 ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
 
 /* ── Agent message markdown prose ─────────────────────────────────────────── */
-.agent-prose { font-size: 0.875rem; color: #1f2937; line-height: 1.6; }
+.agent-prose { font-size: 0.875rem; font-weight: 300; color: #1f2937; line-height: 1.65; }
 
 /* Headings */
-.agent-h1 { font-size: 1.1rem; font-weight: 700; color: #111827; margin: 1rem 0 0.5rem; line-height: 1.3; }
-.agent-h2 { font-size: 1rem; font-weight: 700; color: #111827; margin: 0.875rem 0 0.4rem; line-height: 1.3; border-bottom: 1px solid #e5e7eb; padding-bottom: 0.25rem; }
-.agent-h3 { font-size: 0.9rem; font-weight: 600; color: #1f2937; margin: 0.75rem 0 0.35rem; line-height: 1.3; }
+.agent-h1 { font-size: 1.15rem; font-weight: 800; color: #111827; margin: 1rem 0 0.5rem; line-height: 1.2; letter-spacing: -0.02em; }
+.agent-h2 { font-size: 1.05rem; font-weight: 700; color: #111827; margin: 0.875rem 0 0.4rem; line-height: 1.2; letter-spacing: -0.015em; border-bottom: 1px solid #e5e7eb; padding-bottom: 0.25rem; }
+.agent-h3 { font-size: 0.95rem; font-weight: 700; color: #1f2937; margin: 0.75rem 0 0.35rem; line-height: 1.25; letter-spacing: -0.01em; }
 .agent-h4 { font-size: 0.875rem; font-weight: 600; color: #374151; margin: 0.6rem 0 0.3rem; }
 
 /* Paragraphs — no double spacing */
@@ -71,8 +74,8 @@ html, body {
 .agent-li > .agent-ol { margin: 0.2rem 0 0.2rem 0; }
 
 /* Inline emphasis */
-.agent-strong { font-weight: 600; color: #111827; }
-.agent-em { font-style: italic; color: #374151; }
+.agent-strong { font-weight: 700; color: #111827; }
+.agent-em { font-style: italic; color: #374151; font-weight: 300; }
 
 /* Inline code */
 .agent-code-inline {
