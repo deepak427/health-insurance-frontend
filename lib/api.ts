@@ -175,6 +175,8 @@ export async function fetchCompanies(): Promise<Company[]> {
   return res.json();
 }
 // ─────────────────────────────────────────────────────────────────────────────
+
+export async function* streamMessage(
   userId: string,
   sessionId: string,
   text: string,
