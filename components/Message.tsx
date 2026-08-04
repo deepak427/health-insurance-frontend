@@ -3,6 +3,7 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { Download, FileText } from "lucide-react";
 import { buildDownloadUrl } from "@/lib/api";
+import PolicyCards, { PolicyCardData } from "./PolicyCards";
 
 export interface Msg {
   role: "user" | "agent";
@@ -14,35 +15,57 @@ interface Props {
   msg: Msg;
   userId: string;
   sessionId: string;
+  onSend?: (text: string) => void;
 }
 
-export default function Message({ msg, userId, sessionId }: Props) {
+// Parses <!--POLICY_CARDS:[...]-->  out of agent text.
+// Returns { displayText, cards } — displayText has the marker stripped.
+function parsePolicyCards(raw: string): { displayText: string; cards: PolicyCardData[] } {
+  const RE = /<!--POLICY_CARDS:([\s\S]*?)-->/g;
+  const cards: PolicyCardData[] = [];
+  const displayText = raw.replace(RE, (_, json) => {
+    try {
+      const parsed = JSON.parse(json.trim());
+      const arr: PolicyCardData[] = Array.isArray(parsed) ? parsed : [parsed];
+      cards.push(...arr);
+    } catch {}
+    return ""; // strip the marker from visible text
+  }).trim();
+  return { displayText, cards };
+}
+
+export default function Message({ msg, userId, sessionId, onSend }: Props) {
   const isUser = msg.role === "user";
   const isTyping = !isUser && !msg.text && (!msg.artifacts || msg.artifacts.length === 0);
 
+  const { displayText, cards } = isUser
+    ? { displayText: msg.text, cards: [] }
+    : parsePolicyCards(msg.text);
+
   return (
-    <div className={`flex gap-3 my-3 w-full ${isUser ? "justify-end" : "justify-start"}`}>
+    <div className={`flex gap-2 my-1.5 w-full ${isUser ? "justify-end" : "justify-start"}`}>
 
       {/* Agent Avatar */}
       {!isUser && (
-        <div className="w-8 h-8 rounded-full bg-blue-100 shrink-0 flex items-center justify-center overflow-hidden border border-[#e5e7eb]">
+        <div className="w-8 h-8 rounded-full bg-[#00a86b] shrink-0 flex items-center justify-center overflow-hidden mt-1">
           <span className="text-sm">🎧</span>
         </div>
       )}
 
-      <div className={`flex flex-col ${isUser ? "items-end" : "items-start"} max-w-[80%]`}>
+      <div className={`flex flex-col ${isUser ? "items-end" : "items-start"} max-w-[75%]`}>
         {/* Author Label */}
         {!isUser && (
-          <span className="text-xs font-bold text-[#0369a1] mb-1 pl-1">Operations Team</span>
+          <span className="text-xs font-semibold text-[#00a86b] mb-1 ml-1">Operations Team</span>
         )}
 
         {/* Bubble */}
         <div
-          className={`px-4 py-3 text-sm font-light relative ${
+          className={`px-3 py-2 text-sm relative ${
             isUser
-              ? "bg-[#dcf8c6] text-[#1f2937] rounded-lg rounded-tr-none"
-              : "bg-white text-[#1f2937] rounded-lg rounded-tl-none border border-[#e5e7eb] shadow-sm"
+              ? "bg-[#dcf8c6] text-[#1f2937] rounded-[10px] rounded-tr-[2px] shadow-sm"
+              : "bg-white text-[#1f2937] rounded-[10px] rounded-tl-[2px] shadow-sm"
           }`}
+          style={{ wordBreak: "break-word" }}
         >
           {isTyping ? (
             <div className="flex items-center gap-1.5 py-1 px-1">
@@ -51,51 +74,64 @@ export default function Message({ msg, userId, sessionId }: Props) {
               <span className="w-1.5 h-1.5 rounded-full bg-gray-400 animate-bounce" style={{ animationDelay: "300ms" }} />
             </div>
           ) : (
-            <div className="agent-prose">
-              <ReactMarkdown
-                remarkPlugins={[remarkGfm]}
-                components={{
-                  h1: ({ children }) => <h1 className="agent-h1">{children}</h1>,
-                  h2: ({ children }) => <h2 className="agent-h2">{children}</h2>,
-                  h3: ({ children }) => <h3 className="agent-h3">{children}</h3>,
-                  h4: ({ children }) => <h4 className="agent-h4">{children}</h4>,
-                  p: ({ children }) => <p className="agent-p">{children}</p>,
-                  ul: ({ children }) => <ul className="agent-ul">{children}</ul>,
-                  ol: ({ children }) => <ol className="agent-ol">{children}</ol>,
-                  li: ({ children }) => <li className="agent-li">{children}</li>,
-                  strong: ({ children }) => <strong className="agent-strong">{children}</strong>,
-                  em: ({ children }) => <em className="agent-em">{children}</em>,
-                  code: ({ inline, children }: { inline?: boolean; children?: React.ReactNode }) =>
-                    inline ? (
-                      <code className="agent-code-inline">{children}</code>
-                    ) : (
-                      <pre className="agent-pre"><code>{children}</code></pre>
-                    ),
-                  blockquote: ({ children }) => <blockquote className="agent-blockquote">{children}</blockquote>,
-                  hr: () => <hr className="agent-hr" />,
-                  table: ({ children }) => (
-                    <div className="agent-table-wrapper">
-                      <table className="agent-table">{children}</table>
-                    </div>
-                  ),
-                  thead: ({ children }) => <thead className="agent-thead">{children}</thead>,
-                  tbody: ({ children }) => <tbody>{children}</tbody>,
-                  tr: ({ children }) => <tr className="agent-tr">{children}</tr>,
-                  th: ({ children }) => <th className="agent-th">{children}</th>,
-                  td: ({ children }) => <td className="agent-td">{children}</td>,
-                  a: ({ href, children }) => (
-                    <a href={href} target="_blank" rel="noopener noreferrer" className="agent-link">
-                      {children}
-                    </a>
-                  ),
-                }}
-              >
-                {msg.text}
-              </ReactMarkdown>
-            </div>
+            <>
+              {/* Text content (with marker stripped) */}
+              {displayText && (
+                <div className="agent-prose">
+                  <ReactMarkdown
+                    remarkPlugins={[remarkGfm]}
+                    components={{
+                      h1: ({ children }) => <h1 className="agent-h1">{children}</h1>,
+                      h2: ({ children }) => <h2 className="agent-h2">{children}</h2>,
+                      h3: ({ children }) => <h3 className="agent-h3">{children}</h3>,
+                      h4: ({ children }) => <h4 className="agent-h4">{children}</h4>,
+                      p: ({ children }) => <p className="agent-p">{children}</p>,
+                      ul: ({ children }) => <ul className="agent-ul">{children}</ul>,
+                      ol: ({ children }) => <ol className="agent-ol">{children}</ol>,
+                      li: ({ children }) => <li className="agent-li">{children}</li>,
+                      strong: ({ children }) => <strong className="agent-strong">{children}</strong>,
+                      em: ({ children }) => <em className="agent-em">{children}</em>,
+                      code: ({ inline, children }: { inline?: boolean; children?: React.ReactNode }) =>
+                        inline ? (
+                          <code className="agent-code-inline">{children}</code>
+                        ) : (
+                          <pre className="agent-pre"><code>{children}</code></pre>
+                        ),
+                      blockquote: ({ children }) => <blockquote className="agent-blockquote">{children}</blockquote>,
+                      hr: () => <hr className="agent-hr" />,
+                      table: ({ children }) => (
+                        <div className="agent-table-wrapper">
+                          <table className="agent-table">{children}</table>
+                        </div>
+                      ),
+                      thead: ({ children }) => <thead className="agent-thead">{children}</thead>,
+                      tbody: ({ children }) => <tbody>{children}</tbody>,
+                      tr: ({ children }) => <tr className="agent-tr">{children}</tr>,
+                      th: ({ children }) => <th className="agent-th">{children}</th>,
+                      td: ({ children }) => <td className="agent-td">{children}</td>,
+                      a: ({ href, children }) => (
+                        <a href={href} target="_blank" rel="noopener noreferrer" className="agent-link">
+                          {children}
+                        </a>
+                      ),
+                    }}
+                  >
+                    {displayText}
+                  </ReactMarkdown>
+                </div>
+              )}
+
+              {/* Policy Cards */}
+              {cards.length > 0 && onSend && (
+                <PolicyCards cards={cards} onChoose={onSend} />
+              )}
+              {cards.length > 0 && !onSend && (
+                <PolicyCards cards={cards} onChoose={() => {}} />
+              )}
+            </>
           )}
 
-          {/* Artifacts (PDF Guides) */}
+          {/* Artifacts (PDF Downloads) */}
           {msg.artifacts && msg.artifacts.length > 0 && (
             <div className="mt-3 pt-3 border-t border-black/5 flex flex-col gap-2">
               {msg.artifacts.map((filename) => (
@@ -122,9 +158,16 @@ export default function Message({ msg, userId, sessionId }: Props) {
           )}
 
           {/* Timestamp */}
-          <div className={`text-[9px] text-right mt-1 ${isUser ? "text-emerald-800/60" : "text-[#9ca3af]"}`}>
-            {isUser ? "Just now • " : ""}
-            <span className={isUser ? "text-emerald-600" : ""}>{isUser ? "✓✓" : "Just now"}</span>
+          <div className="flex items-center justify-end gap-1 mt-1">
+            <span className={`text-[10px] ${isUser ? "text-[#667781]" : "text-[#adb5bd]"}`}>
+              Just now
+            </span>
+            {isUser && (
+              <svg viewBox="0 0 18 11" width="16" height="11" className="text-[#53bdeb]">
+                <path fill="currentColor" d="M17.394 .57 6.23 11.733l-5.624-5.625 1.414-1.414 4.21 4.21L15.98-.844z"/>
+                <path fill="currentColor" d="M11.394 .57.23 11.733l1.414 1.414L12.808 1.984z" opacity=".4"/>
+              </svg>
+            )}
           </div>
         </div>
       </div>

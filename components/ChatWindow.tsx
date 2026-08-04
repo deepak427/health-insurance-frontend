@@ -188,7 +188,7 @@ export default function ChatWindow() {
         </header>
 
         {/* Chat Messages */}
-        <div className="flex-1 overflow-y-auto px-6 py-4 bg-[#f8fafc]">
+        <div className="flex-1 overflow-y-auto px-4 py-3 bg-[#efeae2]">
           {error && (
             <div className="flex items-center gap-2 mb-4 text-xs p-3 rounded bg-red-50 text-red-700 border border-red-200">
               <AlertCircle size={16} />
@@ -204,25 +204,22 @@ export default function ChatWindow() {
             </div>
 
             {messages.length === 0 && !loading && (
-              <div className="flex items-start gap-3 my-4">
-                <div className="w-8 h-8 rounded-full bg-gray-200 shrink-0 overflow-hidden">
-                  <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Priya" alt="avatar" />
+              <div className="flex items-start gap-2 my-2">
+                <div className="w-8 h-8 rounded-full bg-[#00a86b] shrink-0 flex items-center justify-center mt-5">
+                  <span className="text-sm">🎧</span>
                 </div>
-                <div className="flex flex-col items-start">
-                  <div className="flex items-center gap-2 mb-1">
-                    <span className="text-xs font-bold text-[#1f2937]">Dolphin Buddy</span>
-                    <span className="text-xs font-light text-[#6b7280]">| Insurance AI</span>
+                <div className="flex flex-col items-start max-w-[75%]">
+                  <span className="text-xs font-semibold text-[#00a86b] mb-1 ml-1">Operations Team</span>
+                  <div className="bg-white rounded-[10px] rounded-tl-[2px] shadow-sm px-3 py-2">
+                    <p className="text-sm text-[#1f2937]">Hey @{username}, how can I help you today?</p>
+                    <span className="text-[10px] text-[#adb5bd] block text-right mt-1">Just now</span>
                   </div>
-                  <div className="bg-white border border-[#e5e7eb] rounded-lg px-4 py-3 shadow-sm max-w-[85%]">
-                    <p className="text-sm font-light text-[#1f2937]">Hey @{username}, how can I help you today?</p>
-                  </div>
-                  <span className="text-[10px] text-[#6b7280] mt-1 ml-1">Just now</span>
                 </div>
               </div>
             )}
 
             {messages.map((msg, i) => (
-              <Message key={i} msg={msg} userId={userId} sessionId={sessionId} />
+              <Message key={i} msg={msg} userId={userId} sessionId={sessionId} onSend={(text) => handleSend(text)} />
             ))}
           </div>
           <div ref={bottomRef} />

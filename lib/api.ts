@@ -97,7 +97,11 @@ export function eventsToMessages(events: ADKEvent[]): ChatMessage[] {
 
       const last = msgs[msgs.length - 1];
       if (last?.role === "agent") {
-        last.text += text;
+        // Deduplicate: don't append if this text is already contained in the agent message
+        const isDuplicate = last.text.includes(text.trim()) && text.trim().length > 40;
+        if (!isDuplicate) {
+          last.text += text;
+        }
         if (artifacts) last.artifacts = [...(last.artifacts ?? []), ...artifacts];
       } else {
         msgs.push({ role: "agent", text, artifacts });
@@ -217,6 +221,9 @@ export async function* streamMessage(
   const decoder = new TextDecoder();
   let buffer = "";
 
+  // Track accumulated text to deduplicate repeated agent turns
+  let accumulatedText = "";
+
   while (true) {
     const { done, value } = await reader.read();
     if (done) break;
@@ -244,6 +251,14 @@ export async function* streamMessage(
         const textPart = isModelContent
           ? content.parts?.find((p: { text?: string }) => p.text)?.text
           : undefined;
+
+        if (textPart) {
+          // Deduplicate: if the agent emits the same text again in a second turn, skip it
+          if (accumulatedText.includes(textPart.trim()) && textPart.trim().length > 40) {
+            continue;
+          }
+          accumulatedText += textPart;
+        }
 
         if (textPart || artifacts) yield { text: textPart, artifacts };
       } catch {
