@@ -1,18 +1,18 @@
 "use client";
-import { useState } from "react";
 import { FilePlus, FileText, IndianRupee, BarChart3, MessageCircle, HeadphonesIcon, Database, LogOut } from "lucide-react";
 import Link from "next/link";
 import { useChatContext } from "@/context/ChatContext";
-import PoliciesPanel from "./PoliciesPanel";
 
 interface Props {
   isOpenMobile?: boolean;
   onCloseMobile?: () => void;
+  onOpenPolicies?: () => void;
+  onClosePolicies?: () => void;
+  policiesOpen?: boolean;
 }
 
-export default function Sidebar({ isOpenMobile, onCloseMobile }: Props) {
+export default function Sidebar({ isOpenMobile, onCloseMobile, onOpenPolicies, onClosePolicies, policiesOpen }: Props) {
   const { logout, username } = useChatContext();
-  const [policiesOpen, setPoliciesOpen] = useState(false);
 
   const content = (
     <div className="flex flex-col h-full w-[220px] bg-[#0a192f] text-white">
@@ -34,8 +34,12 @@ export default function Sidebar({ isOpenMobile, onCloseMobile }: Props) {
           <span>Create Policy</span>
         </Link>
         <button
-          onClick={() => setPoliciesOpen(true)}
-          className="flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-light text-[#94a3b8] hover:bg-[#132742] hover:text-white transition-colors w-full text-left"
+          onClick={() => { onCloseMobile?.(); onOpenPolicies?.(); }}
+          className={`flex items-center gap-3 px-4 py-3 rounded-lg text-sm w-full text-left transition-colors relative ${
+            policiesOpen
+              ? "bg-[#132742] text-white font-bold before:absolute before:left-0 before:top-2 before:bottom-2 before:w-1 before:bg-[#00a86b] before:rounded-r-md"
+              : "font-light text-[#94a3b8] hover:bg-[#132742] hover:text-white"
+          }`}
         >
           <FileText size={18} />
           <span>My Policies</span>
@@ -52,8 +56,12 @@ export default function Sidebar({ isOpenMobile, onCloseMobile }: Props) {
           <Database size={18} />
           <span>Knowledge Base</span>
         </Link>
-        <Link href="/" className="flex items-center justify-between px-4 py-3 mt-2 rounded-lg bg-[#132742] text-white relative before:absolute before:left-0 before:top-2 before:bottom-2 before:w-1 before:bg-[#00a86b] before:rounded-r-md cursor-pointer">
-          <div className="flex items-center gap-3 text-sm font-bold tracking-[-0.01em]">
+        <Link href="/" onClick={() => { onCloseMobile?.(); onClosePolicies?.(); }} className={`flex items-center justify-between px-4 py-3 mt-2 rounded-lg relative transition-colors ${
+            !policiesOpen
+              ? "bg-[#132742] text-white before:absolute before:left-0 before:top-2 before:bottom-2 before:w-1 before:bg-[#00a86b] before:rounded-r-md"
+              : "text-[#94a3b8] hover:bg-[#132742] hover:text-white"
+          }`}>
+          <div className={`flex items-center gap-3 text-sm font-bold tracking-[-0.01em] ${!policiesOpen ? "text-white" : "text-[#94a3b8]"}`}>
             <MessageCircle size={18} />
             <span>Buddy</span>
           </div>
@@ -101,8 +109,6 @@ export default function Sidebar({ isOpenMobile, onCloseMobile }: Props) {
           </aside>
         </div>
       )}
-
-      <PoliciesPanel isOpen={policiesOpen} onClose={() => setPoliciesOpen(false)} />
     </>
   );
 }

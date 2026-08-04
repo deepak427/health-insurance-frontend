@@ -9,6 +9,7 @@ import ConversationDetails from "./ConversationDetails";
 import Message from "./Message";
 import ChatInput from "./ChatInput";
 import UsernameModal from "./UsernameModal";
+import PoliciesPanel from "./PoliciesPanel";
 import { AlertCircle, Search, Phone, MoreVertical, ShieldCheck, Bell, ChevronDown, Menu, Users, Info } from "lucide-react";
 
 export default function ChatWindow() {
@@ -34,6 +35,7 @@ export default function ChatWindow() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [listOpen, setListOpen] = useState(false);
   const [detailsOpen, setDetailsOpen] = useState(false);
+  const [policiesOpen, setPoliciesOpen] = useState(false);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -105,10 +107,10 @@ export default function ChatWindow() {
   return (
     <div className="flex h-full min-h-0 w-full bg-white relative">
       {/* Column 1: Navy Sidebar */}
-      <Sidebar isOpenMobile={sidebarOpen} onCloseMobile={() => setSidebarOpen(false)} />
+      <Sidebar isOpenMobile={sidebarOpen} onCloseMobile={() => setSidebarOpen(false)} onOpenPolicies={() => setPoliciesOpen(true)} onClosePolicies={() => setPoliciesOpen(false)} policiesOpen={policiesOpen} />
 
       {/* Columns 2+3+4 wrapper with shared top bar */}
-      <div className="flex flex-col flex-1 min-w-0 h-full">
+      <div className="flex flex-col flex-1 min-w-0 h-full relative">
 
         {/* Top bar: spans col 2+3+4 — Buddy on left, bell+avatar on right */}
         <div className="flex items-center justify-between px-3 md:px-5 py-3 border-b border-[#e5e7eb] bg-white shrink-0">
@@ -159,7 +161,7 @@ export default function ChatWindow() {
       />
 
       {/* Column 3: Main Chat Stream */}
-      <div className="flex flex-col flex-1 min-w-0 h-full bg-white">
+      <div className="flex flex-col flex-1 min-w-0 h-full bg-white relative">
         {/* Chat Header */}
         <header className="flex items-center justify-between px-3 md:px-6 py-3 md:py-4 border-b border-[#e5e7eb]">
           <div className="flex items-center gap-2 md:gap-3">
@@ -230,6 +232,7 @@ export default function ChatWindow() {
         <div className="shrink-0">
           <ChatInput onSend={handleSend} disabled={loading} />
         </div>
+
       </div>
 
       {/* Column 4: Conversation Details Panel */}
@@ -238,6 +241,10 @@ export default function ChatWindow() {
         onCloseMobile={() => setDetailsOpen(false)} 
       />
         </div>{/* end bottom row */}
+
+        {/* Policies overlay — covers full col 2+3+4 area */}
+        <PoliciesPanel isOpen={policiesOpen} onClose={() => setPoliciesOpen(false)} />
+
       </div>{/* end col 2+3+4 wrapper */}
     </div>
   );
