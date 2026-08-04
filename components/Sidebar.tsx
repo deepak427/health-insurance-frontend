@@ -1,7 +1,9 @@
 "use client";
+import { useState } from "react";
 import { FilePlus, FileText, IndianRupee, BarChart3, MessageCircle, HeadphonesIcon, Database, LogOut } from "lucide-react";
 import Link from "next/link";
 import { useChatContext } from "@/context/ChatContext";
+import PoliciesPanel from "./PoliciesPanel";
 
 interface Props {
   isOpenMobile?: boolean;
@@ -10,6 +12,7 @@ interface Props {
 
 export default function Sidebar({ isOpenMobile, onCloseMobile }: Props) {
   const { logout, username } = useChatContext();
+  const [policiesOpen, setPoliciesOpen] = useState(false);
 
   const content = (
     <div className="flex flex-col h-full w-[220px] bg-[#0a192f] text-white">
@@ -30,10 +33,13 @@ export default function Sidebar({ isOpenMobile, onCloseMobile }: Props) {
           <FilePlus size={18} />
           <span>Create Policy</span>
         </Link>
-        <Link href="#" className="flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-light text-[#94a3b8] hover:bg-[#132742] hover:text-white transition-colors">
+        <button
+          onClick={() => setPoliciesOpen(true)}
+          className="flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-light text-[#94a3b8] hover:bg-[#132742] hover:text-white transition-colors w-full text-left"
+        >
           <FileText size={18} />
           <span>My Policies</span>
-        </Link>
+        </button>
         <Link href="#" className="flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-light text-[#94a3b8] hover:bg-[#132742] hover:text-white transition-colors">
           <IndianRupee size={18} />
           <span>Claims</span>
@@ -95,6 +101,8 @@ export default function Sidebar({ isOpenMobile, onCloseMobile }: Props) {
           </aside>
         </div>
       )}
+
+      <PoliciesPanel isOpen={policiesOpen} onClose={() => setPoliciesOpen(false)} />
     </>
   );
 }

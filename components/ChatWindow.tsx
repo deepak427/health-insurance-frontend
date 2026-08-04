@@ -212,7 +212,7 @@ export default function ChatWindow() {
                     <span className="text-xs font-light text-[#6b7280]">| Insurance AI</span>
                   </div>
                   <div className="bg-white border border-[#e5e7eb] rounded-lg px-4 py-3 shadow-sm max-w-[85%]">
-                    <p className="text-sm font-light text-[#1f2937]">Hi @{username}! How can I help you with your insurance today?</p>
+                    <p className="text-sm font-light text-[#1f2937]">Hey @{username}, how can I help you today?</p>
                   </div>
                   <span className="text-[10px] text-[#6b7280] mt-1 ml-1">Just now</span>
                 </div>

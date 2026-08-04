@@ -151,7 +151,30 @@ export async function saveData(key: DataKey, data: Record<string, unknown>): Pro
 }
 // ─────────────────────────────────────────────────────────────────────────────
 
-export async function* streamMessage(
+// ── hip-backend policy data ───────────────────────────────────────────────────
+export interface Policy {
+  _id: string;
+  name: string;
+  companyId: string;
+}
+
+export interface Company {
+  _id: string;
+  name: string;
+}
+
+export async function fetchPolicies(): Promise<Policy[]> {
+  const res = await fetch(`${BASE_URL}/policies`);
+  if (!res.ok) throw new Error("Failed to load policies");
+  return res.json();
+}
+
+export async function fetchCompanies(): Promise<Company[]> {
+  const res = await fetch(`${BASE_URL}/companies`);
+  if (!res.ok) throw new Error("Failed to load companies");
+  return res.json();
+}
+// ─────────────────────────────────────────────────────────────────────────────
   userId: string,
   sessionId: string,
   text: string,
