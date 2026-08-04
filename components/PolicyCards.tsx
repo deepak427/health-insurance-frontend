@@ -18,7 +18,7 @@ interface Props {
 
 export default function PolicyCards({ cards, onChoose }: Props) {
   return (
-    <div className="flex flex-col gap-2 mt-1">
+    <>
       {cards.map((card, i) => (
         <div
           key={i}
@@ -79,6 +79,6 @@ export default function PolicyCards({ cards, onChoose }: Props) {
           </div>
         </div>
       ))}
-    </div>
+    </>
   );
 }

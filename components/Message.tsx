@@ -52,20 +52,20 @@ export default function Message({ msg, userId, sessionId, onSend }: Props) {
         </div>
       )}
 
-      <div className={`flex flex-col ${isUser ? "items-end" : "items-start"} max-w-[75%]`}>
+      <div className={`flex flex-col ${isUser ? "items-end" : "items-start"}`} style={{ maxWidth: cards.length > 0 ? "90%" : "75%" }}>
         {/* Author Label */}
         {!isUser && (
           <span className="text-xs font-semibold text-[#00a86b] mb-1 ml-1">Operations Team</span>
         )}
 
-        {/* Bubble */}
+        {/* Bubble — text only, no cards inside */}
         <div
           className={`px-3 py-2 text-sm relative ${
             isUser
               ? "bg-[#dcf8c6] text-[#1f2937] rounded-[10px] rounded-tr-[2px] shadow-sm"
               : "bg-white text-[#1f2937] rounded-[10px] rounded-tl-[2px] shadow-sm"
           }`}
-          style={{ wordBreak: "break-word" }}
+          style={{ wordBreak: "break-word", maxWidth: cards.length > 0 ? "100%" : undefined }}
         >
           {isTyping ? (
             <div className="flex items-center gap-1.5 py-1 px-1">
@@ -120,14 +120,6 @@ export default function Message({ msg, userId, sessionId, onSend }: Props) {
                   </ReactMarkdown>
                 </div>
               )}
-
-              {/* Policy Cards */}
-              {cards.length > 0 && onSend && (
-                <PolicyCards cards={cards} onChoose={onSend} />
-              )}
-              {cards.length > 0 && !onSend && (
-                <PolicyCards cards={cards} onChoose={() => {}} />
-              )}
             </>
           )}
 
@@ -170,6 +162,16 @@ export default function Message({ msg, userId, sessionId, onSend }: Props) {
             )}
           </div>
         </div>
+
+        {/* Policy Cards — outside the bubble, side by side */}
+        {cards.length > 0 && (
+          <div className="mt-2 flex flex-row gap-3 flex-wrap">
+            <PolicyCards
+              cards={cards}
+              onChoose={onSend ?? (() => {})}
+            />
+          </div>
+        )}
       </div>
     </div>
   );
