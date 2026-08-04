@@ -1,22 +1,27 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { ShieldCheck, ArrowLeft, Save, RefreshCw, CheckCircle, AlertCircle, Database, Code2 } from "lucide-react";
+import { ArrowLeft, Save, RefreshCw, CheckCircle, AlertCircle, Database, Code2, MessageSquareText } from "lucide-react";
 import Link from "next/link";
 import { fetchData, saveData, DataKey } from "@/lib/api";
 
-const TABS: { key: DataKey; label: string; description: string }[] = [
+const TABS: { key: DataKey; label: string; description: string; isPrompt?: boolean }[] = [
   { key: "faqs", label: "Insurance FAQs", description: "Standard Q&A repository for policy inquiries." },
   { key: "claims", label: "Claim Filing Guides", description: "Step-by-step workflow for health and auto claims." },
   { key: "premium_config", label: "Premium Rate Config", description: "Rate multipliers and pricing tables for premium estimates." },
+  { key: "response_prompt", label: "Response Style", description: "Customize how the agent formats and tones its responses.", isPrompt: true },
 ];
 
 export default function DataPage() {
   const [activeTab, setActiveTab] = useState<DataKey>("faqs");
   const [editorValue, setEditorValue] = useState("");
+  const [promptValue, setPromptValue] = useState("");
   const [loaded, setLoaded] = useState(false);
   const [status, setStatus] = useState<"idle" | "loading" | "saving" | "saved" | "error">("idle");
   const [errorMsg, setErrorMsg] = useState("");
+
+  const activeInfo = TABS.find((t) => t.key === activeTab)!;
+  const isPromptTab = activeInfo?.isPrompt;
 
   async function loadTab(key: DataKey) {
     setActiveTab(key);
@@ -25,7 +30,11 @@ export default function DataPage() {
     setErrorMsg("");
     try {
       const data = await fetchData(key);
-      setEditorValue(JSON.stringify(data, null, 2));
+      if (key === "response_prompt") {
+        setPromptValue((data as { prompt?: string }).prompt ?? "");
+      } else {
+        setEditorValue(JSON.stringify(data, null, 2));
+      }
       setLoaded(true);
       setStatus("idle");
     } catch (e) {
@@ -38,8 +47,12 @@ export default function DataPage() {
     setStatus("saving");
     setErrorMsg("");
     try {
-      const parsed = JSON.parse(editorValue);
-      await saveData(activeTab, parsed);
+      if (isPromptTab) {
+        await saveData(activeTab, { prompt: promptValue });
+      } else {
+        const parsed = JSON.parse(editorValue);
+        await saveData(activeTab, parsed);
+      }
       setStatus("saved");
       setTimeout(() => setStatus("idle"), 2500);
     } catch (e) {
@@ -51,8 +64,6 @@ export default function DataPage() {
   useEffect(() => {
     loadTab("faqs");
   }, []);
-
-  const activeInfo = TABS.find((t) => t.key === activeTab)!;
 
   return (
     <main className="h-screen w-screen flex flex-col bg-[#f4f7f9] overflow-hidden">
@@ -94,7 +105,7 @@ export default function DataPage() {
                     : "text-[#94a3b8] hover:bg-[#132742] hover:text-white"
                 }`}
               >
-                <Database size={16} />
+                {tab.isPrompt ? <MessageSquareText size={16} /> : <Database size={16} />}
                 <span className="truncate">{tab.label}</span>
               </button>
             ))}
@@ -157,6 +168,28 @@ export default function DataPage() {
               <div className="flex flex-col items-center justify-center h-full gap-2 text-[#6b7280] text-sm font-semibold">
                 <RefreshCw size={24} className="animate-spin text-[#00a86b]" />
                 <span>Loading dataset...</span>
+              </div>
+            ) : isPromptTab ? (
+              <div className="flex-1 flex flex-col gap-3">
+                <p className="text-xs text-[#6b7280] leading-relaxed">
+                  Write plain instructions for how the agent should format and tone its replies.
+                  For example: <span className="italic">&quot;Keep answers short. Use bullet points. Be friendly.&quot;</span>
+                  <br />
+                  This takes priority over the default formatting. Leave blank to use defaults.
+                </p>
+                <div className="flex-1 flex flex-col bg-white border border-[#e5e7eb] rounded-lg overflow-hidden shadow-sm">
+                  <div className="flex items-center gap-2 px-4 py-2 bg-gray-50 border-b border-[#e5e7eb] text-xs font-semibold text-[#6b7280]">
+                    <MessageSquareText size={14} className="text-[#00a86b]" />
+                    Response Style Instructions
+                  </div>
+                  <textarea
+                    value={promptValue}
+                    onChange={(e) => setPromptValue(e.target.value)}
+                    placeholder="e.g. Keep responses short and friendly. Use bullet points and markdown headers. Talk like a real person, not a formal document."
+                    spellCheck
+                    className="w-full flex-1 p-4 text-sm text-[#1f2937] resize-none outline-none leading-relaxed min-h-[240px]"
+                  />
+                </div>
               </div>
             ) : (
               <div className="flex-1 flex flex-col bg-white border border-[#e5e7eb] rounded-lg overflow-hidden shadow-sm">

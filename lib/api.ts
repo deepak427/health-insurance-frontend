@@ -133,7 +133,7 @@ export function sessionPreview(events: ADKEvent[]): string {
 // ─────────────────────────────────────────────────────────────────────────────
 
 // ── Dynamic data API ──────────────────────────────────────────────────────────
-export type DataKey = "faqs" | "claims" | "premium_config";
+export type DataKey = "faqs" | "claims" | "premium_config" | "response_prompt";
 
 export async function fetchData(key: DataKey): Promise<Record<string, unknown>> {
   const res = await fetch(`${BASE_URL}/data/${key}`);
