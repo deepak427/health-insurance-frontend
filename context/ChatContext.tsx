@@ -1,7 +1,7 @@
 "use client";
 
 import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from "react";
-import { createSession, listSessions, getSession, deleteSession, eventsToMessages, sessionPreview, ADKSession } from "@/lib/api";
+import { createSession, listSessions, getSession, deleteSession, eventsToMessages, sessionPreview, ADKSession, fetchWallet } from "@/lib/api";
 import { getUsername, getOrCreateSession, newSession, setActiveSession } from "@/lib/session";
 import type { Msg } from "@/components/Message";
 
@@ -20,6 +20,9 @@ interface ChatContextValue {
   loading: boolean;
   error: string | null;
   sessions: ChatSessionMeta[];
+  walletBalance: number;
+  setWalletBalance: (v: number) => void;
+  refreshWallet: () => Promise<void>;
   setMessages: React.Dispatch<React.SetStateAction<Msg[]>>;
   setLoading: (v: boolean) => void;
   setError: (v: string | null) => void;
@@ -72,6 +75,18 @@ export function ChatProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [sessions, setSessions] = useState<ChatSessionMeta[]>([]);
+  const [walletBalance, setWalletBalance] = useState<number>(0);
+
+  const refreshWallet = useCallback(async (uid?: string) => {
+    const id = uid || userId;
+    if (!id) return;
+    try {
+      const w = await fetchWallet(id);
+      setWalletBalance(w.balance);
+    } catch {
+      // ignore
+    }
+  }, [userId]);
 
   const refreshSessionList = useCallback(async (uid?: string) => {
     const id = uid || userId;
@@ -135,6 +150,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
         }
       }).catch(() => setSessionReadyRaw(null));
       refreshSessionList(uid);
+      refreshWallet(uid);
     }
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -147,7 +163,8 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     localStorage.setItem("hip_sessionId", sid);
     setSessionReadyRaw(null);
     refreshSessionList(name);
-  }, [refreshSessionList]);
+    refreshWallet(name);
+  }, [refreshSessionList, refreshWallet]);
 
   const logout = useCallback(() => {
     localStorage.removeItem("hip_username");
@@ -220,6 +237,9 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       loading,
       error,
       sessions,
+      walletBalance,
+      setWalletBalance,
+      refreshWallet,
       setMessages,
       setLoading,
       setError,

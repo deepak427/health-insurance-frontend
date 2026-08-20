@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useCallback, useState } from "react";
-import { streamMessage, uploadArtifact } from "@/lib/api";
+import { streamMessage, uploadArtifact, updateWallet, topupWallet } from "@/lib/api";
 import { useChatContext, savePreview } from "@/context/ChatContext";
 import Sidebar from "./Sidebar";
 import ConversationList from "./ConversationList";
@@ -10,7 +10,7 @@ import Message from "./Message";
 import ChatInput from "./ChatInput";
 import UsernameModal from "./UsernameModal";
 import PoliciesPanel from "./PoliciesPanel";
-import { AlertCircle, Search, Phone, MoreVertical, ShieldCheck, Bell, ChevronDown, Menu, Users, Info } from "lucide-react";
+import { AlertCircle, Search, Phone, MoreVertical, ShieldCheck, Bell, ChevronDown, Menu, Users, Info, Coins, Plus, X, Check, Loader2 } from "lucide-react";
 
 export default function ChatWindow() {
   const {
@@ -20,6 +20,9 @@ export default function ChatWindow() {
     messages,
     loading,
     error,
+    walletBalance,
+    refreshWallet,
+    setWalletBalance,
     setMessages,
     setLoading,
     setError,
@@ -37,9 +40,45 @@ export default function ChatWindow() {
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [policiesOpen, setPoliciesOpen] = useState(false);
 
+  // Wallet top-up modal state
+  const [showWalletModal, setShowWalletModal] = useState(false);
+  const [customAmount, setCustomAmount] = useState("");
+  const [walletOpLoading, setWalletOpLoading] = useState(false);
+  const [walletSuccessMsg, setWalletSuccessMsg] = useState("");
+
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, loading]);
+
+  async function handleAddCredits(amount: number) {
+    if (!userId || amount <= 0) return;
+    setWalletOpLoading(true);
+    setWalletSuccessMsg("");
+    try {
+      const res = await topupWallet(userId, amount);
+      setWalletBalance(res.balance);
+      setWalletSuccessMsg(`Added ₹${amount.toLocaleString()} credits!`);
+      setTimeout(() => setWalletSuccessMsg(""), 2500);
+    } catch (e) {
+      console.error(e);
+    }
+    setWalletOpLoading(false);
+  }
+
+  async function handleSetExactCredits(balance: number) {
+    if (!userId || balance < 0) return;
+    setWalletOpLoading(true);
+    setWalletSuccessMsg("");
+    try {
+      const res = await updateWallet(userId, balance);
+      setWalletBalance(res.balance);
+      setWalletSuccessMsg(`Balance updated to ₹${balance.toLocaleString()}!`);
+      setTimeout(() => setWalletSuccessMsg(""), 2500);
+    } catch (e) {
+      console.error(e);
+    }
+    setWalletOpLoading(false);
+  }
 
   const handleSend = useCallback(async (
     text: string,
@@ -99,6 +138,7 @@ export default function ChatWindow() {
 
       if (isFirstMessage) savePreview(sessionId, text);
       await refreshSessionList();
+      await refreshWallet();
     } catch (err) {
       setMessages((prev) => {
         const last = prev[prev.length - 1];
@@ -108,8 +148,9 @@ export default function ChatWindow() {
       setError(err instanceof Error ? err.message : "An error occurred.");
     } finally {
       setLoading(false);
+      await refreshWallet();
     }
-  }, [loading, ensureSession, messages.length, userId, sessionId, setMessages, setLoading, setError, refreshSessionList]);
+  }, [loading, ensureSession, messages.length, userId, sessionId, setMessages, setLoading, setError, refreshSessionList, refreshWallet]);
 
   // Show username modal if not logged in
   if (!username) {
@@ -124,7 +165,7 @@ export default function ChatWindow() {
       {/* Columns 2+3+4 wrapper with shared top bar */}
       <div className="flex flex-col flex-1 min-w-0 h-full relative">
 
-        {/* Top bar: spans col 2+3+4 — Buddy on left, bell+avatar on right */}
+        {/* Top bar: spans col 2+3+4 — Buddy on left, wallet + bell + avatar on right */}
         <div className="flex items-center justify-between px-3 md:px-5 py-3 border-b border-[#e5e7eb] bg-white shrink-0">
           <div className="flex items-center gap-3">
             <button className="md:hidden p-1.5 -ml-1 text-[#6b7280] hover:bg-gray-100 rounded-md" onClick={() => setSidebarOpen(true)}>
@@ -137,13 +178,31 @@ export default function ChatWindow() {
               <circle cx="18" cy="14" r="2.5" fill="white"/>
               <circle cx="25" cy="14" r="2.5" fill="white"/>
             </svg>
-              <div>
+            <div>
               <h2 className="font-black text-[#1f2937] text-[20px] leading-none tracking-[-0.03em]">Buddy</h2>
-                <p className="text-[12px] text-[#6b7280] font-light mt-0.5">Travel Insurance Communication Hub</p>
-              </div>
+              <p className="text-[12px] text-[#6b7280] font-light mt-0.5">Travel Insurance Communication Hub</p>
+            </div>
           </div>
 
-          <div className="flex items-center gap-3 md:gap-4">
+          <div className="flex items-center gap-2.5 md:gap-4">
+            {/* Wallet Credits Pill */}
+            <button
+              onClick={() => setShowWalletModal(true)}
+              className="flex items-center gap-2 px-2.5 sm:px-3 py-1.5 rounded-lg bg-[#ecfdf5] border border-[#a7f3d0] hover:bg-[#d1fae5] transition-all text-[#065f46] shadow-sm hover:shadow group cursor-pointer"
+              title="Click to view or edit credits"
+            >
+              <div className="w-6 h-6 rounded-full bg-[#00a86b] flex items-center justify-center text-white shrink-0 shadow-xs">
+                <Coins size={13} />
+              </div>
+              <div className="flex flex-col items-start leading-none text-left">
+                <span className="text-[9px] text-[#059669] font-medium uppercase tracking-wide">Wallet Credits</span>
+                <span className="text-[13px] font-bold text-[#065f46]">₹{walletBalance.toLocaleString()}</span>
+              </div>
+              <span className="hidden sm:inline-flex text-[10px] bg-[#00a86b] text-white px-1.5 py-0.5 rounded font-semibold ml-0.5 group-hover:scale-105 transition-transform">
+                + Top up
+              </span>
+            </button>
+
             <div className="relative">
               <Bell size={20} className="text-[#6b7280]" />
               <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center">3</span>
@@ -160,6 +219,110 @@ export default function ChatWindow() {
             </div>
           </div>
         </div>
+
+        {/* ── Wallet Management Modal ── */}
+        {showWalletModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 animate-in fade-in duration-150">
+            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden border border-[#e5e7eb]">
+              {/* Modal Header */}
+              <div className="flex items-center justify-between px-5 py-4 bg-[#0a192f] text-white">
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-lg bg-[#00a86b] flex items-center justify-center text-white">
+                    <Coins size={16} />
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-sm">Agent Wallet Credits</h3>
+                    <p className="text-[10px] text-gray-300">Used automatically to book policies</p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setShowWalletModal(false)}
+                  className="text-gray-300 hover:text-white p-1 rounded-md"
+                >
+                  <X size={18} />
+                </button>
+              </div>
+
+              <div className="p-5 flex flex-col gap-4">
+                {/* Current Balance Card */}
+                <div className="bg-[#f0fdf4] border border-[#bbf7d0] rounded-xl p-4 flex items-center justify-between">
+                  <div>
+                    <p className="text-xs text-[#166534] font-medium">Available Balance</p>
+                    <p className="text-2xl font-black text-[#15803d]">₹{walletBalance.toLocaleString()}</p>
+                  </div>
+                  <span className="text-[11px] px-2 py-1 bg-[#dcfce7] text-[#15803d] font-bold rounded-md">
+                    {walletBalance > 0 ? "Active" : "Low Balance"}
+                  </span>
+                </div>
+
+                {walletSuccessMsg && (
+                  <div className="flex items-center gap-2 text-xs font-semibold text-[#15803d] bg-[#dcfce7] p-2.5 rounded-lg border border-[#86efac]">
+                    <Check size={14} />
+                    <span>{walletSuccessMsg}</span>
+                  </div>
+                )}
+
+                {/* Quick Top-up Buttons */}
+                <div>
+                  <p className="text-xs font-bold text-[#1f2937] mb-2">Quick Add Credits</p>
+                  <div className="grid grid-cols-3 gap-2">
+                    {[1000, 5000, 10000].map((amt) => (
+                      <button
+                        key={amt}
+                        onClick={() => handleAddCredits(amt)}
+                        disabled={walletOpLoading}
+                        className="py-2 px-2 text-xs font-bold rounded-lg border border-[#e5e7eb] bg-[#f8fafc] hover:bg-[#00a86b] hover:text-white hover:border-[#00a86b] transition-all disabled:opacity-50"
+                      >
+                        +₹{amt.toLocaleString()}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Custom Amount / Set Balance */}
+                <div className="flex flex-col gap-2 pt-2 border-t border-[#e5e7eb]">
+                  <p className="text-xs font-bold text-[#1f2937]">Set Custom Balance</p>
+                  <div className="flex gap-2">
+                    <input
+                      type="number"
+                      placeholder="Enter amount (e.g. 5000)"
+                      value={customAmount}
+                      onChange={(e) => setCustomAmount(e.target.value)}
+                      className="flex-1 px-3 py-2 text-xs bg-[#f8fafc] border border-[#e5e7eb] rounded-lg outline-none focus:border-[#00a86b] transition-colors"
+                    />
+                    <button
+                      onClick={() => {
+                        const amt = parseFloat(customAmount);
+                        if (!isNaN(amt)) {
+                          handleSetExactCredits(amt);
+                          setCustomAmount("");
+                        }
+                      }}
+                      disabled={walletOpLoading || !customAmount}
+                      className="px-3 py-2 text-xs font-bold rounded-lg bg-[#00a86b] text-white hover:bg-[#00925d] transition-colors disabled:opacity-40 flex items-center gap-1 shrink-0"
+                    >
+                      {walletOpLoading && <Loader2 size={12} className="animate-spin" />}
+                      Set
+                    </button>
+                  </div>
+                  <p className="text-[10px] text-[#9ca3af]">
+                    Each policy booking automatically deducts its premium in credits from your wallet.
+                  </p>
+                </div>
+              </div>
+
+              {/* Modal Footer */}
+              <div className="px-5 py-3 bg-[#f8fafc] border-t border-[#e5e7eb] flex justify-end">
+                <button
+                  onClick={() => setShowWalletModal(false)}
+                  className="px-4 py-1.5 text-xs font-bold text-[#374151] hover:bg-gray-200 rounded-lg transition-colors"
+                >
+                  Done
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Bottom row: col 2 + col 3 + col 4 */}
         <div className="flex flex-1 min-h-0 relative">

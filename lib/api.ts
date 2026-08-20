@@ -50,6 +50,38 @@ export interface ADKEvent {
   timestamp: number;
 }
 
+export interface WalletInfo {
+  user_id: string;
+  balance: number;
+  updated_at: string;
+}
+
+export async function fetchWallet(userId: string): Promise<WalletInfo> {
+  const res = await fetch(`${BASE_URL}/wallet/${userId}`);
+  if (!res.ok) return { user_id: userId, balance: 0, updated_at: "" };
+  return res.json();
+}
+
+export async function updateWallet(userId: string, balance: number): Promise<WalletInfo> {
+  const res = await fetch(`${BASE_URL}/wallet/${userId}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ balance }),
+  });
+  if (!res.ok) throw new Error("Failed to update wallet balance");
+  return res.json();
+}
+
+export async function topupWallet(userId: string, amount: number): Promise<WalletInfo> {
+  const res = await fetch(`${BASE_URL}/wallet/${userId}/topup`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ amount }),
+  });
+  if (!res.ok) throw new Error("Failed to top up wallet balance");
+  return res.json();
+}
+
 export interface ADKSession {
   id: string;
   appName: string;
