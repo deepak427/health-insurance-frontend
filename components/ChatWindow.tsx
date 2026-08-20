@@ -91,10 +91,11 @@ export default function ChatWindow() {
     if (!ready) return;
 
     const isFirstMessage = messages.length === 0;
+    const userMessageText = file ? `${text}\n📎 ${file.name}` : text;
 
     setMessages((prev) => [...prev, { 
       role: "user", 
-      text: file ? `${text}\n📎 ${file.name}` : text,
+      text: userMessageText,
       userAttachment: file ? { name: file.name, mimeType: file.mimeType, data: file.data } : undefined,
     }]);
     setLoading(true);
@@ -112,7 +113,7 @@ export default function ChatWindow() {
 
       const inlineData = file ? { mimeType: file.mimeType, data: file.data } : undefined;
 
-      for await (const chunk of streamMessage(userId, sessionId, text, inlineData)) {
+      for await (const chunk of streamMessage(userId, sessionId, userMessageText, inlineData)) {
         setMessages((prev) => {
           const updated = [...prev];
           const last = updated[updated.length - 1];

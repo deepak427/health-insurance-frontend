@@ -161,25 +161,43 @@ export function eventsToMessages(events: ADKEvent[]): ChatMessage[] {
     const parts = ev.content?.parts;
     const text = parts?.find((p: Record<string, unknown>) => typeof p.text === "string")?.text as string | undefined;
 
-    if (ev.content?.role === "user" && text) {
+    if (ev.content?.role === "user") {
       // Skip tool/function response events — they aren't real user messages
       const isFunctionResponse = parts?.some((p: Record<string, unknown>) => "functionResponse" in p);
       if (!isFunctionResponse) {
-        // Extract attachment name from the 📎 marker if present
-        const attachMatch = text.match(/\n?📎 (.+)$/);
-        let userAttachment: { name: string; mimeType: string } | undefined = undefined;
+        // Check for inlineData in parts
+        const inlinePart = parts?.find(
+          (p: Record<string, unknown>) => "inlineData" in p || "inline_data" in p
+        ) as Record<string, { mimeType?: string; mime_type?: string; data?: string }> | undefined;
+        const inlineObj = inlinePart?.inlineData || inlinePart?.inline_data;
+
+        // Extract attachment name from the 📎 marker if present in text
+        const attachMatch = text ? text.match(/\n?📎 (.+)$/) : null;
+        let userAttachment: { name: string; mimeType: string; data?: string } | undefined = undefined;
+
         if (attachMatch) {
           const name = attachMatch[1].trim();
           const ext = name.split(".").pop()?.toLowerCase() || "";
-          let mimeType = "application/octet-stream";
-          if (["png", "jpg", "jpeg", "webp", "gif", "bmp"].includes(ext)) {
-            mimeType = `image/${ext === "jpg" ? "jpeg" : ext}`;
-          } else if (ext === "pdf") {
-            mimeType = "application/pdf";
+          let mimeType = inlineObj?.mimeType || inlineObj?.mime_type || "application/octet-stream";
+          if (mimeType === "application/octet-stream") {
+            if (["png", "jpg", "jpeg", "webp", "gif", "bmp"].includes(ext)) {
+              mimeType = `image/${ext === "jpg" ? "jpeg" : ext}`;
+            } else if (ext === "pdf") {
+              mimeType = "application/pdf";
+            }
           }
-          userAttachment = { name, mimeType };
+          userAttachment = { name, mimeType, data: inlineObj?.data };
+        } else if (inlineObj) {
+          const mimeType = inlineObj.mimeType || inlineObj.mime_type || "application/octet-stream";
+          const isImage = mimeType.startsWith("image/");
+          const name = isImage ? "image.png" : "document.pdf";
+          userAttachment = { name, mimeType, data: inlineObj.data };
         }
-        msgs.push({ role: "user", text, userAttachment });
+
+        const msgText = text || (userAttachment ? `📎 ${userAttachment.name}` : "");
+        if (msgText || userAttachment) {
+          msgs.push({ role: "user", text: msgText, userAttachment });
+        }
       }
     } else if (ev.content?.role === "model" && text) {
       // Flush any pending artifacts onto this agent message
@@ -220,7 +238,10 @@ export function sessionPreview(events: ADKEvent[]): string {
       const isFunctionResponse = ev.content.parts?.some((p: Record<string, unknown>) => p.functionResponse);
       if (isFunctionResponse) continue;
       const text = ev.content.parts?.find((p) => p.text)?.text;
-      if (text) return text.slice(0, 60) + (text.length > 60 ? "…" : "");
+      if (text) {
+        const clean = text.replace(/\n?📎 .+$/, "").trim();
+        return (clean || "Conversation").slice(0, 60) + (clean.length > 60 ? "…" : "");
+      }
     }
   }
   return "New conversation";
