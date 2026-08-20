@@ -4,7 +4,7 @@ import {
   X, Shield, RefreshCw, Search, FileText, Calendar, Users,
   DollarSign, MapPin, Pencil, Trash2, AlertTriangle, Check,
 } from "lucide-react";
-import { fetchBookings, updateBooking, cancelBooking, Booking, buildBookingDownloadUrl } from "@/lib/api";
+import { fetchBookings, updateBooking, cancelBooking, Booking, buildBookingDownloadUrl, BASE_URL, APP_NAME } from "@/lib/api";
 import { getOrCreateSession } from "@/lib/session";
 
 interface Props {
@@ -13,6 +13,8 @@ interface Props {
 }
 
 interface EditForm {
+  policy_name: string;
+  insurer: string;
   destination: string;
   travel_dates: string;
   num_adults: number;
@@ -75,6 +77,8 @@ export default function PoliciesPanel({ isOpen, onClose }: Props) {
 
   function openEdit(booking: Booking) {
     setEditForm({
+      policy_name: booking.policy_name,
+      insurer: booking.insurer,
       destination: booking.destination,
       travel_dates: booking.travel_dates,
       num_adults: booking.num_adults,
@@ -250,19 +254,19 @@ export default function PoliciesPanel({ isOpen, onClose }: Props) {
                   </div>
 
                   {/* Details grid */}
-                  <div className="grid grid-cols-2 gap-3 p-3">
+                  <div className="grid grid-cols-2 gap-x-3 gap-y-2.5 p-3">
                     <div className="flex items-start gap-2">
                       <MapPin size={12} className="text-[#9ca3af] mt-0.5 shrink-0" />
                       <div>
                         <p className="text-[10px] text-[#9ca3af]">Destination</p>
-                        <p className="text-xs font-medium text-[#1f2937]">{booking.destination}</p>
+                        <p className="text-xs font-medium text-[#1f2937]">{booking.destination || "—"}</p>
                       </div>
                     </div>
                     <div className="flex items-start gap-2">
                       <Calendar size={12} className="text-[#9ca3af] mt-0.5 shrink-0" />
                       <div>
                         <p className="text-[10px] text-[#9ca3af]">Travel Dates</p>
-                        <p className="text-xs font-medium text-[#1f2937]">{booking.travel_dates}</p>
+                        <p className="text-xs font-medium text-[#1f2937]">{booking.travel_dates || "—"}</p>
                       </div>
                     </div>
                     <div className="flex items-start gap-2">
@@ -279,34 +283,87 @@ export default function PoliciesPanel({ isOpen, onClose }: Props) {
                       <DollarSign size={12} className="text-[#9ca3af] mt-0.5 shrink-0" />
                       <div>
                         <p className="text-[10px] text-[#9ca3af]">Premium</p>
-                        <p className="text-xs font-bold text-[#00a86b]">{booking.premium}</p>
+                        <p className="text-xs font-bold text-[#00a86b]">{booking.premium || "—"}</p>
                       </div>
                     </div>
+                    {booking.sum_insured && (
+                      <div className="flex items-start gap-2">
+                        <Shield size={12} className="text-[#9ca3af] mt-0.5 shrink-0" />
+                        <div>
+                          <p className="text-[10px] text-[#9ca3af]">Sum Insured</p>
+                          <p className="text-xs font-medium text-[#1f2937]">{booking.sum_insured}</p>
+                        </div>
+                      </div>
+                    )}
+                    {booking.traveller_ages && (
+                      <div className="flex items-start gap-2">
+                        <Users size={12} className="text-[#9ca3af] mt-0.5 shrink-0" />
+                        <div>
+                          <p className="text-[10px] text-[#9ca3af]">Ages</p>
+                          <p className="text-xs font-medium text-[#1f2937]">{booking.traveller_ages}</p>
+                        </div>
+                      </div>
+                    )}
                   </div>
 
                   {/* Artifacts */}
                   {booking.artifact_ids && booking.artifact_ids.length > 0 && (
                     <div className="p-3 border-t border-[#f1f5f9] bg-[#f8fafc]">
                       <p className="text-[10px] font-bold text-[#9ca3af] mb-2">Documents</p>
-                      <div className="flex items-center gap-2 flex-wrap">
+                      <div className="flex flex-col gap-2">
                         {booking.artifact_ids.map((filename) => {
                           const isUserDoc = !filename.startsWith("booking_") && !filename.startsWith("quotation_");
+                          const isImage = /\.(png|jpg|jpeg|gif|webp|bmp)$/i.test(filename);
+                          // Always use the session-agnostic fallback — it scans all sessions so it
+                          // works regardless of whether the file was saved in the current session.
+                          const href = `${BASE_URL}/download-artifact/${APP_NAME}/${booking.user_id}/${encodeURIComponent(filename)}`;
+                          const label = isUserDoc
+                            ? filename
+                            : filename
+                                .replace(/^booking_confirmation_/, "")
+                                .replace(/^quotation_comparison_/, "Comparison ")
+                                .replace(/_/g, " ")
+                                .replace(/\.pdf$/i, "")
+                                .trim();
+
+                          if (isImage && isUserDoc) {
+                            return (
+                              <a
+                                key={filename}
+                                href={href}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="flex items-center gap-2 bg-[#fffbeb] border border-[#fde68a] rounded-lg overflow-hidden hover:bg-[#fef9c3] transition-colors"
+                              >
+                                <img
+                                  src={href}
+                                  alt={filename}
+                                  className="w-12 h-12 object-cover shrink-0"
+                                  onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
+                                />
+                                <div className="flex-1 min-w-0 px-2 py-1">
+                                  <p className="text-[10px] font-semibold text-[#d97706] truncate">{label}</p>
+                                  <p className="text-[9px] text-[#6b7280]">Uploaded document · tap to open</p>
+                                </div>
+                                <FileText size={12} className="text-[#d97706] shrink-0 mr-2" />
+                              </a>
+                            );
+                          }
+
                           return (
                             <a
                               key={filename}
-                              href={buildBookingDownloadUrl(booking.user_id, booking.session_id, filename)}
+                              href={href}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className={`flex items-center gap-1.5 text-[10px] font-medium px-2 py-1 rounded border transition-colors ${
+                              className={`flex items-center gap-1.5 text-[10px] font-medium px-2 py-1.5 rounded border transition-colors ${
                                 isUserDoc
                                   ? "bg-[#fffbeb] border-[#fde68a] text-[#d97706] hover:bg-[#fef3c7]"
                                   : "bg-white border-[#e5e7eb] text-[#00a86b] hover:bg-[#f0fdf4] hover:border-[#00a86b]"
                               }`}
                             >
                               <FileText size={10} />
-                              {isUserDoc
-                                ? filename
-                                : filename.replace(/^booking_confirmation_/, "").replace(/_/g, " ").replace(".pdf", "").replace(/^quotation_comparison_/, "Comparison ").trim()}
+                              {label}
                             </a>
                           );
                         })}
@@ -344,6 +401,8 @@ export default function PoliciesPanel({ isOpen, onClose }: Props) {
 
             <div className="p-4 flex flex-col gap-3">
               {[
+                { label: "Policy Name", key: "policy_name" as const, type: "text" },
+                { label: "Insurer", key: "insurer" as const, type: "text" },
                 { label: "Destination", key: "destination" as const, type: "text" },
                 { label: "Travel Dates", key: "travel_dates" as const, type: "text" },
                 { label: "Traveller Ages", key: "traveller_ages" as const, type: "text" },

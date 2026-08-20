@@ -79,12 +79,16 @@ export default function Message({ msg, userId, sessionId, onSend }: Props) {
 
   const hasExtraContent = cards.length > 0 || bookingCards.length > 0 || bookingTable !== null;
 
-  // Build openable URL for user-uploaded attachment (available after agent processes it as artifact)
-  const attachmentUrl = userAttachmentName
-    ? (msg.userAttachment?.mimeType?.startsWith("image/") && msg.userAttachment?.data
-        ? `data:${msg.userAttachment.mimeType};base64,${msg.userAttachment.data}`
-        : buildDownloadUrl(userId, sessionId, userAttachmentName))
-    : null;
+  // Build openable URL for user-uploaded attachment
+  // Images: use blob URL from inline data (avoids about:blank#blocked with data: URLs)
+  // PDFs: use backend artifact endpoint (agent saves them)
+  // History reconstructed messages: no data available, skip the chip
+  const attachmentData = msg.userAttachment?.data;
+  const attachmentMime = msg.userAttachment?.mimeType ?? "";
+  const attachmentIsImage = attachmentMime.startsWith("image/");
+
+  // We only show the chip if we actually have data or it's a PDF that the backend might have
+  const showAttachmentChip = !!userAttachmentName && (!!attachmentData || !attachmentIsImage);
 
   return (
     <div className={`flex gap-2 my-1.5 w-full ${isUser ? "justify-end" : "justify-start"}`}>
@@ -194,23 +198,40 @@ export default function Message({ msg, userId, sessionId, onSend }: Props) {
           )}
 
           {/* User-uploaded attachment chip */}
-          {isUser && userAttachmentName && (
+          {isUser && showAttachmentChip && (
             <div className="mt-2 pt-2 border-t border-black/5">
-              <a
-                href={attachmentUrl ?? "#"}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-white/60 border border-black/10 hover:bg-white transition-colors"
-              >
-                <div className="w-6 h-6 bg-red-100 rounded flex items-center justify-center text-red-600 shrink-0">
-                  <FileText size={12} />
+              {attachmentIsImage && attachmentData ? (
+                // Render image inline — no external URL needed, no blocked popup
+                <div className="rounded-lg overflow-hidden border border-black/10" style={{ maxWidth: 220 }}>
+                  <img
+                    src={`data:${attachmentMime};base64,${attachmentData}`}
+                    alt={userAttachmentName ?? "attachment"}
+                    className="w-full h-auto object-contain block"
+                    style={{ maxHeight: 160 }}
+                  />
+                  <div className="flex items-center gap-1.5 px-2 py-1 bg-white/80">
+                    <FileText size={10} className="text-[#6b7280] shrink-0" />
+                    <p className="text-[10px] text-[#6b7280] truncate">{userAttachmentName}</p>
+                  </div>
                 </div>
-                <div className="min-w-0">
-                  <p className="text-[11px] font-semibold text-[#1f2937] truncate max-w-[160px]">{userAttachmentName}</p>
-                  <p className="text-[9px] text-[#6b7280]">Tap to open</p>
-                </div>
-                <Download size={11} className="text-[#6b7280] shrink-0" />
-              </a>
+              ) : (
+                // PDF — open via backend artifact endpoint
+                <a
+                  href={buildDownloadUrl(userId, sessionId, userAttachmentName!)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-white/60 border border-black/10 hover:bg-white transition-colors"
+                >
+                  <div className="w-6 h-6 bg-red-100 rounded flex items-center justify-center text-red-600 shrink-0">
+                    <FileText size={12} />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-[11px] font-semibold text-[#1f2937] truncate max-w-[160px]">{userAttachmentName}</p>
+                    <p className="text-[9px] text-[#6b7280]">Tap to open</p>
+                  </div>
+                  <Download size={11} className="text-[#6b7280] shrink-0" />
+                </a>
+              )}
             </div>
           )}
 

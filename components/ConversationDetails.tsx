@@ -14,10 +14,14 @@ export default function ConversationDetails({ isOpenMobile, onCloseMobile }: Pro
 
   // Agent-generated PDFs from artifacts
   const agentDocs = messages.flatMap(m => m.artifacts || []);
-  // User-uploaded attachments parsed from message text/userAttachment
+  // User-uploaded attachments — carry inline data for images, skip backend for those
   const userDocs = messages
     .filter(m => m.role === "user" && m.userAttachment?.name)
-    .map(m => ({ name: m.userAttachment!.name, mimeType: m.userAttachment!.mimeType, isUser: true }));
+    .map(m => ({
+      name: m.userAttachment!.name,
+      mimeType: m.userAttachment!.mimeType ?? "",
+      data: m.userAttachment!.data,
+    }));
 
   const totalDocs = agentDocs.length + userDocs.length;
 
@@ -99,24 +103,48 @@ export default function ConversationDetails({ isOpenMobile, onCloseMobile }: Pro
                     </a>
                   </div>
                 ))}
-                {userDocs.map((doc, i) => (
-                  <a
-                    key={`user-${i}`}
-                    href={buildDownloadUrl(userId, sessionId, doc.name)}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-3 bg-[#fffbeb] p-2 rounded-lg border border-[#fde68a] hover:bg-[#fef9c3] transition-colors"
-                  >
-                    <div className="w-8 h-8 bg-amber-100 rounded flex items-center justify-center text-amber-600 shrink-0">
-                      <FileText size={16} />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-xs font-bold text-[#1f2937] truncate" title={doc.name}>{doc.name}</p>
-                      <p className="text-[10px] font-light text-[#6b7280]">Uploaded by you</p>
-                    </div>
-                    <Download size={14} className="text-[#9ca3af] shrink-0" />
-                  </a>
-                ))}
+                {userDocs.map((doc, i) => {
+                  const isImage = doc.mimeType.startsWith("image/");
+                  if (isImage && doc.data) {
+                    // Render inline thumbnail — no backend needed
+                    return (
+                      <div key={`user-${i}`} className="flex flex-col bg-[#fffbeb] rounded-lg border border-[#fde68a] overflow-hidden">
+                        <img
+                          src={`data:${doc.mimeType};base64,${doc.data}`}
+                          alt={doc.name}
+                          className="w-full object-cover"
+                          style={{ maxHeight: 100 }}
+                        />
+                        <div className="flex items-center gap-2 px-2 py-1.5">
+                          <FileText size={10} className="text-[#d97706] shrink-0" />
+                          <div className="flex-1 min-w-0">
+                            <p className="text-[10px] font-bold text-[#1f2937] truncate">{doc.name}</p>
+                            <p className="text-[9px] text-[#6b7280]">Uploaded by you</p>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  }
+                  // PDF — link to backend
+                  return (
+                    <a
+                      key={`user-${i}`}
+                      href={buildDownloadUrl(userId, sessionId, doc.name)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-3 bg-[#fffbeb] p-2 rounded-lg border border-[#fde68a] hover:bg-[#fef9c3] transition-colors"
+                    >
+                      <div className="w-8 h-8 bg-amber-100 rounded flex items-center justify-center text-amber-600 shrink-0">
+                        <FileText size={16} />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs font-bold text-[#1f2937] truncate">{doc.name}</p>
+                        <p className="text-[10px] font-light text-[#6b7280]">Uploaded by you</p>
+                      </div>
+                      <Download size={14} className="text-[#9ca3af] shrink-0" />
+                    </a>
+                  );
+                })}
               </div>
             )}
             

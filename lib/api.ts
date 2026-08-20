@@ -206,7 +206,7 @@ export async function fetchBooking(refNumber: string): Promise<Booking | null> {
 
 export async function updateBooking(
   refNumber: string,
-  updates: Partial<Pick<Booking, "destination" | "travel_dates" | "num_adults" | "num_children" | "traveller_ages" | "sum_insured" | "premium" | "notes">>
+  updates: Partial<Pick<Booking, "policy_name" | "insurer" | "destination" | "travel_dates" | "num_adults" | "num_children" | "traveller_ages" | "sum_insured" | "premium" | "notes">>
 ): Promise<Booking> {
   const res = await fetch(`${BASE_URL}/bookings/${refNumber}`, {
     method: "PUT",
