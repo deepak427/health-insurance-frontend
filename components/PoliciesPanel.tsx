@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react";
 import { X, Shield, RefreshCw, Search, FileText, Calendar, Users, DollarSign, MapPin } from "lucide-react";
 import { fetchBookings, Booking, buildDownloadUrl } from "@/lib/api";
-import { getUserId } from "@/lib/session";
+import { getOrCreateSession } from "@/lib/session";
 
 interface Props {
   isOpen: boolean;
@@ -17,7 +17,7 @@ export default function PoliciesPanel({ isOpen, onClose }: Props) {
   async function loadBookings() {
     setLoading(true);
     try {
-      const userId = getUserId();
+      const { userId } = getOrCreateSession();
       const data = await fetchBookings(userId);
       setBookings(data);
     } catch (error) {
