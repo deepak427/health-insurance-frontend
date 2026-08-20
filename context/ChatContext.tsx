@@ -1,7 +1,7 @@
 "use client";
 
 import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from "react";
-import { createSession, listSessions, getSession, deleteSession, eventsToMessages, sessionPreview, ADKSession, fetchPolicies, fetchCompanies, Policy, Company } from "@/lib/api";
+import { createSession, listSessions, getSession, deleteSession, eventsToMessages, sessionPreview, ADKSession } from "@/lib/api";
 import { getUsername, getOrCreateSession, newSession, setActiveSession } from "@/lib/session";
 import type { Msg } from "@/components/Message";
 
@@ -20,11 +20,6 @@ interface ChatContextValue {
   loading: boolean;
   error: string | null;
   sessions: ChatSessionMeta[];
-  policies: Policy[];
-  companies: Record<string, string>;
-  policiesLoading: boolean;
-  setPolicies: React.Dispatch<React.SetStateAction<Policy[]>>;
-  setCompanies: React.Dispatch<React.SetStateAction<Record<string, string>>>;
   setMessages: React.Dispatch<React.SetStateAction<Msg[]>>;
   setLoading: (v: boolean) => void;
   setError: (v: string | null) => void;
@@ -77,9 +72,6 @@ export function ChatProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [sessions, setSessions] = useState<ChatSessionMeta[]>([]);
-  const [policies, setPolicies] = useState<Policy[]>([]);
-  const [companies, setCompanies] = useState<Record<string, string>>({});
-  const [policiesLoading, setPoliciesLoading] = useState(false);
 
   const refreshSessionList = useCallback(async (uid?: string) => {
     const id = uid || userId;
@@ -124,20 +116,6 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       return false;
     }
   }, [sessionReady, userId, sessionId]);
-
-  // Eager-load policies on mount — fire and forget, no blocking
-  useEffect(() => {
-    setPoliciesLoading(true);
-    Promise.all([fetchPolicies(), fetchCompanies()])
-      .then(([pols, comps]) => {
-        setPolicies(pols);
-        const map: Record<string, string> = {};
-        comps.forEach((c: Company) => { map[c._id] = c.name; });
-        setCompanies(map);
-      })
-      .catch(() => {})
-      .finally(() => setPoliciesLoading(false));
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     const name = getUsername();
@@ -242,11 +220,6 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       loading,
       error,
       sessions,
-      policies,
-      companies,
-      policiesLoading,
-      setPolicies,
-      setCompanies,
       setMessages,
       setLoading,
       setError,

@@ -155,42 +155,39 @@ export async function saveData(key: DataKey, data: Record<string, unknown>): Pro
 }
 // ─────────────────────────────────────────────────────────────────────────────
 
-// ── hip-backend policy data ───────────────────────────────────────────────────
-export interface Policy {
-  _id: string;
-  name: string;
-  companyId: string | { _id: string; name: string };
-  company?: { _id: string; name: string };
-  policyCategory?: { _id: string; name: string };
-  subPolicies?: { _id: string; name: string }[];
+// ── Bookings API ──────────────────────────────────────────────────────────────
+export interface Booking {
+  ref_number: string;
+  created_at: string;
+  updated_at: string;
+  user_id: string;
+  session_id: string;
+  policy_name: string;
+  insurer: string;
+  destination: string;
+  travel_dates: string;
+  num_adults: number;
+  num_children: number;
+  traveller_ages: string;
+  sum_insured: string;
+  premium: string;
+  artifact_ids: string[];
+  status: string;
+  notes: string;
 }
 
-export interface Company {
-  _id: string;
-  name: string;
-  logo?: string;
-}
-
-export function resolveCompanyName(policy: Policy, companies: Record<string, string>): string {
-  // company field is the most reliable — API populates it directly
-  if (policy.company?.name) return policy.company.name;
-  if (typeof policy.companyId === "object" && policy.companyId?.name) return policy.companyId.name;
-  const id = typeof policy.companyId === "string" ? policy.companyId : policy.companyId?._id;
-  return companies[id] ?? "";
-}
-
-export async function fetchPolicies(): Promise<Policy[]> {
-  const res = await fetch(`${BASE_URL}/policies`);
-  if (!res.ok) throw new Error("Failed to load policies");
+export async function fetchBookings(userId?: string): Promise<Booking[]> {
+  const url = userId ? `${BASE_URL}/bookings?user_id=${userId}` : `${BASE_URL}/bookings`;
+  const res = await fetch(url);
+  if (!res.ok) throw new Error("Failed to load bookings");
   const data = await res.json();
-  return Array.isArray(data) ? data : (data.policies ?? data.data ?? []);
+  return data.bookings ?? [];
 }
 
-export async function fetchCompanies(): Promise<Company[]> {
-  const res = await fetch(`${BASE_URL}/companies`);
-  if (!res.ok) throw new Error("Failed to load companies");
-  const data = await res.json();
-  return Array.isArray(data) ? data : (data.companies ?? data.data ?? []);
+export async function fetchBooking(refNumber: string): Promise<Booking | null> {
+  const res = await fetch(`${BASE_URL}/bookings/${refNumber}`);
+  if (!res.ok) return null;
+  return res.json();
 }
 // ─────────────────────────────────────────────────────────────────────────────
 
