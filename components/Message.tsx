@@ -2,7 +2,7 @@
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { Download, FileText } from "lucide-react";
-import { buildDownloadUrl } from "@/lib/api";
+import { buildDownloadUrl, isAgentGeneratedArtifact } from "@/lib/api";
 import PolicyCards, { PolicyCardData, BookingCards, BookingsTable, BookingCardData, BookingTableRow } from "./PolicyCards";
 
 export interface Msg {
@@ -179,10 +179,10 @@ export default function Message({ msg, userId, sessionId, onSend }: Props) {
             </>
           )}
 
-          {/* Artifacts (PDF Downloads) */}
-          {msg.artifacts && msg.artifacts.length > 0 && (
+          {/* Artifacts (Agent-Generated PDF Downloads) */}
+          {!isUser && msg.artifacts && msg.artifacts.filter(isAgentGeneratedArtifact).length > 0 && (
             <div className="mt-3 pt-3 border-t border-black/5 flex flex-col gap-2">
-              {msg.artifacts.map((filename) => (
+              {msg.artifacts.filter(isAgentGeneratedArtifact).map((filename) => (
                 <div key={filename} className="flex items-center gap-3">
                   <div className="w-8 h-8 bg-red-100 rounded flex items-center justify-center text-red-600 shrink-0">
                     <FileText size={16} />

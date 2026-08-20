@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { X, User, Calendar, FileText, Download, ChevronRight, ChevronDown } from "lucide-react";
 import { useChatContext } from "@/context/ChatContext";
-import { buildDownloadUrl } from "@/lib/api";
+import { buildDownloadUrl, isAgentGeneratedArtifact } from "@/lib/api";
 interface Props {
   isOpenMobile?: boolean;
   onCloseMobile?: () => void;
@@ -12,16 +12,25 @@ export default function ConversationDetails({ isOpenMobile, onCloseMobile }: Pro
   const { messages, userId, sessionId } = useChatContext();
   const [docsOpen, setDocsOpen] = useState(true);
 
-  // Agent-generated PDFs from artifacts
-  const agentDocs = messages.flatMap(m => m.artifacts || []);
-  // User-uploaded attachments — carry inline data for images, skip backend for those
-  const userDocs = messages
-    .filter(m => m.role === "user" && m.userAttachment?.name)
-    .map(m => ({
-      name: m.userAttachment!.name,
-      mimeType: m.userAttachment!.mimeType ?? "",
-      data: m.userAttachment!.data,
-    }));
+  // Agent-generated PDFs only
+  const agentDocs = Array.from(
+    new Set(messages.flatMap((m) => m.artifacts || []).filter(isAgentGeneratedArtifact))
+  );
+  // User-uploaded attachments deduplicated by name
+  const userDocs = Array.from(
+    new Map(
+      messages
+        .filter((m) => m.role === "user" && m.userAttachment?.name)
+        .map((m) => [
+          m.userAttachment!.name,
+          {
+            name: m.userAttachment!.name,
+            mimeType: m.userAttachment!.mimeType ?? "",
+            data: m.userAttachment!.data,
+          },
+        ])
+    ).values()
+  );
 
   const totalDocs = agentDocs.length + userDocs.length;
 

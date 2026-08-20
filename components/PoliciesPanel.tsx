@@ -30,6 +30,8 @@ export default function PoliciesPanel({ isOpen, onClose }: Props) {
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState("");
 
+  const [activeFilter, setActiveFilter] = useState<string>("all");
+
   // Edit state
   const [editingRef, setEditingRef] = useState<string | null>(null);
   const [editForm, setEditForm] = useState<EditForm | null>(null);
@@ -66,13 +68,32 @@ export default function PoliciesPanel({ isOpen, onClose }: Props) {
     );
   });
 
-  const grouped: Record<string, Booking[]> = {
-    confirmed:    filtered.filter((b) => b.status === "confirmed"),
-    complete:     filtered.filter((b) => b.status === "complete"),
-    partial:      filtered.filter((b) => b.status === "partial" || b.status === "pending_docs"),
-    docs_received: filtered.filter((b) => b.status === "docs_received"),
-    claim_filed:  filtered.filter((b) => b.status === "claim_filed"),
-    cancelled:    filtered.filter((b) => b.status === "cancelled"),
+  const filterTabs = [
+    { id: "all", label: "All", count: filtered.length },
+    { id: "complete", label: "Complete", count: filtered.filter((b) => b.status === "complete").length },
+    { id: "pending_docs", label: "Pending Docs", count: filtered.filter((b) => b.status === "pending_docs" || b.status === "partial").length },
+    { id: "confirmed", label: "Confirmed", count: filtered.filter((b) => b.status === "confirmed").length },
+    { id: "docs_received", label: "Docs Received", count: filtered.filter((b) => b.status === "docs_received").length },
+    { id: "claim_filed", label: "Claim Filed", count: filtered.filter((b) => b.status === "claim_filed").length },
+    { id: "cancelled", label: "Cancelled", count: filtered.filter((b) => b.status === "cancelled").length },
+  ];
+
+  const displayedBookings = filtered
+    .filter((b) => {
+      if (activeFilter === "all") return true;
+      if (activeFilter === "pending_docs") return b.status === "pending_docs" || b.status === "partial";
+      return b.status === activeFilter;
+    })
+    .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+
+  const statusConfig: Record<string, { label: string; color: string; bg: string; border: string }> = {
+    complete:      { label: "Complete",      color: "text-[#00a86b]", bg: "bg-[#f0fdf4]", border: "border-[#86efac]" },
+    confirmed:     { label: "Confirmed",     color: "text-[#0ea5e9]", bg: "bg-[#f0f9ff]", border: "border-[#bae6fd]" },
+    partial:       { label: "Pending Docs",  color: "text-[#f59e0b]", bg: "bg-[#fffbeb]", border: "border-[#fde68a]" },
+    pending_docs:  { label: "Pending Docs",  color: "text-[#f59e0b]", bg: "bg-[#fffbeb]", border: "border-[#fde68a]" },
+    docs_received: { label: "Docs Received", color: "text-[#8b5cf6]", bg: "bg-[#f5f3ff]", border: "border-[#ddd6fe]" },
+    claim_filed:   { label: "Claim Filed",   color: "text-[#f97316]", bg: "bg-[#fff7ed]", border: "border-[#fed7aa]" },
+    cancelled:     { label: "Cancelled",     color: "text-[#ef4444]", bg: "bg-[#fef2f2]", border: "border-[#fecaca]" },
   };
 
   function openEdit(booking: Booking) {
@@ -152,7 +173,7 @@ export default function PoliciesPanel({ isOpen, onClose }: Props) {
       </div>
 
       {/* Search */}
-      <div className="px-5 py-3 border-b border-[#e5e7eb] shrink-0">
+      <div className="px-5 py-3 border-b border-[#e5e7eb] shrink-0 bg-white">
         <div className="relative">
           <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[#9ca3af]" />
           <input
@@ -164,8 +185,35 @@ export default function PoliciesPanel({ isOpen, onClose }: Props) {
         </div>
       </div>
 
-      {/* Bookings list */}
-      <div className="flex-1 overflow-y-auto bg-[#f8fafc]">
+      {/* Filter Tabs */}
+      <div className="flex items-center gap-1.5 px-5 py-2.5 border-b border-[#e5e7eb] overflow-x-auto shrink-0 bg-[#fafafa]">
+        {filterTabs.map((tab) => {
+          const isActive = activeFilter === tab.id;
+          return (
+            <button
+              key={tab.id}
+              onClick={() => setActiveFilter(tab.id)}
+              className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium transition-all shrink-0 ${
+                isActive
+                  ? "bg-[#00a86b] text-white shadow-sm font-semibold"
+                  : "bg-white text-[#6b7280] hover:bg-[#f1f5f9] border border-[#e5e7eb]"
+              }`}
+            >
+              <span>{tab.label}</span>
+              <span
+                className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
+                  isActive ? "bg-white/25 text-white" : "bg-gray-100 text-[#9ca3af]"
+                }`}
+              >
+                {tab.count}
+              </span>
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Bookings list — Latest First Feed */}
+      <div className="flex-1 overflow-y-auto bg-[#f8fafc] p-2">
         {loading && bookings.length === 0 && (
           <div className="flex flex-col items-center justify-center h-32 gap-2">
             <div className="w-4 h-4 rounded-full border-2 border-[#00a86b] border-t-transparent animate-spin" />
@@ -181,204 +229,196 @@ export default function PoliciesPanel({ isOpen, onClose }: Props) {
           </div>
         )}
 
-        {!loading && filtered.length === 0 && bookings.length > 0 && (
+        {!loading && displayedBookings.length === 0 && bookings.length > 0 && (
           <div className="flex flex-col items-center justify-center h-32 gap-2">
             <Search size={24} className="text-[#e5e7eb]" />
-            <p className="text-xs font-light text-[#9ca3af]">No bookings match your search</p>
+            <p className="text-xs font-light text-[#9ca3af]">No bookings match your filter</p>
           </div>
         )}
 
-        {["complete", "confirmed", "partial", "docs_received", "claim_filed", "cancelled"].map((status) => {
-          const items = grouped[status] ?? [];
-          if (items.length === 0) return null;
-
-          const statusConfig: Record<string, { label: string; color: string; bg: string; border: string }> = {
-            complete:      { label: "Complete",      color: "text-[#00a86b]", bg: "bg-[#f0fdf4]", border: "border-[#86efac]" },
-            confirmed:     { label: "Confirmed",     color: "text-[#0ea5e9]", bg: "bg-[#f0f9ff]", border: "border-[#bae6fd]" },
-            partial:       { label: "Pending Docs",  color: "text-[#f59e0b]", bg: "bg-[#fffbeb]", border: "border-[#fde68a]" },
-            docs_received: { label: "Docs Received", color: "text-[#8b5cf6]", bg: "bg-[#f5f3ff]", border: "border-[#ddd6fe]" },
-            claim_filed:   { label: "Claim Filed",   color: "text-[#f97316]", bg: "bg-[#fff7ed]", border: "border-[#fed7aa]" },
-            cancelled:     { label: "Cancelled",     color: "text-[#ef4444]", bg: "bg-[#fef2f2]", border: "border-[#fecaca]" },
+        {displayedBookings.map((booking) => {
+          const cfg = statusConfig[booking.status] ?? {
+            label: booking.status,
+            color: "text-[#6b7280]",
+            bg: "bg-[#f8fafc]",
+            border: "border-[#e5e7eb]",
           };
-          const cfg = statusConfig[status] ?? { label: status, color: "text-[#6b7280]", bg: "bg-[#f8fafc]", border: "border-[#e5e7eb]" };
-          const isCancelledSection = status === "cancelled";
+          const isCancelled = booking.status === "cancelled";
 
           return (
-            <div key={status}>
-              <div className="flex items-center gap-2 px-5 py-2.5 bg-white border-b border-[#f1f5f9] sticky top-0 z-10">
-                <span className="text-[11px] font-bold text-[#1f2937]">{cfg.label}</span>
-                <span className="text-[10px] font-light text-[#9ca3af]">{items.length}</span>
-              </div>
-
-              {items.map((booking) => (
-                <div
-                  key={booking.ref_number}
-                  className={`mx-4 my-3 bg-white rounded-lg border border-[#e5e7eb] shadow-sm hover:shadow-md transition-shadow ${isCancelledSection ? "opacity-60" : ""}`}
-                >
-                  {/* Card header */}
-                  <div className="flex items-start justify-between p-3 border-b border-[#f1f5f9]">
+            <div
+              key={booking.ref_number}
+              className={`mx-2 my-2.5 bg-white rounded-lg border border-[#e5e7eb] shadow-sm hover:shadow-md transition-shadow ${
+                isCancelled ? "opacity-60" : ""
+              }`}
+            >
+              {/* Card header */}
+              <div className="flex items-start justify-between p-3 border-b border-[#f1f5f9]">
+                <div className="flex items-center gap-2">
+                  <div className={`w-8 h-8 rounded-lg ${cfg.bg} border ${cfg.border} flex items-center justify-center shrink-0`}>
+                    <Shield size={14} className={cfg.color} />
+                  </div>
+                  <div>
                     <div className="flex items-center gap-2">
-                      <div className={`w-8 h-8 rounded-lg ${cfg.bg} border ${cfg.border} flex items-center justify-center shrink-0`}>
-                        <Shield size={14} className={cfg.color} />
-                      </div>
-                      <div>
-                        <p className="text-xs font-bold text-[#1f2937]">{booking.policy_name}</p>
-                        <p className="text-[10px] font-light text-[#9ca3af]">{booking.insurer || "Travel Insurance"}</p>
-                      </div>
+                      <p className="text-xs font-bold text-[#1f2937]">{booking.policy_name}</p>
+                      <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded border ${cfg.bg} ${cfg.color} ${cfg.border}`}>
+                        {cfg.label}
+                      </span>
                     </div>
-                    <div className="flex items-start gap-2">
-                      <div className="text-right">
-                        <p className="text-[10px] font-mono font-bold text-[#00a86b]">{booking.ref_number}</p>
-                        <p className="text-[9px] text-[#9ca3af]">{new Date(booking.created_at).toLocaleDateString()}</p>
-                      </div>
-                      {/* Action buttons — hidden for cancelled */}
-                      {!isCancelledSection && (
-                        <div className="flex items-center gap-1 ml-1">
-                          <button
-                            onClick={() => openEdit(booking)}
-                            title="Edit booking"
-                            className="p-1 rounded text-[#9ca3af] hover:text-[#0ea5e9] hover:bg-[#f0f9ff] transition-colors"
-                          >
-                            <Pencil size={12} />
-                          </button>
-                          <button
-                            onClick={() => setCancelRef(booking.ref_number)}
-                            title="Cancel policy"
-                            className="p-1 rounded text-[#9ca3af] hover:text-[#ef4444] hover:bg-[#fef2f2] transition-colors"
-                          >
-                            <Trash2 size={12} />
-                          </button>
-                        </div>
-                      )}
-                    </div>
+                    <p className="text-[10px] font-light text-[#9ca3af]">{booking.insurer || "Travel Insurance"}</p>
                   </div>
-
-                  {/* Details grid */}
-                  <div className="grid grid-cols-2 gap-x-3 gap-y-2.5 p-3">
-                    <div className="flex items-start gap-2">
-                      <MapPin size={12} className="text-[#9ca3af] mt-0.5 shrink-0" />
-                      <div>
-                        <p className="text-[10px] text-[#9ca3af]">Destination</p>
-                        <p className="text-xs font-medium text-[#1f2937]">{booking.destination || "—"}</p>
-                      </div>
-                    </div>
-                    <div className="flex items-start gap-2">
-                      <Calendar size={12} className="text-[#9ca3af] mt-0.5 shrink-0" />
-                      <div>
-                        <p className="text-[10px] text-[#9ca3af]">Travel Dates</p>
-                        <p className="text-xs font-medium text-[#1f2937]">{booking.travel_dates || "—"}</p>
-                      </div>
-                    </div>
-                    <div className="flex items-start gap-2">
-                      <Users size={12} className="text-[#9ca3af] mt-0.5 shrink-0" />
-                      <div>
-                        <p className="text-[10px] text-[#9ca3af]">Travellers</p>
-                        <p className="text-xs font-medium text-[#1f2937]">
-                          {booking.num_adults} {booking.num_adults === 1 ? "adult" : "adults"}
-                          {booking.num_children > 0 && `, ${booking.num_children} ${booking.num_children === 1 ? "child" : "children"}`}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="flex items-start gap-2">
-                      <DollarSign size={12} className="text-[#9ca3af] mt-0.5 shrink-0" />
-                      <div>
-                        <p className="text-[10px] text-[#9ca3af]">Premium</p>
-                        <p className="text-xs font-bold text-[#00a86b]">{booking.premium || "—"}</p>
-                      </div>
-                    </div>
-                    {booking.sum_insured && (
-                      <div className="flex items-start gap-2">
-                        <Shield size={12} className="text-[#9ca3af] mt-0.5 shrink-0" />
-                        <div>
-                          <p className="text-[10px] text-[#9ca3af]">Sum Insured</p>
-                          <p className="text-xs font-medium text-[#1f2937]">{booking.sum_insured}</p>
-                        </div>
-                      </div>
-                    )}
-                    {booking.traveller_ages && (
-                      <div className="flex items-start gap-2">
-                        <Users size={12} className="text-[#9ca3af] mt-0.5 shrink-0" />
-                        <div>
-                          <p className="text-[10px] text-[#9ca3af]">Ages</p>
-                          <p className="text-xs font-medium text-[#1f2937]">{booking.traveller_ages}</p>
-                        </div>
-                      </div>
-                    )}
+                </div>
+                <div className="flex items-start gap-2">
+                  <div className="text-right">
+                    <p className="text-[10px] font-mono font-bold text-[#00a86b]">{booking.ref_number}</p>
+                    <p className="text-[9px] text-[#9ca3af]">
+                      {new Date(booking.created_at).toLocaleDateString()}
+                    </p>
                   </div>
-
-                  {/* Artifacts */}
-                  {booking.artifact_ids && booking.artifact_ids.length > 0 && (
-                    <div className="p-3 border-t border-[#f1f5f9] bg-[#f8fafc]">
-                      <p className="text-[10px] font-bold text-[#9ca3af] mb-2">Documents</p>
-                      <div className="flex flex-col gap-2">
-                        {booking.artifact_ids.map((filename) => {
-                          const isUserDoc = !filename.startsWith("booking_") && !filename.startsWith("quotation_");
-                          const isImage = /\.(png|jpg|jpeg|gif|webp|bmp)$/i.test(filename);
-                          // Always use the session-agnostic fallback — it scans all sessions so it
-                          // works regardless of whether the file was saved in the current session.
-                          const href = `${BASE_URL}/download-artifact/${APP_NAME}/${booking.user_id}/${encodeURIComponent(filename)}`;
-                          const label = isUserDoc
-                            ? filename
-                            : filename
-                                .replace(/^booking_confirmation_/, "")
-                                .replace(/^quotation_comparison_/, "Comparison ")
-                                .replace(/_/g, " ")
-                                .replace(/\.pdf$/i, "")
-                                .trim();
-
-                          if (isImage && isUserDoc) {
-                            return (
-                              <a
-                                key={filename}
-                                href={href}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="flex items-center gap-2 bg-[#fffbeb] border border-[#fde68a] rounded-lg overflow-hidden hover:bg-[#fef9c3] transition-colors"
-                              >
-                                <img
-                                  src={href}
-                                  alt={filename}
-                                  className="w-12 h-12 object-cover shrink-0"
-                                  onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
-                                />
-                                <div className="flex-1 min-w-0 px-2 py-1">
-                                  <p className="text-[10px] font-semibold text-[#d97706] truncate">{label}</p>
-                                  <p className="text-[9px] text-[#6b7280]">Uploaded document · tap to open</p>
-                                </div>
-                                <FileText size={12} className="text-[#d97706] shrink-0 mr-2" />
-                              </a>
-                            );
-                          }
-
-                          return (
-                            <a
-                              key={filename}
-                              href={href}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className={`flex items-center gap-1.5 text-[10px] font-medium px-2 py-1.5 rounded border transition-colors ${
-                                isUserDoc
-                                  ? "bg-[#fffbeb] border-[#fde68a] text-[#d97706] hover:bg-[#fef3c7]"
-                                  : "bg-white border-[#e5e7eb] text-[#00a86b] hover:bg-[#f0fdf4] hover:border-[#00a86b]"
-                              }`}
-                            >
-                              <FileText size={10} />
-                              {label}
-                            </a>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Notes */}
-                  {booking.notes && (
-                    <div className="p-3 border-t border-[#f1f5f9]">
-                      <p className="text-[10px] text-[#6b7280] italic">{booking.notes}</p>
+                  {/* Action buttons — hidden for cancelled */}
+                  {!isCancelled && (
+                    <div className="flex items-center gap-1 ml-1">
+                      <button
+                        onClick={() => openEdit(booking)}
+                        title="Edit booking"
+                        className="p-1 rounded text-[#9ca3af] hover:text-[#0ea5e9] hover:bg-[#f0f9ff] transition-colors"
+                      >
+                        <Pencil size={12} />
+                      </button>
+                      <button
+                        onClick={() => setCancelRef(booking.ref_number)}
+                        title="Cancel policy"
+                        className="p-1 rounded text-[#9ca3af] hover:text-[#ef4444] hover:bg-[#fef2f2] transition-colors"
+                      >
+                        <Trash2 size={12} />
+                      </button>
                     </div>
                   )}
                 </div>
-              ))}
+              </div>
+
+              {/* Details grid */}
+              <div className="grid grid-cols-2 gap-x-3 gap-y-2.5 p-3">
+                <div className="flex items-start gap-2">
+                  <MapPin size={12} className="text-[#9ca3af] mt-0.5 shrink-0" />
+                  <div>
+                    <p className="text-[10px] text-[#9ca3af]">Destination</p>
+                    <p className="text-xs font-medium text-[#1f2937]">{booking.destination || "—"}</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-2">
+                  <Calendar size={12} className="text-[#9ca3af] mt-0.5 shrink-0" />
+                  <div>
+                    <p className="text-[10px] text-[#9ca3af]">Travel Dates</p>
+                    <p className="text-xs font-medium text-[#1f2937]">{booking.travel_dates || "—"}</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-2">
+                  <Users size={12} className="text-[#9ca3af] mt-0.5 shrink-0" />
+                  <div>
+                    <p className="text-[10px] text-[#9ca3af]">Travellers</p>
+                    <p className="text-xs font-medium text-[#1f2937]">
+                      {booking.num_adults} {booking.num_adults === 1 ? "adult" : "adults"}
+                      {booking.num_children > 0 && `, ${booking.num_children} ${booking.num_children === 1 ? "child" : "children"}`}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-2">
+                  <DollarSign size={12} className="text-[#9ca3af] mt-0.5 shrink-0" />
+                  <div>
+                    <p className="text-[10px] text-[#9ca3af]">Premium</p>
+                    <p className="text-xs font-bold text-[#00a86b]">{booking.premium || "—"}</p>
+                  </div>
+                </div>
+                {booking.sum_insured && (
+                  <div className="flex items-start gap-2">
+                    <Shield size={12} className="text-[#9ca3af] mt-0.5 shrink-0" />
+                    <div>
+                      <p className="text-[10px] text-[#9ca3af]">Sum Insured</p>
+                      <p className="text-xs font-medium text-[#1f2937]">{booking.sum_insured}</p>
+                    </div>
+                  </div>
+                )}
+                {booking.traveller_ages && (
+                  <div className="flex items-start gap-2">
+                    <Users size={12} className="text-[#9ca3af] mt-0.5 shrink-0" />
+                    <div>
+                      <p className="text-[10px] text-[#9ca3af]">Ages</p>
+                      <p className="text-xs font-medium text-[#1f2937]">{booking.traveller_ages}</p>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Artifacts */}
+              {booking.artifact_ids && booking.artifact_ids.length > 0 && (
+                <div className="p-3 border-t border-[#f1f5f9] bg-[#f8fafc]">
+                  <p className="text-[10px] font-bold text-[#9ca3af] mb-2">Documents</p>
+                  <div className="flex flex-col gap-2">
+                    {booking.artifact_ids.map((filename) => {
+                      const isUserDoc = !filename.startsWith("booking_") && !filename.startsWith("quotation_");
+                      const isImage = /\.(png|jpg|jpeg|gif|webp|bmp)$/i.test(filename);
+                      const href = `${BASE_URL}/download-artifact/${APP_NAME}/${booking.user_id}/${encodeURIComponent(filename)}`;
+                      const label = isUserDoc
+                        ? filename
+                        : filename
+                            .replace(/^booking_confirmation_/, "")
+                            .replace(/^quotation_comparison_/, "Comparison ")
+                            .replace(/_/g, " ")
+                            .replace(/\.pdf$/i, "")
+                            .trim();
+
+                      if (isImage && isUserDoc) {
+                        return (
+                          <a
+                            key={filename}
+                            href={href}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center gap-2 bg-[#fffbeb] border border-[#fde68a] rounded-lg overflow-hidden hover:bg-[#fef9c3] transition-colors"
+                          >
+                            <img
+                              src={href}
+                              alt={filename}
+                              className="w-12 h-12 object-cover shrink-0"
+                              onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
+                            />
+                            <div className="flex-1 min-w-0 px-2 py-1">
+                              <p className="text-[10px] font-semibold text-[#d97706] truncate">{label}</p>
+                              <p className="text-[9px] text-[#6b7280]">Uploaded document · tap to open</p>
+                            </div>
+                            <FileText size={12} className="text-[#d97706] shrink-0 mr-2" />
+                          </a>
+                        );
+                      }
+
+                      return (
+                        <a
+                          key={filename}
+                          href={href}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className={`flex items-center gap-1.5 text-[10px] font-medium px-2 py-1.5 rounded border transition-colors ${
+                            isUserDoc
+                              ? "bg-[#fffbeb] border-[#fde68a] text-[#d97706] hover:bg-[#fef3c7]"
+                              : "bg-white border-[#e5e7eb] text-[#00a86b] hover:bg-[#f0fdf4] hover:border-[#00a86b]"
+                          }`}
+                        >
+                          <FileText size={10} />
+                          {label}
+                        </a>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* Notes */}
+              {booking.notes && (
+                <div className="p-3 border-t border-[#f1f5f9]">
+                  <p className="text-[10px] text-[#6b7280] italic">{booking.notes}</p>
+                </div>
+              )}
             </div>
           );
         })}
