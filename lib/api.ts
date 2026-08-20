@@ -15,7 +15,14 @@ export async function createSession(userId: string, sessionId: string) {
 }
 
 export function buildDownloadUrl(userId: string, sessionId: string, filename: string) {
+  // Always use the proxied path so it works when served through Next.js
   return `${BASE_URL}/download/${APP_NAME}/${userId}/${sessionId}/${filename}`;
+}
+
+/** Absolute backend download URL — resolves correctly regardless of frontend origin */
+export function buildAbsoluteDownloadUrl(userId: string, sessionId: string, filename: string) {
+  const backendBase = process.env.NEXT_PUBLIC_API_URL || "http://43.204.143.233:8000";
+  return `${backendBase}/download/${APP_NAME}/${userId}/${sessionId}/${filename}`;
 }
 
 // Direct EC2 URL for cases where proxy streaming might buffer (fallback)
