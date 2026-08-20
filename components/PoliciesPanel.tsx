@@ -4,7 +4,7 @@ import {
   X, Shield, RefreshCw, Search, FileText, Calendar, Users,
   DollarSign, MapPin, Pencil, Trash2, AlertTriangle, Check,
 } from "lucide-react";
-import { fetchBookings, updateBooking, cancelBooking, Booking, buildDownloadUrl } from "@/lib/api";
+import { fetchBookings, updateBooking, cancelBooking, Booking, buildBookingDownloadUrl } from "@/lib/api";
 import { getOrCreateSession } from "@/lib/session";
 
 interface Props {
@@ -287,7 +287,7 @@ export default function PoliciesPanel({ isOpen, onClose }: Props) {
                         {booking.artifact_ids.map((filename) => (
                           <a
                             key={filename}
-                            href={buildDownloadUrl(booking.user_id, booking.session_id, filename)}
+                            href={buildBookingDownloadUrl(booking.user_id, booking.session_id, filename)}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="flex items-center gap-1.5 text-[10px] font-medium px-2 py-1 rounded bg-white border border-[#e5e7eb] text-[#00a86b] hover:bg-[#f0fdf4] hover:border-[#00a86b] transition-colors"

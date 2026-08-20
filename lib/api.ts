@@ -215,6 +215,16 @@ export async function cancelBooking(refNumber: string): Promise<void> {
   const res = await fetch(`${BASE_URL}/bookings/${refNumber}`, { method: "DELETE" });
   if (!res.ok) throw new Error("Failed to cancel booking");
 }
+
+/** Build the best download URL for a booking artifact.
+ *  If session_id is missing, falls back to the session-agnostic endpoint. */
+export function buildBookingDownloadUrl(userId: string, sessionId: string, filename: string): string {
+  if (sessionId) {
+    return `${BASE_URL}/download/${APP_NAME}/${userId}/${sessionId}/${filename}`;
+  }
+  // session_id not stored — use the scan-all-sessions fallback endpoint
+  return `${BASE_URL}/download-artifact/${APP_NAME}/${userId}/${filename}`;
+}
 // ─────────────────────────────────────────────────────────────────────────────
 
 export async function* streamMessage(
