@@ -3,7 +3,7 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { Download, FileText } from "lucide-react";
 import { buildDownloadUrl } from "@/lib/api";
-import PolicyCards, { PolicyCardData } from "./PolicyCards";
+import PolicyCards, { PolicyCardData, BookingCards, BookingsTable, BookingCardData, BookingTableRow } from "./PolicyCards";
 
 export interface Msg {
   role: "user" | "agent";
@@ -18,29 +18,57 @@ interface Props {
   onSend?: (text: string) => void;
 }
 
-// Parses <!--POLICY_CARDS:[...]-->, <!--ADDON_CARDS:[...]-->, and <!--VAS_CARDS:[...]-->  out of agent text.
-// Returns { displayText, cards } — displayText has the markers stripped.
-function parsePolicyCards(raw: string): { displayText: string; cards: PolicyCardData[] } {
-  const RE = /<!--(?:POLICY|ADDON|VAS)_CARDS:([\s\S]*?)-->/g;
+interface ParsedContent {
+  displayText: string;
+  cards: PolicyCardData[];
+  bookingCards: BookingCardData[];
+  bookingTable: BookingTableRow[] | null;
+}
+
+// Parses all card markers out of agent text and returns displayText + typed card arrays.
+function parseContent(raw: string): ParsedContent {
   const cards: PolicyCardData[] = [];
-  const displayText = raw.replace(RE, (match, json) => {
-    try {
-      const parsed = JSON.parse(json.trim());
-      const arr: PolicyCardData[] = Array.isArray(parsed) ? parsed : [parsed];
-      cards.push(...arr);
-    } catch {}
-    return ""; // strip the marker from visible text
-  }).trim();
-  return { displayText, cards };
+  const bookingCards: BookingCardData[] = [];
+  let bookingTable: BookingTableRow[] | null = null;
+
+  const displayText = raw
+    .replace(/<!--(?:POLICY|ADDON|VAS)_CARDS:([\s\S]*?)-->/g, (_, json) => {
+      try {
+        const parsed = JSON.parse(json.trim());
+        const arr: PolicyCardData[] = Array.isArray(parsed) ? parsed : [parsed];
+        cards.push(...arr);
+      } catch {}
+      return "";
+    })
+    .replace(/<!--BOOKING_CARDS:([\s\S]*?)-->/g, (_, json) => {
+      try {
+        const parsed = JSON.parse(json.trim());
+        const arr: BookingCardData[] = Array.isArray(parsed) ? parsed : [parsed];
+        bookingCards.push(...arr);
+      } catch {}
+      return "";
+    })
+    .replace(/<!--BOOKING_TABLE:([\s\S]*?)-->/g, (_, json) => {
+      try {
+        const parsed = JSON.parse(json.trim());
+        bookingTable = Array.isArray(parsed) ? parsed : [parsed];
+      } catch {}
+      return "";
+    })
+    .trim();
+
+  return { displayText, cards, bookingCards, bookingTable };
 }
 
 export default function Message({ msg, userId, sessionId, onSend }: Props) {
   const isUser = msg.role === "user";
   const isTyping = !isUser && !msg.text && (!msg.artifacts || msg.artifacts.length === 0);
 
-  const { displayText, cards } = isUser
-    ? { displayText: msg.text, cards: [] }
-    : parsePolicyCards(msg.text);
+  const { displayText, cards, bookingCards, bookingTable } = isUser
+    ? { displayText: msg.text, cards: [], bookingCards: [], bookingTable: null }
+    : parseContent(msg.text);
+
+  const hasExtraContent = cards.length > 0 || bookingCards.length > 0 || bookingTable !== null;
 
   return (
     <div className={`flex gap-2 my-1.5 w-full ${isUser ? "justify-end" : "justify-start"}`}>
@@ -52,7 +80,7 @@ export default function Message({ msg, userId, sessionId, onSend }: Props) {
         </div>
       )}
 
-      <div className={`flex flex-col ${isUser ? "items-end" : "items-start"}`} style={{ maxWidth: cards.length > 0 ? "90%" : "75%" }}>
+      <div className={`flex flex-col ${isUser ? "items-end" : "items-start"}`} style={{ maxWidth: hasExtraContent ? "90%" : "75%" }}>
         {/* Author Label */}
         {!isUser && (
           <span className="text-xs font-semibold text-[#00a86b] mb-1 ml-1">Operations Team</span>
@@ -65,7 +93,7 @@ export default function Message({ msg, userId, sessionId, onSend }: Props) {
               ? "bg-[#dcf8c6] text-[#1f2937] rounded-[10px] rounded-tr-[2px] shadow-sm"
               : "bg-white text-[#1f2937] rounded-[10px] rounded-tl-[2px] shadow-sm"
           }`}
-          style={{ wordBreak: "break-word", maxWidth: cards.length > 0 ? "100%" : undefined }}
+          style={{ wordBreak: "break-word", maxWidth: hasExtraContent ? "100%" : undefined }}
         >
           {isTyping ? (
             <div className="flex items-center gap-1.5 py-1 px-1">
@@ -170,6 +198,23 @@ export default function Message({ msg, userId, sessionId, onSend }: Props) {
               cards={cards}
               onChoose={onSend ?? (() => {})}
             />
+          </div>
+        )}
+
+        {/* Booking History Cards */}
+        {bookingCards.length > 0 && (
+          <div className="mt-2 flex flex-row gap-3 flex-wrap">
+            <BookingCards
+              bookings={bookingCards}
+              onChoose={onSend ?? (() => {})}
+            />
+          </div>
+        )}
+
+        {/* Bookings Table with Excel export */}
+        {bookingTable && (
+          <div className="mt-2 w-full">
+            <BookingsTable rows={bookingTable} />
           </div>
         )}
       </div>

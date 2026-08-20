@@ -1,5 +1,5 @@
 "use client";
-import { Shield, CheckCircle2, IndianRupee, MapPin, Calendar, Users, BadgeCheck, PlusCircle, Sparkles, HeartPulse } from "lucide-react";
+import { Shield, CheckCircle2, IndianRupee, MapPin, Calendar, Users, BadgeCheck, PlusCircle, Sparkles, HeartPulse, FileSpreadsheet, ExternalLink, Clock } from "lucide-react";
 
 export interface PolicyCardData {
   type?: "policy" | "confirm" | "addon" | "vas";
@@ -21,9 +21,39 @@ export interface PolicyCardData {
   description?: string;
 }
 
+export interface BookingCardData {
+  ref: string;
+  policy: string;
+  destination?: string;
+  dates?: string;
+  premium?: string;
+  status?: string;
+  prompt?: string;
+}
+
+export interface BookingTableRow {
+  ref: string;
+  policy: string;
+  destination?: string;
+  dates?: string;
+  travellers?: string;
+  premium?: string;
+  status?: string;
+  created?: string;
+}
+
 interface Props {
   cards: PolicyCardData[];
   onChoose: (prompt: string) => void;
+}
+
+export interface BookingCardsProps {
+  bookings: BookingCardData[];
+  onChoose: (prompt: string) => void;
+}
+
+export interface BookingTableProps {
+  rows: BookingTableRow[];
 }
 
 function PolicyCard({ card, onChoose }: { card: PolicyCardData; onChoose: (p: string) => void }) {
@@ -263,5 +293,165 @@ export default function PolicyCards({ cards, onChoose }: Props) {
         )
       )}
     </>
+  );
+}
+
+// ── Booking History Cards ─────────────────────────────────────────────────────
+
+const STATUS_STYLES: Record<string, { bg: string; text: string; dot: string }> = {
+  confirmed:    { bg: "bg-[#f0fdf4]", text: "text-[#16a34a]", dot: "bg-[#16a34a]" },
+  pending_docs: { bg: "bg-[#fffbeb]", text: "text-[#d97706]", dot: "bg-[#d97706]" },
+  complete:     { bg: "bg-[#eff6ff]", text: "text-[#2563eb]", dot: "bg-[#2563eb]" },
+  cancelled:    { bg: "bg-[#fef2f2]", text: "text-[#dc2626]", dot: "bg-[#dc2626]" },
+};
+
+function statusStyle(s?: string) {
+  return STATUS_STYLES[s ?? "confirmed"] ?? STATUS_STYLES["confirmed"];
+}
+
+function BookingCard({ booking, onChoose }: { booking: BookingCardData; onChoose: (p: string) => void }) {
+  const st = statusStyle(booking.status);
+  return (
+    <div
+      className="rounded-[10px] border border-[#e5e7eb] bg-white shadow-sm overflow-hidden"
+      style={{ minWidth: 220, maxWidth: 280 }}
+    >
+      {/* Header */}
+      <div className="flex items-center gap-2 px-3 pt-3 pb-2 bg-[#f8fafc]">
+        <div className="w-8 h-8 rounded-lg bg-[#f0fdf4] border border-[#bbf7d0] flex items-center justify-center shrink-0">
+          <Shield size={14} className="text-[#00a86b]" />
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className="text-xs font-bold text-[#1f2937] leading-tight truncate">{booking.policy}</p>
+          <p className="text-[10px] font-mono text-[#6b7280]">{booking.ref}</p>
+        </div>
+        <span className={`text-[8px] font-bold px-1.5 py-0.5 rounded-full shrink-0 flex items-center gap-1 ${st.bg} ${st.text}`}>
+          <span className={`w-1.5 h-1.5 rounded-full ${st.dot}`} />
+          {(booking.status ?? "confirmed").replace("_", " ")}
+        </span>
+      </div>
+
+      {/* Details */}
+      <div className="flex flex-col gap-1 px-3 py-2">
+        {booking.destination && (
+          <div className="flex items-center gap-1.5">
+            <MapPin size={10} className="text-[#9ca3af] shrink-0" />
+            <span className="text-[11px] text-[#374151] truncate">{booking.destination}</span>
+          </div>
+        )}
+        {booking.dates && (
+          <div className="flex items-center gap-1.5">
+            <Calendar size={10} className="text-[#9ca3af] shrink-0" />
+            <span className="text-[11px] text-[#374151] truncate">{booking.dates}</span>
+          </div>
+        )}
+        {booking.premium && (
+          <div className="flex items-center gap-1.5">
+            <IndianRupee size={10} className="text-[#9ca3af] shrink-0" />
+            <span className="text-[11px] font-semibold text-[#1f2937]">{booking.premium}</span>
+          </div>
+        )}
+      </div>
+
+      {/* Action */}
+      <div className="border-t border-[#f1f5f9]">
+        <button
+          onClick={() => onChoose(booking.prompt || `Show me full details for booking ${booking.ref}`)}
+          className="w-full flex items-center justify-center gap-1.5 text-xs font-semibold text-[#00a86b] py-2.5 hover:bg-[#f0fdf4] transition-colors"
+        >
+          <ExternalLink size={12} />
+          View Details
+        </button>
+      </div>
+    </div>
+  );
+}
+
+export function BookingCards({ bookings, onChoose }: BookingCardsProps) {
+  return (
+    <>
+      {bookings.map((b, i) => (
+        <BookingCard key={i} booking={b} onChoose={onChoose} />
+      ))}
+    </>
+  );
+}
+
+// ── Bookings Table with Excel export ─────────────────────────────────────────
+
+export function BookingsTable({ rows }: BookingTableProps) {
+  const handleExcel = async () => {
+    const XLSX = await import("xlsx");
+    const data = rows.map((r) => ({
+      "Reference":   r.ref,
+      "Policy":      r.policy,
+      "Destination": r.destination ?? "",
+      "Travel Dates": r.dates ?? "",
+      "Travellers":  r.travellers ?? "",
+      "Premium":     r.premium ?? "",
+      "Status":      r.status ?? "",
+      "Created":     r.created ?? "",
+    }));
+    const ws = XLSX.utils.json_to_sheet(data);
+    // Column widths
+    ws["!cols"] = [14, 26, 20, 22, 14, 12, 14, 14].map((w) => ({ wch: w }));
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Bookings");
+    XLSX.writeFile(wb, "bookings.xlsx");
+  };
+
+  return (
+    <div className="rounded-[10px] border border-[#e5e7eb] bg-white shadow-sm overflow-hidden w-full" style={{ minWidth: 520 }}>
+      {/* Table header bar */}
+      <div className="flex items-center justify-between px-4 py-2.5 bg-[#f8fafc] border-b border-[#e5e7eb]">
+        <div className="flex items-center gap-2">
+          <Clock size={13} className="text-[#6b7280]" />
+          <span className="text-xs font-bold text-[#1f2937]">Booking History</span>
+          <span className="text-[10px] text-[#6b7280] bg-[#e5e7eb] px-1.5 py-0.5 rounded-full">{rows.length}</span>
+        </div>
+        <button
+          onClick={handleExcel}
+          className="flex items-center gap-1.5 text-[11px] font-semibold text-white bg-[#00a86b] px-2.5 py-1.5 rounded-[6px] hover:bg-[#008f5a] transition-colors"
+        >
+          <FileSpreadsheet size={12} />
+          Export Excel
+        </button>
+      </div>
+
+      {/* Table */}
+      <div className="overflow-x-auto">
+        <table className="w-full text-[11px]">
+          <thead>
+            <tr className="border-b border-[#f1f5f9]">
+              {["Ref", "Policy", "Destination", "Dates", "Premium", "Status"].map((h) => (
+                <th key={h} className="text-left px-3 py-2 text-[10px] font-bold text-[#6b7280] uppercase tracking-wide whitespace-nowrap">
+                  {h}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((r, i) => {
+              const st = statusStyle(r.status);
+              return (
+                <tr key={i} className={`border-b border-[#f8fafc] hover:bg-[#f8fafc] transition-colors ${i % 2 === 0 ? "" : "bg-[#fafafa]"}`}>
+                  <td className="px-3 py-2 font-mono font-semibold text-[#1f2937] whitespace-nowrap">{r.ref}</td>
+                  <td className="px-3 py-2 text-[#374151] max-w-[160px] truncate">{r.policy}</td>
+                  <td className="px-3 py-2 text-[#374151] whitespace-nowrap">{r.destination ?? "—"}</td>
+                  <td className="px-3 py-2 text-[#374151] whitespace-nowrap">{r.dates ?? "—"}</td>
+                  <td className="px-3 py-2 font-semibold text-[#1f2937] whitespace-nowrap">{r.premium ?? "—"}</td>
+                  <td className="px-3 py-2">
+                    <span className={`inline-flex items-center gap-1 text-[9px] font-bold px-2 py-0.5 rounded-full ${st.bg} ${st.text}`}>
+                      <span className={`w-1.5 h-1.5 rounded-full ${st.dot}`} />
+                      {(r.status ?? "confirmed").replace("_", " ")}
+                    </span>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+    </div>
   );
 }
