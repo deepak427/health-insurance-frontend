@@ -197,6 +197,24 @@ export async function fetchBooking(refNumber: string): Promise<Booking | null> {
   if (!res.ok) return null;
   return res.json();
 }
+
+export async function updateBooking(
+  refNumber: string,
+  updates: Partial<Pick<Booking, "destination" | "travel_dates" | "num_adults" | "num_children" | "traveller_ages" | "sum_insured" | "premium" | "notes">>
+): Promise<Booking> {
+  const res = await fetch(`${BASE_URL}/bookings/${refNumber}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(updates),
+  });
+  if (!res.ok) throw new Error("Failed to update booking");
+  return res.json();
+}
+
+export async function cancelBooking(refNumber: string): Promise<void> {
+  const res = await fetch(`${BASE_URL}/bookings/${refNumber}`, { method: "DELETE" });
+  if (!res.ok) throw new Error("Failed to cancel booking");
+}
 // ─────────────────────────────────────────────────────────────────────────────
 
 export async function* streamMessage(
