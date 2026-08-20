@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useCallback, useState } from "react";
-import { streamMessage } from "@/lib/api";
+import { streamMessage, uploadArtifact } from "@/lib/api";
 import { useChatContext, savePreview } from "@/context/ChatContext";
 import Sidebar from "./Sidebar";
 import ConversationList from "./ConversationList";
@@ -63,6 +63,14 @@ export default function ChatWindow() {
     setMessages((prev) => [...prev, { role: "agent", text: "", artifacts: [] }]);
 
     try {
+      if (file) {
+        try {
+          await uploadArtifact(userId, sessionId, file.name, file.mimeType, file.data);
+        } catch (uploadErr) {
+          console.warn("Failed to upload artifact to server:", uploadErr);
+        }
+      }
+
       const inlineData = file ? { mimeType: file.mimeType, data: file.data } : undefined;
 
       for await (const chunk of streamMessage(userId, sessionId, text, inlineData)) {

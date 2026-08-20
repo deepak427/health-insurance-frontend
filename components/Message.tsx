@@ -84,11 +84,19 @@ export default function Message({ msg, userId, sessionId, onSend }: Props) {
   // PDFs: use backend artifact endpoint (agent saves them)
   // History reconstructed messages: no data available, skip the chip
   const attachmentData = msg.userAttachment?.data;
-  const attachmentMime = msg.userAttachment?.mimeType ?? "";
+  let attachmentMime = msg.userAttachment?.mimeType ?? "";
+  if (!attachmentMime || attachmentMime === "application/octet-stream") {
+    const ext = userAttachmentName?.split(".").pop()?.toLowerCase() || "";
+    if (["png", "jpg", "jpeg", "webp", "gif", "bmp"].includes(ext)) {
+      attachmentMime = `image/${ext === "jpg" ? "jpeg" : ext}`;
+    } else if (ext === "pdf") {
+      attachmentMime = "application/pdf";
+    }
+  }
   const attachmentIsImage = attachmentMime.startsWith("image/");
 
-  // We only show the chip if we actually have data or it's a PDF that the backend might have
-  const showAttachmentChip = !!userAttachmentName && (!!attachmentData || !attachmentIsImage);
+  // Always show attachment chip when userAttachmentName exists
+  const showAttachmentChip = !!userAttachmentName;
 
   return (
     <div className={`flex gap-2 my-1.5 w-full ${isUser ? "justify-end" : "justify-start"}`}>
@@ -200,22 +208,37 @@ export default function Message({ msg, userId, sessionId, onSend }: Props) {
           {/* User-uploaded attachment chip */}
           {isUser && showAttachmentChip && (
             <div className="mt-2 pt-2 border-t border-black/5">
-              {attachmentIsImage && attachmentData ? (
-                // Render image inline — no external URL needed, no blocked popup
+              {attachmentIsImage ? (
+                // Render image inline — works with base64 in live turn and download URL after refresh
                 <div className="rounded-lg overflow-hidden border border-black/10" style={{ maxWidth: 220 }}>
                   <img
-                    src={`data:${attachmentMime};base64,${attachmentData}`}
+                    src={
+                      attachmentData
+                        ? `data:${attachmentMime};base64,${attachmentData}`
+                        : buildDownloadUrl(userId, sessionId, userAttachmentName!)
+                    }
                     alt={userAttachmentName ?? "attachment"}
-                    className="w-full h-auto object-contain block"
+                    className="w-full h-auto object-contain block bg-white"
                     style={{ maxHeight: 160 }}
                   />
-                  <div className="flex items-center gap-1.5 px-2 py-1 bg-white/80">
-                    <FileText size={10} className="text-[#6b7280] shrink-0" />
-                    <p className="text-[10px] text-[#6b7280] truncate">{userAttachmentName}</p>
+                  <div className="flex items-center justify-between gap-1.5 px-2 py-1 bg-white/80">
+                    <div className="flex items-center gap-1.5 min-w-0">
+                      <FileText size={10} className="text-[#6b7280] shrink-0" />
+                      <p className="text-[10px] text-[#6b7280] truncate">{userAttachmentName}</p>
+                    </div>
+                    <a
+                      href={buildDownloadUrl(userId, sessionId, userAttachmentName!)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-[#6b7280] hover:text-[#1f2937]"
+                      aria-label="Download image"
+                    >
+                      <Download size={11} />
+                    </a>
                   </div>
                 </div>
               ) : (
-                // PDF — open via backend artifact endpoint
+                // PDF / other document — open via backend artifact endpoint
                 <a
                   href={buildDownloadUrl(userId, sessionId, userAttachmentName!)}
                   target="_blank"

@@ -77,6 +77,29 @@ export async function deleteSession(userId: string, sessionId: string): Promise<
   await fetch(`${BASE_URL}/apps/${APP_NAME}/users/${userId}/sessions/${sessionId}`, { method: "DELETE" });
 }
 
+export async function uploadArtifact(
+  userId: string,
+  sessionId: string,
+  filename: string,
+  mimeType: string,
+  data: string
+): Promise<{ status: string; filename: string; version?: number }> {
+  const res = await fetch(`${BASE_URL}/upload-artifact`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      app_name: APP_NAME,
+      user_id: userId,
+      session_id: sessionId,
+      filename,
+      mime_type: mimeType,
+      data,
+    }),
+  });
+  if (!res.ok) throw new Error("Failed to upload artifact");
+  return res.json();
+}
+
 /** Extract readable messages from ADK session events */
 export function eventsToMessages(events: ADKEvent[]): ChatMessage[] {
   const msgs: ChatMessage[] = [];
@@ -98,9 +121,18 @@ export function eventsToMessages(events: ADKEvent[]): ChatMessage[] {
       if (!isFunctionResponse) {
         // Extract attachment name from the 📎 marker if present
         const attachMatch = text.match(/\n?📎 (.+)$/);
-        const userAttachment = attachMatch
-          ? { name: attachMatch[1].trim(), mimeType: "application/octet-stream" }
-          : undefined;
+        let userAttachment: { name: string; mimeType: string } | undefined = undefined;
+        if (attachMatch) {
+          const name = attachMatch[1].trim();
+          const ext = name.split(".").pop()?.toLowerCase() || "";
+          let mimeType = "application/octet-stream";
+          if (["png", "jpg", "jpeg", "webp", "gif", "bmp"].includes(ext)) {
+            mimeType = `image/${ext === "jpg" ? "jpeg" : ext}`;
+          } else if (ext === "pdf") {
+            mimeType = "application/pdf";
+          }
+          userAttachment = { name, mimeType };
+        }
         msgs.push({ role: "user", text, userAttachment });
       }
     } else if (ev.content?.role === "model" && text) {
