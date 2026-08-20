@@ -179,6 +179,7 @@ export interface Booking {
   sum_insured: string;
   premium: string;
   artifact_ids: string[];
+  addons: Array<{ key: string; name: string; cost?: number } | string>;
   status: string;
   notes: string;
 }

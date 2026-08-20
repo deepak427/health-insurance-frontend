@@ -18,12 +18,12 @@ interface Props {
   onSend?: (text: string) => void;
 }
 
-// Parses <!--POLICY_CARDS:[...]-->  out of agent text.
-// Returns { displayText, cards } — displayText has the marker stripped.
+// Parses <!--POLICY_CARDS:[...]-->, <!--ADDON_CARDS:[...]-->, and <!--VAS_CARDS:[...]-->  out of agent text.
+// Returns { displayText, cards } — displayText has the markers stripped.
 function parsePolicyCards(raw: string): { displayText: string; cards: PolicyCardData[] } {
-  const RE = /<!--POLICY_CARDS:([\s\S]*?)-->/g;
+  const RE = /<!--(?:POLICY|ADDON|VAS)_CARDS:([\s\S]*?)-->/g;
   const cards: PolicyCardData[] = [];
-  const displayText = raw.replace(RE, (_, json) => {
+  const displayText = raw.replace(RE, (match, json) => {
     try {
       const parsed = JSON.parse(json.trim());
       const arr: PolicyCardData[] = Array.isArray(parsed) ? parsed : [parsed];
