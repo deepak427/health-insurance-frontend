@@ -9,6 +9,7 @@ export interface Msg {
   role: "user" | "agent";
   text: string;
   artifacts?: string[];
+  userAttachment?: { name: string; mimeType: string; data?: string }; // user-uploaded file
 }
 
 interface Props {
@@ -64,11 +65,26 @@ export default function Message({ msg, userId, sessionId, onSend }: Props) {
   const isUser = msg.role === "user";
   const isTyping = !isUser && !msg.text && (!msg.artifacts || msg.artifacts.length === 0);
 
+  // For user messages: strip the 📎 attachment line and extract the filename
+  const userAttachmentName = isUser
+    ? (msg.text.match(/\n?📎 (.+)$/) ?? [])[1] ?? msg.userAttachment?.name ?? null
+    : null;
+  const userDisplayText = isUser && userAttachmentName
+    ? msg.text.replace(/\n?📎 .+$/, "").trim()
+    : msg.text;
+
   const { displayText, cards, bookingCards, bookingTable } = isUser
-    ? { displayText: msg.text, cards: [], bookingCards: [], bookingTable: null }
+    ? { displayText: userDisplayText, cards: [], bookingCards: [], bookingTable: null }
     : parseContent(msg.text);
 
   const hasExtraContent = cards.length > 0 || bookingCards.length > 0 || bookingTable !== null;
+
+  // Build openable URL for user-uploaded attachment (available after agent processes it as artifact)
+  const attachmentUrl = userAttachmentName
+    ? (msg.userAttachment?.mimeType?.startsWith("image/") && msg.userAttachment?.data
+        ? `data:${msg.userAttachment.mimeType};base64,${msg.userAttachment.data}`
+        : buildDownloadUrl(userId, sessionId, userAttachmentName))
+    : null;
 
   return (
     <div className={`flex gap-2 my-1.5 w-full ${isUser ? "justify-end" : "justify-start"}`}>
@@ -174,6 +190,27 @@ export default function Message({ msg, userId, sessionId, onSend }: Props) {
                   </a>
                 </div>
               ))}
+            </div>
+          )}
+
+          {/* User-uploaded attachment chip */}
+          {isUser && userAttachmentName && (
+            <div className="mt-2 pt-2 border-t border-black/5">
+              <a
+                href={attachmentUrl ?? "#"}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-white/60 border border-black/10 hover:bg-white transition-colors"
+              >
+                <div className="w-6 h-6 bg-red-100 rounded flex items-center justify-center text-red-600 shrink-0">
+                  <FileText size={12} />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-[11px] font-semibold text-[#1f2937] truncate max-w-[160px]">{userAttachmentName}</p>
+                  <p className="text-[9px] text-[#6b7280]">Tap to open</p>
+                </div>
+                <Download size={11} className="text-[#6b7280] shrink-0" />
+              </a>
             </div>
           )}
 

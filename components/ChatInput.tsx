@@ -7,6 +7,18 @@ interface Props {
   disabled?: boolean;
 }
 
+/** Guess a human-friendly document type from filename */
+function _docLabel(name: string): string {
+  const lower = name.toLowerCase();
+  if (lower.includes("passport")) return "passport";
+  if (lower.includes("aadhaar") || lower.includes("aadhar")) return "Aadhaar card";
+  if (lower.includes("pan")) return "PAN card";
+  if (lower.includes("visa")) return "visa document";
+  if (lower.includes("ticket") || lower.includes("boarding")) return "boarding pass";
+  if (lower.endsWith(".pdf")) return "PDF document";
+  return "document";
+}
+
 export default function ChatInput({ onSend, disabled }: Props) {
   const [text, setText] = useState("");
   const [file, setFile] = useState<{ name: string; mimeType: string; data: string } | null>(null);
@@ -28,7 +40,11 @@ export default function ChatInput({ onSend, disabled }: Props) {
   function submit() {
     const trimmed = text.trim();
     if (!trimmed && !file) return;
-    onSend(trimmed || "Analyze this document", file ?? undefined);
+    // Build a natural fallback message when user pastes/uploads a file without typing
+    const fallback = file
+      ? `Here is my ${_docLabel(file.name)}`
+      : "";
+    onSend(trimmed || fallback, file ?? undefined);
     setText("");
     setFile(null);
     if (textareaRef.current) {

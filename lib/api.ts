@@ -32,6 +32,7 @@ export interface ChatMessage {
   role: "user" | "agent";
   text: string;
   artifacts?: string[]; // filenames
+  userAttachment?: { name: string; mimeType: string; data?: string };
 }
 
 // ── Session list & history ────────────────────────────────────────────────────
@@ -95,7 +96,12 @@ export function eventsToMessages(events: ADKEvent[]): ChatMessage[] {
       // Skip tool/function response events — they aren't real user messages
       const isFunctionResponse = parts?.some((p: Record<string, unknown>) => "functionResponse" in p);
       if (!isFunctionResponse) {
-        msgs.push({ role: "user", text });
+        // Extract attachment name from the 📎 marker if present
+        const attachMatch = text.match(/\n?📎 (.+)$/);
+        const userAttachment = attachMatch
+          ? { name: attachMatch[1].trim(), mimeType: "application/octet-stream" }
+          : undefined;
+        msgs.push({ role: "user", text, userAttachment });
       }
     } else if (ev.content?.role === "model" && text) {
       // Flush any pending artifacts onto this agent message

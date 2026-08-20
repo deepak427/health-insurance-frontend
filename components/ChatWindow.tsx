@@ -53,7 +53,11 @@ export default function ChatWindow() {
 
     const isFirstMessage = messages.length === 0;
 
-    setMessages((prev) => [...prev, { role: "user", text: file ? `${text}\n📎 ${file.name}` : text }]);
+    setMessages((prev) => [...prev, { 
+      role: "user", 
+      text: file ? `${text}\n📎 ${file.name}` : text,
+      userAttachment: file ? { name: file.name, mimeType: file.mimeType, data: file.data } : undefined,
+    }]);
     setLoading(true);
     setError(null);
     setMessages((prev) => [...prev, { role: "agent", text: "", artifacts: [] }]);

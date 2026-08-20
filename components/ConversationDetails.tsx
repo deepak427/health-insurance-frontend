@@ -12,8 +12,14 @@ export default function ConversationDetails({ isOpenMobile, onCloseMobile }: Pro
   const { messages, userId, sessionId } = useChatContext();
   const [docsOpen, setDocsOpen] = useState(true);
 
-  // Extract documents sent in the chat
-  const documents = messages.flatMap(m => m.artifacts || []);
+  // Agent-generated PDFs from artifacts
+  const agentDocs = messages.flatMap(m => m.artifacts || []);
+  // User-uploaded attachments parsed from message text/userAttachment
+  const userDocs = messages
+    .filter(m => m.role === "user" && m.userAttachment?.name)
+    .map(m => ({ name: m.userAttachment!.name, mimeType: m.userAttachment!.mimeType, isUser: true }));
+
+  const totalDocs = agentDocs.length + userDocs.length;
 
   const content = (
     <div className="flex flex-col h-full w-full xl:w-[280px] bg-white border-l border-[#e5e7eb]">
@@ -62,7 +68,7 @@ export default function ConversationDetails({ isOpenMobile, onCloseMobile }: Pro
                 <span className="text-xs font-bold text-[#1f2937]">Policy Documents</span>
               </div>
               <div className="flex items-center gap-2">
-                <span className="text-xs font-medium text-[#6b7280]">{documents.length}</span>
+                <span className="text-xs font-medium text-[#6b7280]">{totalDocs}</span>
                 {docsOpen ? (
                   <ChevronDown size={14} className="text-[#9ca3af]" />
                 ) : (
@@ -71,10 +77,10 @@ export default function ConversationDetails({ isOpenMobile, onCloseMobile }: Pro
               </div>
             </button>
             
-            {docsOpen && documents.length > 0 && (
+            {docsOpen && (agentDocs.length > 0 || userDocs.length > 0) && (
               <div className="px-5 pb-4 flex flex-col gap-3">
-                {documents.map((filename, i) => (
-                  <div key={i} className="flex items-center gap-3 bg-[#f8fafc] p-2 rounded-lg border border-[#e5e7eb]">
+                {agentDocs.map((filename, i) => (
+                  <div key={`agent-${i}`} className="flex items-center gap-3 bg-[#f8fafc] p-2 rounded-lg border border-[#e5e7eb]">
                     <div className="w-8 h-8 bg-red-100 rounded flex items-center justify-center text-red-600 shrink-0">
                        <FileText size={16} />
                     </div>
@@ -87,16 +93,34 @@ export default function ConversationDetails({ isOpenMobile, onCloseMobile }: Pro
                       target="_blank"
                       rel="noopener noreferrer"
                       className="w-8 h-8 flex items-center justify-center text-[#6b7280] hover:bg-gray-100 rounded shrink-0"
-                      title="Download"
+                      title="Open"
                     >
                       <Download size={16} />
                     </a>
                   </div>
                 ))}
+                {userDocs.map((doc, i) => (
+                  <a
+                    key={`user-${i}`}
+                    href={buildDownloadUrl(userId, sessionId, doc.name)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-3 bg-[#fffbeb] p-2 rounded-lg border border-[#fde68a] hover:bg-[#fef9c3] transition-colors"
+                  >
+                    <div className="w-8 h-8 bg-amber-100 rounded flex items-center justify-center text-amber-600 shrink-0">
+                      <FileText size={16} />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-bold text-[#1f2937] truncate" title={doc.name}>{doc.name}</p>
+                      <p className="text-[10px] font-light text-[#6b7280]">Uploaded by you</p>
+                    </div>
+                    <Download size={14} className="text-[#9ca3af] shrink-0" />
+                  </a>
+                ))}
               </div>
             )}
             
-            {docsOpen && documents.length === 0 && (
+            {docsOpen && totalDocs === 0 && (
               <div className="px-5 pb-4">
                 <p className="text-xs font-light text-[#9ca3af] text-center">No documents in this chat yet.</p>
               </div>

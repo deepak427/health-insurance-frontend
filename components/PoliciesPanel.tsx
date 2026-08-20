@@ -64,11 +64,13 @@ export default function PoliciesPanel({ isOpen, onClose }: Props) {
     );
   });
 
-  const grouped = {
-    confirmed: filtered.filter((b) => b.status === "confirmed"),
+  const grouped: Record<string, Booking[]> = {
+    confirmed:    filtered.filter((b) => b.status === "confirmed"),
+    complete:     filtered.filter((b) => b.status === "complete"),
+    partial:      filtered.filter((b) => b.status === "partial" || b.status === "pending_docs"),
     docs_received: filtered.filter((b) => b.status === "docs_received"),
-    claim_filed: filtered.filter((b) => b.status === "claim_filed"),
-    cancelled: filtered.filter((b) => b.status === "cancelled"),
+    claim_filed:  filtered.filter((b) => b.status === "claim_filed"),
+    cancelled:    filtered.filter((b) => b.status === "cancelled"),
   };
 
   function openEdit(booking: Booking) {
@@ -182,23 +184,25 @@ export default function PoliciesPanel({ isOpen, onClose }: Props) {
           </div>
         )}
 
-        {["confirmed", "docs_received", "claim_filed", "cancelled"].map((status) => {
-          const items = grouped[status as keyof typeof grouped];
+        {["complete", "confirmed", "partial", "docs_received", "claim_filed", "cancelled"].map((status) => {
+          const items = grouped[status] ?? [];
           if (items.length === 0) return null;
 
-          const statusConfig = {
-            confirmed: { label: "Confirmed", color: "text-[#00a86b]", bg: "bg-[#f0fdf4]", border: "border-[#bbf7d0]" },
-            docs_received: { label: "Docs Received", color: "text-[#0ea5e9]", bg: "bg-[#f0f9ff]", border: "border-[#bae6fd]" },
-            claim_filed: { label: "Claim Filed", color: "text-[#f59e0b]", bg: "bg-[#fffbeb]", border: "border-[#fde68a]" },
-            cancelled: { label: "Cancelled", color: "text-[#ef4444]", bg: "bg-[#fef2f2]", border: "border-[#fecaca]" },
-          }[status] || { label: status, color: "text-[#6b7280]", bg: "bg-[#f8fafc]", border: "border-[#e5e7eb]" };
-
+          const statusConfig: Record<string, { label: string; color: string; bg: string; border: string }> = {
+            complete:      { label: "Complete",      color: "text-[#00a86b]", bg: "bg-[#f0fdf4]", border: "border-[#86efac]" },
+            confirmed:     { label: "Confirmed",     color: "text-[#0ea5e9]", bg: "bg-[#f0f9ff]", border: "border-[#bae6fd]" },
+            partial:       { label: "Pending Docs",  color: "text-[#f59e0b]", bg: "bg-[#fffbeb]", border: "border-[#fde68a]" },
+            docs_received: { label: "Docs Received", color: "text-[#8b5cf6]", bg: "bg-[#f5f3ff]", border: "border-[#ddd6fe]" },
+            claim_filed:   { label: "Claim Filed",   color: "text-[#f97316]", bg: "bg-[#fff7ed]", border: "border-[#fed7aa]" },
+            cancelled:     { label: "Cancelled",     color: "text-[#ef4444]", bg: "bg-[#fef2f2]", border: "border-[#fecaca]" },
+          };
+          const cfg = statusConfig[status] ?? { label: status, color: "text-[#6b7280]", bg: "bg-[#f8fafc]", border: "border-[#e5e7eb]" };
           const isCancelledSection = status === "cancelled";
 
           return (
             <div key={status}>
               <div className="flex items-center gap-2 px-5 py-2.5 bg-white border-b border-[#f1f5f9] sticky top-0 z-10">
-                <span className="text-[11px] font-bold text-[#1f2937]">{statusConfig.label}</span>
+                <span className="text-[11px] font-bold text-[#1f2937]">{cfg.label}</span>
                 <span className="text-[10px] font-light text-[#9ca3af]">{items.length}</span>
               </div>
 
@@ -210,8 +214,8 @@ export default function PoliciesPanel({ isOpen, onClose }: Props) {
                   {/* Card header */}
                   <div className="flex items-start justify-between p-3 border-b border-[#f1f5f9]">
                     <div className="flex items-center gap-2">
-                      <div className={`w-8 h-8 rounded-lg ${statusConfig.bg} border ${statusConfig.border} flex items-center justify-center shrink-0`}>
-                        <Shield size={14} className={statusConfig.color} />
+                      <div className={`w-8 h-8 rounded-lg ${cfg.bg} border ${cfg.border} flex items-center justify-center shrink-0`}>
+                        <Shield size={14} className={cfg.color} />
                       </div>
                       <div>
                         <p className="text-xs font-bold text-[#1f2937]">{booking.policy_name}</p>
@@ -283,19 +287,29 @@ export default function PoliciesPanel({ isOpen, onClose }: Props) {
                   {/* Artifacts */}
                   {booking.artifact_ids && booking.artifact_ids.length > 0 && (
                     <div className="p-3 border-t border-[#f1f5f9] bg-[#f8fafc]">
+                      <p className="text-[10px] font-bold text-[#9ca3af] mb-2">Documents</p>
                       <div className="flex items-center gap-2 flex-wrap">
-                        {booking.artifact_ids.map((filename) => (
-                          <a
-                            key={filename}
-                            href={buildBookingDownloadUrl(booking.user_id, booking.session_id, filename)}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="flex items-center gap-1.5 text-[10px] font-medium px-2 py-1 rounded bg-white border border-[#e5e7eb] text-[#00a86b] hover:bg-[#f0fdf4] hover:border-[#00a86b] transition-colors"
-                          >
-                            <FileText size={10} />
-                            {filename.replace(/^booking_confirmation_/, "").replace(/_/g, " ").replace(".pdf", "")}
-                          </a>
-                        ))}
+                        {booking.artifact_ids.map((filename) => {
+                          const isUserDoc = !filename.startsWith("booking_") && !filename.startsWith("quotation_");
+                          return (
+                            <a
+                              key={filename}
+                              href={buildBookingDownloadUrl(booking.user_id, booking.session_id, filename)}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className={`flex items-center gap-1.5 text-[10px] font-medium px-2 py-1 rounded border transition-colors ${
+                                isUserDoc
+                                  ? "bg-[#fffbeb] border-[#fde68a] text-[#d97706] hover:bg-[#fef3c7]"
+                                  : "bg-white border-[#e5e7eb] text-[#00a86b] hover:bg-[#f0fdf4] hover:border-[#00a86b]"
+                              }`}
+                            >
+                              <FileText size={10} />
+                              {isUserDoc
+                                ? filename
+                                : filename.replace(/^booking_confirmation_/, "").replace(/_/g, " ").replace(".pdf", "").replace(/^quotation_comparison_/, "Comparison ").trim()}
+                            </a>
+                          );
+                        })}
                       </div>
                     </div>
                   )}
