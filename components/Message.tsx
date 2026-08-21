@@ -99,27 +99,30 @@ export default function Message({ msg, userId, sessionId, onSend }: Props) {
   const showAttachmentChip = !!userAttachmentName;
 
   return (
-    <div className={`flex gap-2 my-1.5 w-full ${isUser ? "justify-end" : "justify-start"}`}>
+    <div className={`flex gap-2.5 my-2 w-full ${isUser ? "justify-end" : "justify-start"}`}>
 
       {/* Agent Avatar */}
       {!isUser && (
-        <div className="w-8 h-8 rounded-full bg-[#00a86b] shrink-0 flex items-center justify-center overflow-hidden mt-1">
-          <span className="text-sm">🎧</span>
+        <div className="w-8 h-8 rounded-lg bg-[#ece7fe] border border-[#7b58dc]/20 text-[#5925dc] shrink-0 flex items-center justify-center overflow-hidden mt-0.5 shadow-2xs">
+          <span className="text-xs font-bold">AI</span>
         </div>
       )}
 
-      <div className={`flex flex-col ${isUser ? "items-end" : "items-start"}`} style={{ maxWidth: hasExtraContent ? "90%" : "75%" }}>
+      <div className={`flex flex-col ${isUser ? "items-end" : "items-start"}`} style={{ maxWidth: hasExtraContent ? "95%" : "80%" }}>
         {/* Author Label */}
         {!isUser && (
-          <span className="text-xs font-semibold text-[#00a86b] mb-1 ml-1">Operations Team</span>
+          <div className="flex items-center gap-1.5 mb-1 ml-1">
+            <span className="text-[11px] font-bold text-[#5925dc]">Dolphin Operations</span>
+            <span className="text-[9px] font-semibold text-[#6b7280] bg-[#f1f5f9] px-1 rounded">BOT</span>
+          </div>
         )}
 
         {/* Bubble — text only, no cards inside */}
         <div
-          className={`px-3 py-2 text-sm relative ${
+          className={`px-3.5 py-2.5 text-sm relative border ${
             isUser
-              ? "bg-[#dcf8c6] text-[#1f2937] rounded-[10px] rounded-tr-[2px] shadow-sm"
-              : "bg-white text-[#1f2937] rounded-[10px] rounded-tl-[2px] shadow-sm"
+              ? "bg-[#f4f0ff] text-[#1f2937] border-[#d8b4fe] rounded-2xl rounded-tr-xs shadow-2xs"
+              : "bg-white text-[#1f2937] border-[#e5e7eb] rounded-2xl rounded-tl-xs shadow-2xs"
           }`}
           style={{ wordBreak: "break-word", maxWidth: hasExtraContent ? "100%" : undefined }}
         >

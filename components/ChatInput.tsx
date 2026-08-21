@@ -1,6 +1,6 @@
 "use client";
 import { useRef, useState, KeyboardEvent } from "react";
-import { Send, Paperclip, X, FileText } from "lucide-react";
+import { Send, Paperclip, X, FileText, Sparkles } from "lucide-react";
 
 interface Props {
   onSend: (text: string, file?: { mimeType: string; data: string; name: string }) => void;
@@ -18,6 +18,13 @@ function _docLabel(name: string): string {
   if (lower.endsWith(".pdf")) return "PDF document";
   return "document";
 }
+
+const QUICK_PROMPTS = [
+  "Compare travel insurance plans for Europe",
+  "How do I file an emergency medical claim?",
+  "Show me add-ons for adventure sports",
+  "View my current policy status",
+];
 
 export default function ChatInput({ onSend, disabled }: Props) {
   const [text, setText] = useState("");
@@ -40,7 +47,6 @@ export default function ChatInput({ onSend, disabled }: Props) {
   function submit() {
     const trimmed = text.trim();
     if (!trimmed && !file) return;
-    // Build a natural fallback message when user pastes/uploads a file without typing
     const fallback = file
       ? `Here is my ${_docLabel(file.name)}`
       : "";
@@ -62,35 +68,53 @@ export default function ChatInput({ onSend, disabled }: Props) {
   function handleTextChange(e: React.ChangeEvent<HTMLTextAreaElement>) {
     setText(e.target.value);
     e.target.style.height = "auto";
-    e.target.style.height = Math.min(e.target.scrollHeight, 140) + "px";
+    e.target.style.height = Math.min(e.target.scrollHeight, 120) + "px";
   }
 
   return (
-    <div className="px-6 py-4 bg-white border-t border-[#e5e7eb]">
+    <div className="px-4 md:px-8 py-3 bg-white border-t border-[#e5e7eb] flex flex-col gap-2">
+      {/* Quick Prompt Suggestions */}
+      <div className="hidden sm:flex items-center gap-1.5 overflow-x-auto pb-0.5 no-scrollbar">
+        <span className="text-[10px] font-bold text-[#9ca3af] uppercase tracking-wide shrink-0 mr-1 flex items-center gap-1">
+          <Sparkles size={11} className="text-[#7b58dc]" /> Suggested:
+        </span>
+        {QUICK_PROMPTS.map((prompt, i) => (
+          <button
+            key={i}
+            onClick={() => onSend(prompt)}
+            disabled={disabled}
+            className="text-[11px] px-2.5 py-1 rounded-full bg-[#f8fafc] border border-[#e5e7eb] text-[#4b5563] hover:bg-[#ece7fe] hover:text-[#5925dc] hover:border-[#d8b4fe] transition-all whitespace-nowrap shrink-0 disabled:opacity-50"
+          >
+            {prompt}
+          </button>
+        ))}
+      </div>
+
       <div className="flex flex-col gap-2">
         {/* File Preview Badge */}
         {file && (
-          <div className="flex items-center gap-2 px-3 py-1.5 rounded bg-gray-100 text-[#1f2937] border border-[#e5e7eb] self-start text-xs shadow-sm">
-            <FileText size={14} className="text-red-500" />
-            <span className="truncate max-w-xs">{file.name}</span>
+          <div className="flex items-center gap-2 px-2.5 py-1 rounded-md bg-[#ece7fe] text-[#5925dc] border border-[#d8b4fe] self-start text-xs shadow-2xs">
+            <FileText size={13} className="text-[#7b58dc]" />
+            <span className="truncate max-w-xs font-semibold">{file.name}</span>
             <button
               onClick={() => setFile(null)}
-              className="w-5 h-5 flex items-center justify-center rounded hover:bg-gray-200 text-[#6b7280]"
+              className="w-4 h-4 flex items-center justify-center rounded hover:bg-white/60 text-[#5925dc]"
             >
-              <X size={13} />
+              <X size={12} />
             </button>
           </div>
         )}
 
         {/* Input Bar */}
-        <div className="flex items-end gap-2 px-1">
+        <div className="flex items-end gap-2 p-1 bg-[#f8fafc] border border-[#d1d5db] focus-within:border-[#7b58dc] focus-within:ring-1 focus-within:ring-[#7b58dc] rounded-xl transition-all">
           {/* Attach Button */}
           <button
             onClick={() => fileRef.current?.click()}
             disabled={disabled}
-            className="w-8 h-8 shrink-0 rounded flex items-center justify-center text-[#9ca3af] hover:text-[#6b7280] transition-colors disabled:opacity-50 mb-1"
+            className="w-8 h-8 shrink-0 rounded-lg flex items-center justify-center text-[#6b7280] hover:text-[#1f2937] hover:bg-white transition-colors disabled:opacity-50 mb-0.5"
+            title="Upload Document / PDF / Image"
           >
-            <Paperclip size={20} />
+            <Paperclip size={17} />
           </button>
           <input
             ref={fileRef}
@@ -108,8 +132,8 @@ export default function ChatInput({ onSend, disabled }: Props) {
             onChange={handleTextChange}
             onKeyDown={handleKey}
             disabled={disabled}
-            placeholder="Type a travel insurance message..."
-            className="flex-1 resize-none bg-transparent text-sm font-light text-[#1f2937] placeholder-[#9ca3af] outline-none py-2 px-2 disabled:opacity-50 min-h-[36px]"
+            placeholder="Type your insurance query or ask to book / compare..."
+            className="flex-1 resize-none bg-transparent text-xs sm:text-sm text-[#1f2937] placeholder-[#9ca3af] outline-none py-2 px-1 disabled:opacity-50 min-h-[34px]"
             style={{ maxHeight: "120px" }}
           />
 
@@ -117,7 +141,8 @@ export default function ChatInput({ onSend, disabled }: Props) {
           <button
             onClick={submit}
             disabled={disabled || (!text.trim() && !file)}
-            className="w-8 h-8 shrink-0 rounded bg-[#00a86b] hover:bg-[#008f5a] text-white flex items-center justify-center transition-colors disabled:opacity-50 mb-1"
+            className="w-8 h-8 shrink-0 rounded-lg bg-[#7b58dc] hover:bg-[#6e49cb] text-white flex items-center justify-center transition-colors disabled:opacity-40 mb-0.5 shadow-2xs"
+            title="Send Message"
           >
             <Send size={14} className="-ml-0.5" />
           </button>

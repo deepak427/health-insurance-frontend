@@ -1,5 +1,11 @@
 "use client";
-import { FilePlus, FileText, IndianRupee, BarChart3, MessageCircle, HeadphonesIcon, Database, LogOut } from "lucide-react";
+
+import { useState } from "react";
+import {
+  FileText, IndianRupee, BarChart3, MessageCircle, Database, LogOut,
+  FolderGit2, ChevronDown, ChevronRight, Sparkles,
+  Shield, Settings, HelpCircle, PanelLeftClose, PanelLeft
+} from "lucide-react";
 import Link from "next/link";
 import { useChatContext } from "@/context/ChatContext";
 
@@ -13,83 +19,226 @@ interface Props {
 
 export default function Sidebar({ isOpenMobile, onCloseMobile, onOpenPolicies, onClosePolicies, policiesOpen }: Props) {
   const { logout, username } = useChatContext();
+  const [collapsed, setCollapsed] = useState(false);
+
+  // Accordion section states (GitLab tree menu style)
+  const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({
+    ai: true,
+    code: true,
+    manage: false,
+    plan: false,
+    settings: false,
+  });
+
+  const toggleSection = (section: string) => {
+    setExpandedSections((prev) => ({ ...prev, [section]: !prev[section] }));
+  };
 
   const content = (
-    <div className="flex flex-col h-full w-[220px] bg-[#0a192f] text-white">
+    <div
+      className={`flex flex-col h-full bg-[#fbfbfd] text-[#1f2937] border-r border-[#e5e7eb] select-none transition-all duration-200 ${
+        collapsed ? "w-[68px]" : "w-[240px]"
+      }`}
+    >
       {/* Brand Header */}
-      <div className="flex items-center gap-3 px-5 py-5">
-        {/* Proper dolphin SVG — white, swimming shape */}
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="white" xmlns="http://www.w3.org/2000/svg">
-          <path d="M12.984 8.783c-1.332-1.936-3.792-3.14-6.425-3.14-1.295 0-2.527.31-3.626.866.52-2.316 2.584-4.062 5.067-4.062 2.85 0 5.161 2.31 5.161 5.16 0 .438-.057.863-.163 1.267a5.122 5.122 0 0 1-.014-.091zm9.324 7.64c-.958-3.325-3.418-5.748-6.685-6.683-.81-.233-1.666-.363-2.545-.38l-1.077-.021c.542.484 1.002 1.05 1.353 1.68l.215.385c.896 1.62 1.34 3.535 1.272 5.518l-.01.32c1.78-.184 3.393-1.052 4.544-2.355l1.636-1.848.067-1.127a5.534 5.534 0 0 0 .108-.501.996.996 0 0 1-.878.508c-.28 0-.546-.118-.737-.324l-2.072-2.222c-.383-.412-.358-1.055.054-1.439.412-.383 1.055-.357 1.439.055l1.838 1.973c.123.131.295.205.474.205h.001zm-5.75-8.52c-.615-.466-1.286-.867-1.998-1.196-1.293-.598-2.678-.897-4.113-.897-.992 0-1.97.16-2.91.468C3.896 7.425 1.155 9.775.228 12.87l-.147.494 2.112-2.348c.15-.167.315-.327.491-.478l.42-.355c.784-.663 1.678-1.168 2.657-1.498.412-.138.835-.23 1.264-.275l.435-.046c1.67-.176 3.336.262 4.673 1.233.15.108.297.22.441.336l.244.195c1.455 1.164 2.378 2.85 2.628 4.757.065.498.077 1.002.036 1.5l-.019.227c-.234 2.809-1.956 5.176-4.524 6.184l-2.028.794 3.385.163c2.72.13 5.37-1.195 6.953-3.488l2.257-3.265.172-.45c.162-.42.274-.858.337-1.309.055-.398-.016-.807-.205-1.158l-.946-1.745c-.464-.856-1.11-1.577-1.91-2.136z"/>
-        </svg>
-        <h1 className="text-[15px] font-black tracking-[-0.02em] text-white">
-          Dolphin <span className="text-[#00a86b]">Portal</span>
-        </h1>
+      <div className={`flex items-center ${collapsed ? "justify-center px-2" : "justify-between px-4"} py-3.5 border-b border-[#e5e7eb] bg-white`}>
+        <div className="flex items-center gap-2.5 min-w-0">
+          {/* GitLab / Dolphin Enterprise Emblem */}
+          <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-[#7b58dc] to-[#e24329] flex items-center justify-center text-white shrink-0 shadow-xs">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="white">
+              <path d="M12.984 8.783c-1.332-1.936-3.792-3.14-6.425-3.14-1.295 0-2.527.31-3.626.866.52-2.316 2.584-4.062 5.067-4.062 2.85 0 5.161 2.31 5.161 5.16 0 .438-.057.863-.163 1.267a5.122 5.122 0 0 1-.014-.091zm9.324 7.64c-.958-3.325-3.418-5.748-6.685-6.683-.81-.233-1.666-.363-2.545-.38l-1.077-.021c.542.484 1.002 1.05 1.353 1.68l.215.385c.896 1.62 1.34 3.535 1.272 5.518l-.01.32c1.78-.184 3.393-1.052 4.544-2.355l1.636-1.848.067-1.127a5.534 5.534 0 0 0 .108-.501.996.996 0 0 1-.878.508c-.28 0-.546-.118-.737-.324l-2.072-2.222c-.383-.412-.358-1.055.054-1.439.412-.383 1.055-.357 1.439.055l1.838 1.973c.123.131.295.205.474.205h.001z"/>
+            </svg>
+          </div>
+          {!collapsed && (
+            <div className="flex flex-col min-w-0">
+              <span className="text-[13px] font-bold text-[#1f2937] leading-tight truncate">
+                Dolphin <span className="text-[#7b58dc]">Portal</span>
+              </span>
+              <span className="text-[10px] text-[#6b7280] font-normal leading-tight truncate">
+                Enterprise AI Hub
+              </span>
+            </div>
+          )}
+        </div>
       </div>
 
-      {/* Primary Navigation */}
-      <nav className="flex-1 px-3 mt-4 flex flex-col gap-1.5">
-        <Link href="#" className="flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-light text-[#94a3b8] hover:bg-[#132742] hover:text-white transition-colors">
-          <FilePlus size={18} />
-          <span>Create Policy</span>
-        </Link>
-        <button
-          onClick={() => { onCloseMobile?.(); onOpenPolicies?.(); }}
-          className={`flex items-center gap-3 px-4 py-3 rounded-lg text-sm w-full text-left transition-colors relative ${
-            policiesOpen
-              ? "bg-[#132742] text-white font-bold before:absolute before:left-0 before:top-2 before:bottom-2 before:w-1 before:bg-[#00a86b] before:rounded-r-md"
-              : "font-light text-[#94a3b8] hover:bg-[#132742] hover:text-white"
-          }`}
-        >
-          <FileText size={18} />
-          <span>My Policies</span>
-        </button>
-        <Link href="#" className="flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-light text-[#94a3b8] hover:bg-[#132742] hover:text-white transition-colors">
-          <IndianRupee size={18} />
-          <span>Claims</span>
-        </Link>
-        <Link href="#" className="flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-light text-[#94a3b8] hover:bg-[#132742] hover:text-white transition-colors">
-          <BarChart3 size={18} />
-          <span>Reports</span>
-        </Link>
-        <Link href="/data" onClick={() => onCloseMobile?.()} className="flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-light text-[#94a3b8] hover:bg-[#132742] hover:text-white transition-colors">
-          <Database size={18} />
-          <span>Knowledge Base</span>
-        </Link>
-        <Link href="/" onClick={() => { onCloseMobile?.(); onClosePolicies?.(); }} className={`flex items-center justify-between px-4 py-3 mt-2 rounded-lg relative transition-colors ${
-            !policiesOpen
-              ? "bg-[#132742] text-white before:absolute before:left-0 before:top-2 before:bottom-2 before:w-1 before:bg-[#00a86b] before:rounded-r-md"
-              : "text-[#94a3b8] hover:bg-[#132742] hover:text-white"
-          }`}>
-          <div className={`flex items-center gap-3 text-sm font-bold tracking-[-0.01em] ${!policiesOpen ? "text-white" : "text-[#94a3b8]"}`}>
-            <MessageCircle size={18} />
-            <span>Buddy</span>
+      {/* Navigation Tree (GitLab style) */}
+      <div className="flex-1 overflow-y-auto px-2 py-3 flex flex-col gap-0.5 text-[13px]">
+        {/* Project Section Title */}
+        {!collapsed && (
+          <div className="px-2.5 py-1 text-[11px] font-bold text-[#4b5563] uppercase tracking-wider">
+            Project
           </div>
-          <span className="text-[9px] font-bold bg-[#00a86b] px-1.5 py-0.5 rounded text-white">LIVE</span>
-        </Link>
-      </nav>
+        )}
 
-      {/* Footer */}
-      <div className="px-3 py-4 flex flex-col gap-1 border-t border-[#132742]">
-        {/* Logout */}
+        {/* AI Group */}
+        <div className="flex flex-col">
+          <button
+            onClick={() => toggleSection("ai")}
+            className={`flex items-center ${collapsed ? "justify-center" : "justify-between"} px-2.5 py-1.5 rounded-md text-[#374151] hover:bg-[#f1f5f9] transition-colors w-full font-medium`}
+            title="AI & Assistant"
+          >
+            <div className="flex items-center gap-2.5 min-w-0">
+              <Sparkles size={16} className="text-[#7b58dc] shrink-0" />
+              {!collapsed && <span className="truncate">AI Assistant</span>}
+            </div>
+            {!collapsed && (
+              expandedSections.ai ? <ChevronDown size={14} className="text-[#9ca3af]" /> : <ChevronRight size={14} className="text-[#9ca3af]" />
+            )}
+          </button>
+
+          {(expandedSections.ai || collapsed) && (
+            <div className={`flex flex-col gap-0.5 ${!collapsed ? "pl-6 mt-0.5" : ""}`}>
+              <Link
+                href="/"
+                onClick={() => { onCloseMobile?.(); onClosePolicies?.(); }}
+                className={`flex items-center ${collapsed ? "justify-center px-1.5" : "justify-between px-2.5"} py-1.5 rounded-md transition-all ${
+                  !policiesOpen
+                    ? "bg-[#ece7fe] text-[#5925dc] font-semibold"
+                    : "text-[#4b5563] hover:bg-[#f1f5f9] hover:text-[#1f2937]"
+                }`}
+                title="Buddy Live AI"
+              >
+                <div className="flex items-center gap-2 min-w-0">
+                  <MessageCircle size={15} className={!policiesOpen ? "text-[#5925dc]" : "text-[#6b7280]"} />
+                  {!collapsed && <span className="truncate">Buddy Chat</span>}
+                </div>
+                {!collapsed && (
+                  <span className="text-[9px] font-bold bg-[#00a86b] text-white px-1.5 py-0.2 rounded shadow-xs">
+                    LIVE
+                  </span>
+                )}
+              </Link>
+            </div>
+          )}
+        </div>
+
+        {/* Code / Policies Section */}
+        <div className="flex flex-col mt-1">
+          <button
+            onClick={() => toggleSection("code")}
+            className={`flex items-center ${collapsed ? "justify-center" : "justify-between"} px-2.5 py-1.5 rounded-md text-[#374151] hover:bg-[#f1f5f9] transition-colors w-full font-medium`}
+            title="Code & Policies"
+          >
+            <div className="flex items-center gap-2.5 min-w-0">
+              <FolderGit2 size={16} className="text-[#6b7280] shrink-0" />
+              {!collapsed && <span className="truncate">Policies & Plans</span>}
+            </div>
+            {!collapsed && (
+              expandedSections.code ? <ChevronDown size={14} className="text-[#9ca3af]" /> : <ChevronRight size={14} className="text-[#9ca3af]" />
+            )}
+          </button>
+
+          {(expandedSections.code || collapsed) && (
+            <div className={`flex flex-col gap-0.5 ${!collapsed ? "pl-6 mt-0.5" : ""}`}>
+              <button
+                onClick={() => { onCloseMobile?.(); onOpenPolicies?.(); }}
+                className={`flex items-center ${collapsed ? "justify-center px-1.5" : "justify-between px-2.5"} py-1.5 rounded-md transition-all text-left w-full ${
+                  policiesOpen
+                    ? "bg-[#ece7fe] text-[#5925dc] font-semibold"
+                    : "text-[#4b5563] hover:bg-[#f1f5f9] hover:text-[#1f2937]"
+                }`}
+                title="My Policies"
+              >
+                <div className="flex items-center gap-2 min-w-0">
+                  <FileText size={15} className={policiesOpen ? "text-[#5925dc]" : "text-[#6b7280]"} />
+                  {!collapsed && <span className="truncate">My Policies</span>}
+                </div>
+              </button>
+
+              <Link
+                href="/data"
+                onClick={() => onCloseMobile?.()}
+                className={`flex items-center ${collapsed ? "justify-center px-1.5" : "gap-2 px-2.5"} py-1.5 rounded-md text-[#4b5563] hover:bg-[#f1f5f9] hover:text-[#1f2937] transition-all`}
+                title="Knowledge Base & Catalogs"
+              >
+                <Database size={15} className="text-[#6b7280]" />
+                {!collapsed && <span className="truncate">Knowledge Base</span>}
+              </Link>
+            </div>
+          )}
+        </div>
+
+        {/* Manage Section */}
+        <div className="flex flex-col mt-1">
+          <button
+            onClick={() => toggleSection("manage")}
+            className={`flex items-center ${collapsed ? "justify-center" : "justify-between"} px-2.5 py-1.5 rounded-md text-[#374151] hover:bg-[#f1f5f9] transition-colors w-full font-medium`}
+            title="Manage"
+          >
+            <div className="flex items-center gap-2.5 min-w-0">
+              <Shield size={16} className="text-[#6b7280] shrink-0" />
+              {!collapsed && <span className="truncate">Claims & Billing</span>}
+            </div>
+            {!collapsed && (
+              expandedSections.manage ? <ChevronDown size={14} className="text-[#9ca3af]" /> : <ChevronRight size={14} className="text-[#9ca3af]" />
+            )}
+          </button>
+
+          {(expandedSections.manage || collapsed) && !collapsed && (
+            <div className="flex flex-col gap-0.5 pl-6 mt-0.5">
+              <span className="flex items-center gap-2 px-2.5 py-1.5 rounded-md text-[#6b7280] hover:bg-[#f1f5f9] cursor-pointer">
+                <IndianRupee size={15} />
+                <span>Claims</span>
+              </span>
+              <span className="flex items-center gap-2 px-2.5 py-1.5 rounded-md text-[#6b7280] hover:bg-[#f1f5f9] cursor-pointer">
+                <BarChart3 size={15} />
+                <span>Reports</span>
+              </span>
+            </div>
+          )}
+        </div>
+
+        {/* Settings */}
+        <div className="flex flex-col mt-1">
+          <Link
+            href="/data"
+            onClick={() => onCloseMobile?.()}
+            className={`flex items-center ${collapsed ? "justify-center" : "gap-2.5"} px-2.5 py-1.5 rounded-md text-[#374151] hover:bg-[#f1f5f9] transition-colors font-medium`}
+            title="Settings"
+          >
+            <Settings size={16} className="text-[#6b7280] shrink-0" />
+            {!collapsed && <span>Settings</span>}
+          </Link>
+        </div>
+      </div>
+
+      {/* Sidebar Footer */}
+      <div className="p-2 border-t border-[#e5e7eb] bg-white flex flex-col gap-1">
+        {/* Help & Support */}
+        <button
+          className={`flex items-center ${collapsed ? "justify-center" : "gap-2.5"} px-2.5 py-1.5 rounded-md text-[#6b7280] hover:bg-[#f1f5f9] hover:text-[#1f2937] text-xs transition-colors w-full text-left`}
+          title="Help"
+        >
+          <HelpCircle size={16} className="shrink-0" />
+          {!collapsed && <span>Help & Docs</span>}
+        </button>
+
+        {/* Sign out */}
         <button
           onClick={logout}
-          className="flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-light text-[#94a3b8] hover:bg-red-900/30 hover:text-red-400 transition-colors w-full text-left"
-          title="Sign out"
+          className={`flex items-center ${collapsed ? "justify-center" : "gap-2.5"} px-2.5 py-1.5 rounded-md text-[#dc2626] hover:bg-red-50 text-xs transition-colors w-full text-left`}
+          title="Sign Out"
         >
-          <LogOut size={18} />
-          <div className="flex flex-col items-start">
-            <span>Sign Out</span>
-            {username && <span className="text-[10px] font-light text-[#94a3b8]/60">@{username}</span>}
-          </div>
+          <LogOut size={16} className="shrink-0" />
+          {!collapsed && (
+            <div className="flex flex-col min-w-0">
+              <span className="font-semibold">Sign Out</span>
+              {username && <span className="text-[10px] text-gray-500 truncate">@{username}</span>}
+            </div>
+          )}
         </button>
 
-        <div className="flex items-start gap-3 px-4 py-3 cursor-pointer group">
-          <HeadphonesIcon size={20} className="text-[#94a3b8] group-hover:text-white transition-colors" />
-          <div className="flex flex-col">
-            <span className="text-xs font-light text-[#94a3b8] group-hover:text-white transition-colors">Need Help?</span>
-            <span className="text-xs font-semibold">Contact Support</span>
-          </div>
+        {/* Collapse Sidebar Button (Exact GitLab Bottom Control) */}
+        <div className="pt-1 border-t border-[#f1f5f9] hidden md:block">
+          <button
+            onClick={() => setCollapsed(!collapsed)}
+            className={`flex items-center ${collapsed ? "justify-center" : "gap-2.5"} px-2.5 py-1.5 rounded-md text-[#6b7280] hover:bg-[#f1f5f9] hover:text-[#1f2937] text-xs transition-colors w-full`}
+            title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+          >
+            {collapsed ? <PanelLeft size={16} /> : <PanelLeftClose size={16} />}
+            {!collapsed && <span>Collapse sidebar</span>}
+          </button>
         </div>
       </div>
     </div>
@@ -97,14 +246,16 @@ export default function Sidebar({ isOpenMobile, onCloseMobile, onOpenPolicies, o
 
   return (
     <>
-      <aside className="hidden md:flex flex-col shrink-0 h-full border-r border-[#132742]">
+      {/* Desktop Persistent Sidebar */}
+      <aside className="hidden md:flex flex-col shrink-0 h-full">
         {content}
       </aside>
 
+      {/* Mobile Off-canvas Drawer */}
       {isOpenMobile && (
         <div className="fixed inset-0 z-50 flex md:hidden">
-          <div className="fixed inset-0 bg-[#0a192f]/60 backdrop-blur-sm" onClick={onCloseMobile} />
-          <aside className="relative flex flex-col h-full shadow-2xl z-10 animate-in slide-in-from-left duration-200">
+          <div className="fixed inset-0 bg-black/40 backdrop-blur-xs transition-opacity" onClick={onCloseMobile} />
+          <aside className="relative flex flex-col h-full shadow-2xl z-10 w-[260px] bg-[#fbfbfd] animate-in slide-in-from-left duration-200">
             {content}
           </aside>
         </div>
