@@ -6,11 +6,13 @@ import { useChatContext } from "@/context/ChatContext";
 import { buildDownloadUrl, isAgentGeneratedArtifact } from "@/lib/api";
 
 interface Props {
+  isOpen?: boolean;
+  onClose?: () => void;
   isOpenMobile?: boolean;
   onCloseMobile?: () => void;
 }
 
-export default function ConversationDetails({ isOpenMobile, onCloseMobile }: Props) {
+export default function ConversationDetails({ isOpen, onClose, isOpenMobile, onCloseMobile }: Props) {
   const { messages, userId, sessionId, handleNewChat } = useChatContext();
   const [docsOpen, setDocsOpen] = useState(true);
   const [metadataOpen, setMetadataOpen] = useState(true);
@@ -38,15 +40,19 @@ export default function ConversationDetails({ isOpenMobile, onCloseMobile }: Pro
   const totalDocs = agentDocs.length + userDocs.length;
 
   const content = (
-    <div className="flex flex-col h-full w-full xl:w-[280px] bg-white border-l border-[#e5e7eb] select-none text-[#111827]">
-      {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-[#e5e7eb] bg-white">
+    <div className="flex flex-col h-full w-full w-[300px] xl:w-[320px] bg-white border-l border-[#e9edef] select-none text-[#111b21]">
+      {/* WhatsApp Style Details Header */}
+      <div className="flex items-center justify-between px-4 py-3.5 border-b border-[#e9edef] bg-[#f0f2f5]">
         <div className="flex items-center gap-2">
-          <Shield size={14} className="text-[#ff5722]" />
-          <h2 className="font-bold text-[#111827] text-xs uppercase tracking-wider">Session Details</h2>
+          <Shield size={16} className="text-[#008069]" />
+          <h2 className="font-bold text-[#111b21] text-xs uppercase tracking-wider">Contact & Session Info</h2>
         </div>
-        <button onClick={onCloseMobile} className="text-[#6b7280] hover:text-[#111827] xl:hidden p-1">
-          <X size={16} />
+        <button
+          onClick={() => { onClose?.(); onCloseMobile?.(); }}
+          className="text-[#54656f] hover:text-[#111b21] p-1 rounded-full hover:bg-black/5 transition-colors cursor-pointer"
+          title="Close details"
+        >
+          <X size={18} />
         </button>
       </div>
 
@@ -192,14 +198,16 @@ export default function ConversationDetails({ isOpenMobile, onCloseMobile }: Pro
 
   return (
     <>
-      <aside className="hidden xl:flex flex-col shrink-0 h-full">
-        {content}
-      </aside>
+      {isOpen && (
+        <aside className="hidden lg:flex flex-col shrink-0 h-full animate-in slide-in-from-right duration-200">
+          {content}
+        </aside>
+      )}
 
       {isOpenMobile && (
-        <div className="fixed inset-0 z-40 flex xl:hidden justify-end">
-          <div className="fixed inset-0 bg-black/40 backdrop-blur-xs" onClick={onCloseMobile} />
-          <aside className="relative flex flex-col h-full shadow-2xl z-10 w-[85%] max-w-[280px] bg-white animate-in slide-in-from-right duration-200">
+        <div className="fixed inset-0 z-40 flex lg:hidden justify-end">
+          <div className="fixed inset-0 bg-black/40 backdrop-blur-xs" onClick={() => { onClose?.(); onCloseMobile?.(); }} />
+          <aside className="relative flex flex-col h-full shadow-2xl z-10 w-[85%] max-w-[320px] bg-white animate-in slide-in-from-right duration-200">
             {content}
           </aside>
         </div>

@@ -228,8 +228,130 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* ── Visual Analytics Section: Donut Breakdown + Carrier Flow Bar Chart ── */}
-        <div className="px-5 md:px-8 py-6 grid grid-cols-1 lg:grid-cols-12 gap-5">
+        {/* ── Visual Analytics Section 1: Customer Retention & Conversion Funnel ── */}
+        <div className="px-5 md:px-8 py-5 grid grid-cols-1 lg:grid-cols-12 gap-5">
+          
+          {/* Funnel: Quotation to Policy Issuance (7 cols) */}
+          <div className="lg:col-span-7 bg-white rounded-3xl p-6 border border-[#e5e7eb] shadow-sm flex flex-col justify-between">
+            <div>
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <h3 className="font-bold text-base text-[#111827]">Quote-to-Policy Conversion Funnel</h3>
+                  <p className="text-xs text-[#6b7280]">Real-time customer journey from initial inquiry to paid policy certificate</p>
+                </div>
+                <span className="text-xs font-bold bg-[#ecfdf5] text-[#065f46] border border-[#a7f3d0] px-3 py-1 rounded-full">
+                  39.2% Overall Conversion
+                </span>
+              </div>
+
+              {/* Funnel Steps */}
+              <div className="flex flex-col gap-3 py-2">
+                {[
+                  { step: "1. Quotation Inquiries", count: 1248, rate: "100%", drop: "Base", color: "bg-[#2563eb]", width: "100%" },
+                  { step: "2. Plan Comparisons", count: 936, rate: "75.0%", drop: "-25.0%", color: "bg-[#6366f1]", width: "75%" },
+                  { step: "3. KYC / ID Verification", count: 686, rate: "55.0%", drop: "-20.0%", color: "bg-[#f59e0b]", width: "55%" },
+                  { step: "4. Policy Issued & Paid", count: 489, rate: "39.2%", drop: "-15.8%", color: "bg-[#00a86b]", width: "39.2%" },
+                ].map((item, idx) => (
+                  <div key={idx} className="flex flex-col gap-1">
+                    <div className="flex items-center justify-between text-xs font-semibold">
+                      <span className="text-[#111827]">{item.step}</span>
+                      <div className="flex items-center gap-3">
+                        <span className="text-[#6b7280]">{item.count.toLocaleString()} travelers</span>
+                        <span className="font-black text-[#111827] w-12 text-right">{item.rate}</span>
+                      </div>
+                    </div>
+                    <div className="h-3.5 bg-[#f3f4f6] rounded-full overflow-hidden flex">
+                      <div
+                        className={`h-full ${item.color} rounded-full transition-all duration-500`}
+                        style={{ width: item.width }}
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="pt-4 mt-2 border-t border-[#f1f5f9] flex items-center justify-between text-xs text-[#6b7280]">
+              <span className="flex items-center gap-1.5">
+                <Clock size={13} className="text-[#00a86b]" />
+                <span>Avg. time to policy issuance: <strong className="text-[#111827]">2.4 mins</strong></span>
+              </span>
+              <span className="text-[#00a86b] font-bold">+6.8% vs last month</span>
+            </div>
+          </div>
+
+          {/* Customer Retention & Loyalty Card (5 cols) */}
+          <div className="lg:col-span-5 bg-white rounded-3xl p-6 border border-[#e5e7eb] shadow-sm flex flex-col justify-between">
+            <div>
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <h3 className="font-bold text-base text-[#111827]">Customer Retention & Repeat</h3>
+                  <p className="text-xs text-[#6b7280]">Loyalty rate across frequent travelers & group bookings</p>
+                </div>
+                <div className="w-8 h-8 rounded-full bg-[#fdeee9] text-[#ff5722] flex items-center justify-center font-bold text-xs">
+                  <Users size={15} />
+                </div>
+              </div>
+
+              {/* Retention Metrics Grid */}
+              <div className="grid grid-cols-2 gap-3 py-2">
+                <div className="bg-[#f0fdf4] border border-[#bbf7d0] rounded-2xl p-3.5 flex flex-col justify-between">
+                  <span className="text-xs font-semibold text-[#166534]">Repeat Booking Rate</span>
+                  <div className="mt-2">
+                    <span className="text-2xl font-black text-[#15803d]">78.4%</span>
+                    <p className="text-[10px] text-[#166534] mt-0.5">2+ trips per year</p>
+                  </div>
+                </div>
+
+                <div className="bg-[#fdeee9] border border-[#fbd3c7] rounded-2xl p-3.5 flex flex-col justify-between">
+                  <span className="text-xs font-semibold text-[#855141]">Policy Renewal Rate</span>
+                  <div className="mt-2">
+                    <span className="text-2xl font-black text-[#ff5722]">84.2%</span>
+                    <p className="text-[10px] text-[#855141] mt-0.5">annual multi-trip</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Monthly Cohort Mini-Chart (New vs Returning) */}
+              <div className="mt-3 pt-3 border-t border-[#f1f5f9]">
+                <div className="flex items-center justify-between text-xs mb-2">
+                  <span className="font-bold text-[#111827]">New vs Returning Customers</span>
+                  <div className="flex items-center gap-3 text-[10px]">
+                    <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-[#ff5722]" />New</span>
+                    <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-[#00a86b]" />Returning</span>
+                  </div>
+                </div>
+                <div className="grid grid-cols-6 gap-2 items-end h-16 pt-2">
+                  {[
+                    { m: "Jan", n: 40, r: 60 },
+                    { m: "Feb", n: 35, r: 65 },
+                    { m: "Mar", n: 45, r: 70 },
+                    { m: "Apr", n: 50, r: 78 },
+                    { m: "May", n: 55, r: 82 },
+                    { m: "Jun", n: 60, r: 90 },
+                  ].map((col, i) => (
+                    <div key={i} className="flex flex-col items-center gap-1 h-full justify-end">
+                      <div className="w-full flex items-end gap-0.5 h-12">
+                        <div className="bg-[#ff5722] rounded-t-sm flex-1" style={{ height: `${col.n}%` }} />
+                        <div className="bg-[#00a86b] rounded-t-sm flex-1" style={{ height: `${col.r}%` }} />
+                      </div>
+                      <span className="text-[9px] text-[#9ca3af] font-medium">{col.m}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            <div className="pt-3 border-t border-[#f1f5f9] flex items-center justify-between text-xs text-[#6b7280]">
+              <span>Customer Lifetime Value (LTV)</span>
+              <strong className="text-[#111827] font-bold">₹14,850 / traveler</strong>
+            </div>
+          </div>
+
+        </div>
+
+        {/* ── Visual Analytics Section 2: Destination Breakdown + Carrier Flow Bar Chart ── */}
+        <div className="px-5 md:px-8 py-2 grid grid-cols-1 lg:grid-cols-12 gap-5">
           
           {/* Left Chart Card: Destination / Category Breakdown (5 cols) */}
           <div className="lg:col-span-5 bg-white rounded-3xl p-6 border border-[#e5e7eb] shadow-sm flex flex-col justify-between">

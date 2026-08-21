@@ -51,12 +51,12 @@ const TABS: TabDef[] = [
 ];
 
 // ── Shared helpers ─────────────────────────────────────────────────────────────
-const inp = "text-xs px-3 py-2 rounded-lg border border-[#e5e7eb] outline-none focus:border-[#00a86b] bg-white text-[#1f2937] transition-colors w-full";
+const inp = "text-xs md:text-sm px-3.5 py-2.5 rounded-xl border border-[#e5e7eb] outline-none focus:border-[#ff5722] bg-white text-[#111827] transition-colors w-full font-medium";
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <div className="flex flex-col gap-1">
-      <label className="text-[10px] font-bold text-[#6b7280] uppercase tracking-wide">{label}</label>
+    <div className="flex flex-col gap-1.5">
+      <label className="text-[11px] font-bold text-[#6b7280] uppercase tracking-wider">{label}</label>
       {children}
     </div>
   );
@@ -74,15 +74,15 @@ function TagInput({ values, inputVal, placeholder, accent, accentLight, accentBo
           onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); onAdd(); } }}
           placeholder={placeholder} className={`${inp} flex-1`} />
         <button type="button" onClick={onAdd} style={{ background: accent }}
-          className="px-3 py-1.5 rounded-lg text-white text-xs font-bold hover:opacity-90 shrink-0">Add</button>
+          className="px-4 py-2 rounded-xl text-white text-xs font-bold hover:opacity-90 shrink-0 shadow-2xs cursor-pointer">Add</button>
       </div>
       {values.length > 0 && (
-        <div className="flex flex-wrap gap-1.5">
+        <div className="flex flex-wrap gap-2">
           {values.map((v) => (
-            <span key={v} className="flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full border font-medium"
+            <span key={v} className="flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-xl border font-semibold"
               style={{ borderColor: accentBorder, background: accentLight, color: accent }}>
               {v}
-              <button type="button" onClick={() => onRemove(v)} className="hover:opacity-60 leading-none"><X size={10} /></button>
+              <button type="button" onClick={() => onRemove(v)} className="hover:opacity-60 leading-none cursor-pointer"><X size={12} /></button>
             </span>
           ))}
         </div>
@@ -560,10 +560,10 @@ export default function DataPage() {
       <div className="flex flex-1 w-full h-full bg-[#f4f5f8] overflow-hidden">
 
         {/* Modern White Sidebar */}
-        <aside className="hidden md:flex flex-col w-[240px] bg-white text-[#111827] border-r border-[#e5e7eb] shrink-0 select-none">
+        <aside className="hidden md:flex flex-col w-[260px] bg-white text-[#111827] border-r border-[#e5e7eb] shrink-0 select-none">
           {/* Brand Header */}
           <div className="flex items-center justify-between px-5 pt-6 pb-4">
-            <div className="flex items-center gap-2.5">
+            <div className="flex items-center gap-3">
               <div className="relative w-8 h-8 flex items-center justify-center shrink-0">
                 <svg width="32" height="32" viewBox="0 0 36 36" fill="none">
                   <circle cx="18" cy="18" r="15" stroke="url(#dolphin_grad_data)" strokeWidth="3" strokeLinecap="round" strokeDasharray="75 25" />
@@ -577,9 +577,9 @@ export default function DataPage() {
                   </defs>
                 </svg>
               </div>
-              <div className="flex items-center gap-1">
+              <div className="flex items-center gap-1.5">
                 <span className="text-[18px] font-black tracking-tight text-[#111827]">Dolphin</span>
-                <span className="text-[18px] font-medium tracking-tight text-[#ff5722]">Portal</span>
+                <span className="text-[18px] font-medium tracking-tight text-[#ff5722]">Buddy</span>
               </div>
             </div>
           </div>
@@ -587,26 +587,26 @@ export default function DataPage() {
           <div className="px-4 py-2">
             <Link
               href="/"
-              className="flex items-center justify-center gap-2 w-full bg-black text-white hover:bg-neutral-800 transition-all font-semibold rounded-full py-2.5 px-4 text-xs shadow-sm"
+              className="flex items-center justify-center gap-2 w-full bg-black text-white hover:bg-neutral-800 transition-all font-bold rounded-full py-3 px-4 text-sm shadow-sm"
             >
-              <ArrowLeft size={14} />
-              <span>Back to Hub</span>
+              <ArrowLeft size={16} />
+              <span>Back to Chat</span>
             </Link>
           </div>
 
           {/* Navigation Tabs */}
-          <div className="px-5 mt-4 mb-1 text-[11px] font-bold uppercase tracking-wider text-[#9ca3af]">
+          <div className="px-5 mt-4 mb-1.5 text-xs font-black uppercase tracking-wider text-[#9ca3af]">
             Configuration
           </div>
-          <nav className="px-3 flex flex-col gap-1">
+          <nav className="px-3 flex flex-col gap-1.5 text-sm">
             {TABS.filter(t => !["addons","vas"].includes(t.key)).map(tab => (
               <button
                 key={tab.key}
                 onClick={() => loadTab(tab.key)}
-                className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs transition-all text-left w-full ${
+                className={`flex items-center gap-3.5 px-3.5 py-3 rounded-2xl transition-all text-left w-full cursor-pointer ${
                   activeTab === tab.key
-                    ? "bg-[#f3f4f6] text-[#111827] font-bold"
-                    : "text-[#4b5563] hover:bg-[#f9fafb] hover:text-[#111827] font-medium"
+                    ? "bg-[#f3f4f6] text-[#111827] font-black"
+                    : "text-[#4b5563] hover:bg-[#f9fafb] hover:text-[#111827] font-semibold"
                 }`}
               >
                 <span className={activeTab === tab.key ? "text-[#ff5722]" : "text-[#6b7280]"}>{tab.icon}</span>
@@ -615,18 +615,18 @@ export default function DataPage() {
             ))}
           </nav>
 
-          <div className="px-5 mt-5 mb-1 text-[11px] font-bold uppercase tracking-wider text-[#9ca3af]">
+          <div className="px-5 mt-5 mb-1.5 text-xs font-black uppercase tracking-wider text-[#9ca3af]">
             Catalogs
           </div>
-          <nav className="px-3 flex flex-col gap-1">
+          <nav className="px-3 flex flex-col gap-1.5 text-sm">
             {TABS.filter(t => ["addons","vas"].includes(t.key)).map(tab => (
               <button
                 key={tab.key}
                 onClick={() => loadTab(tab.key)}
-                className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs transition-all text-left w-full ${
+                className={`flex items-center gap-3.5 px-3.5 py-3 rounded-2xl transition-all text-left w-full cursor-pointer ${
                   activeTab === tab.key
-                    ? "bg-[#f3f4f6] text-[#111827] font-bold"
-                    : "text-[#4b5563] hover:bg-[#f9fafb] hover:text-[#111827] font-medium"
+                    ? "bg-[#f3f4f6] text-[#111827] font-black"
+                    : "text-[#4b5563] hover:bg-[#f9fafb] hover:text-[#111827] font-semibold"
                 }`}
               >
                 <span style={{ color: activeTab === tab.key ? tab.accent : undefined }}>{tab.icon}</span>
@@ -638,12 +638,12 @@ export default function DataPage() {
           {/* Bottom user */}
           <div className="mt-auto p-4 border-t border-[#e5e7eb]">
             <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-full bg-black text-white flex items-center justify-center text-xs font-bold shrink-0">
-                XS
+              <div className="w-9 h-9 rounded-full bg-black text-white flex items-center justify-center text-xs font-bold shrink-0">
+                DB
               </div>
               <div className="flex flex-col min-w-0">
-                <span className="text-xs font-bold text-[#111827] truncate leading-tight">Super Admin</span>
-                <span className="text-[10px] text-[#9ca3af] truncate leading-tight">Knowledge Base Mode</span>
+                <span className="text-xs font-bold text-[#111827] truncate leading-tight">Admin Console</span>
+                <span className="text-[11px] text-[#9ca3af] truncate leading-tight">Knowledge Base & VAS</span>
               </div>
             </div>
           </div>
@@ -654,34 +654,34 @@ export default function DataPage() {
           {/* Header */}
           <header className="flex items-center justify-between px-6 py-4 bg-white border-b border-[#e5e7eb] shrink-0">
             <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-xl bg-[#f3f4f6] flex items-center justify-center" style={{ color: activeInfo.accent ?? "#ff5722" }}>
+              <div className="w-10 h-10 rounded-2xl bg-[#fdeee9] flex items-center justify-center" style={{ color: activeInfo.accent ?? "#ff5722" }}>
                 {activeInfo.icon}
               </div>
               <div>
-                <h1 className="text-lg font-bold text-[#111827] tracking-tight">{activeInfo.label}</h1>
-                <p className="text-xs text-[#6b7280]">{activeInfo.description}</p>
+                <h1 className="text-lg font-black text-[#111827] tracking-tight">{activeInfo.label}</h1>
+                <p className="text-xs text-[#6b7280] font-medium">{activeInfo.description}</p>
               </div>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2.5">
               <Link
                 href="/"
-                className="md:hidden flex items-center gap-1 text-xs font-semibold px-3 py-2 rounded-xl bg-gray-100 text-[#111827]"
+                className="md:hidden flex items-center gap-1 text-xs font-bold px-3 py-2 rounded-xl bg-gray-100 text-[#111827]"
               >
-                <ArrowLeft size={13} /> Back
+                <ArrowLeft size={14} /> Back
               </Link>
               <button
                 onClick={() => loadTab(activeTab)}
-                className="flex items-center gap-1.5 text-xs font-semibold px-3.5 py-2 rounded-xl border border-[#d1d5db] bg-white hover:bg-gray-50 text-[#4b5563] shadow-2xs transition-all"
+                className="flex items-center gap-1.5 text-xs font-bold px-4 py-2.5 rounded-xl border border-[#e5e7eb] bg-white hover:bg-gray-50 text-[#374151] shadow-2xs transition-all cursor-pointer"
               >
-                <RefreshCw size={13} className={status === "loading" ? "animate-spin" : ""} />Reload
+                <RefreshCw size={14} className={status === "loading" ? "animate-spin" : ""} />Reload
               </button>
               {!isCatalog && (
                 <button
                   onClick={handleSave}
                   disabled={status === "saving" || !loaded}
-                  className="flex items-center gap-2 text-xs font-semibold px-4 py-2 rounded-xl bg-[#ff5722] hover:bg-[#f4511e] text-white disabled:opacity-50 shadow-sm transition-all"
+                  className="flex items-center gap-2 text-xs font-black px-4 py-2.5 rounded-xl bg-black hover:bg-neutral-800 text-white disabled:opacity-50 shadow-2xs transition-all cursor-pointer"
                 >
-                  <Save size={13} />{status === "saving" ? "Saving…" : "Save Changes"}
+                  <Save size={14} />{status === "saving" ? "Saving…" : "Save Changes"}
                 </button>
               )}
             </div>

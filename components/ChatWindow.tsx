@@ -249,10 +249,10 @@ export default function ChatWindow() {
         </header>
 
         {/* ── Main Workspace: Threads (Col 2) + Chat (Col 3) + Details (Col 4) ── */}
-        <div className="flex flex-1 min-h-0 p-3 md:p-5 gap-4 overflow-hidden">
+        <div className="flex flex-1 min-h-0 overflow-hidden">
           
-          {/* Main Glass Workspace Container */}
-          <div className="flex flex-1 w-full h-full bg-white rounded-3xl border border-[#e5e7eb] shadow-sm overflow-hidden relative">
+          {/* Main WhatsApp Workspace Container */}
+          <div className="flex flex-1 w-full h-full bg-white overflow-hidden relative">
             
             {/* Column 2: Threads List */}
             <ConversationList
@@ -262,59 +262,89 @@ export default function ChatWindow() {
               onCloseMobile={() => setListOpen(false)}
             />
 
-            {/* Column 3: AI Chat Stream */}
-            <div className="flex flex-col flex-1 min-w-0 h-full bg-white relative">
-              {/* Top Sub-Bar with Mobile Drawer Toggles */}
-              <div className="px-4 py-2.5 border-b border-[#e5e7eb] flex items-center justify-between bg-white shrink-0">
-                <div className="flex items-center gap-2">
-                  <div className="w-2.5 h-2.5 rounded-full bg-[#00a86b] animate-pulse" />
-                  <span className="text-xs font-bold text-[#111827]">AI Operations Live Stream</span>
-                  <span className="text-[10px] text-[#6b7280] bg-[#f3f4f6] px-2 py-0.5 rounded-full hidden sm:inline font-medium">
-                    Encrypted Session
-                  </span>
+            {/* Column 3: WhatsApp Chat Stream */}
+            <div className="flex flex-col flex-1 min-w-0 h-full bg-[#efeae2] relative">
+              {/* WhatsApp Web Chat Header Bar */}
+              <div className="px-4 py-2.5 border-b border-[#e9edef] flex items-center justify-between bg-[#f0f2f5] shrink-0">
+                <div className="flex items-center gap-3 min-w-0">
+                  {/* Contact Avatar */}
+                  <div className="w-10 h-10 rounded-full bg-[#008069] text-white flex items-center justify-center font-bold text-sm shrink-0 select-none shadow-2xs">
+                    <Shield size={19} />
+                  </div>
+                  <div className="flex flex-col min-w-0">
+                    <div className="flex items-center gap-2">
+                      <span className="text-[16px] font-bold text-[#111b21] truncate leading-tight">
+                        Dolphin Operations
+                      </span>
+                    </div>
+                    <span className="text-[12px] text-[#008069] font-medium truncate leading-tight mt-0.5 flex items-center gap-1.5">
+                      <span className="w-2 h-2 rounded-full bg-[#00a86b] animate-pulse" />
+                      Online · Travel Insurance Agent
+                    </span>
+                  </div>
                 </div>
-                <div className="flex items-center gap-2">
+
+                {/* Right WhatsApp Action Icons */}
+                <div className="flex items-center gap-1 sm:gap-2 text-[#54656f]">
                   <button
-                    onClick={() => setListOpen(true)}
-                    className="lg:hidden text-xs px-2.5 py-1 rounded-lg border border-gray-200 text-[#4b5563]"
+                    onClick={() => setPoliciesOpen(true)}
+                    className="w-9 h-9 flex items-center justify-center rounded-full hover:bg-black/5 text-[#54656f] hover:text-[#111b21] transition-colors"
+                    title="Policies & Plans"
                   >
-                    Threads
+                    <Shield size={18} />
                   </button>
                   <button
-                    onClick={() => setDetailsOpen(true)}
-                    className="xl:hidden text-xs px-2.5 py-1 rounded-lg border border-gray-200 text-[#4b5563]"
+                    className="w-9 h-9 flex items-center justify-center rounded-full hover:bg-black/5 text-[#54656f] hover:text-[#111b21] transition-colors hidden sm:flex"
+                    title="Video Call"
                   >
-                    Details
+                    <Phone size={18} />
+                  </button>
+                  <button
+                    onClick={() => setDetailsOpen((v) => !v)}
+                    className="w-9 h-9 flex items-center justify-center rounded-full hover:bg-black/5 text-[#54656f] hover:text-[#111b21] transition-colors"
+                    title="Search chat"
+                  >
+                    <Search size={18} />
+                  </button>
+                  {/* Three dots button after search to toggle right sidebar */}
+                  <button
+                    onClick={() => setDetailsOpen((v) => !v)}
+                    className={`w-9 h-9 flex items-center justify-center rounded-full hover:bg-black/5 text-[#54656f] hover:text-[#111b21] transition-colors cursor-pointer ${
+                      detailsOpen ? "bg-black/10 text-[#111b21]" : ""
+                    }`}
+                    title="Session & Contact info"
+                  >
+                    <MoreVertical size={18} />
                   </button>
                 </div>
               </div>
 
-              {/* Messages Feed */}
-              <div className="flex-1 overflow-y-auto px-4 md:px-6 py-4 bg-[#f9fafb]">
+              {/* Messages Feed on WhatsApp Doodle Background */}
+              <div className="flex-1 overflow-y-auto px-3 md:px-6 py-3 whatsapp-chat-bg">
                 {error && (
-                  <div className="flex items-center gap-2 mb-4 text-xs p-3 rounded-xl bg-red-50 text-red-700 border border-red-200">
+                  <div className="flex items-center gap-2 mb-4 text-xs p-3 rounded-lg bg-red-50 text-red-700 border border-red-200 shadow-2xs">
                     <AlertCircle size={15} />
                     <span>{error}</span>
                   </div>
                 )}
 
-                <div className="flex flex-col max-w-3xl mx-auto">
-                  {/* Date separator */}
-                  <div className="text-center my-3">
-                    <span className="text-[10px] font-bold text-[#6b7280] bg-white px-3 py-1 rounded-full border border-[#e5e7eb] shadow-2xs">
+                <div className="flex flex-col w-full">
+                  {/* WhatsApp Date separator pill */}
+                  <div className="text-center my-2">
+                    <span className="text-[12px] font-medium text-[#54656f] bg-white px-3 py-1 rounded-lg shadow-[0_1px_0.5px_rgba(11,20,26,0.13)] uppercase">
                       Today
                     </span>
                   </div>
 
                   {messages.length === 0 && !loading && (
-                    <div className="flex items-start gap-3 my-4 p-5 rounded-2xl bg-white border border-[#e5e7eb] shadow-2xs">
-                      <div className="w-9 h-9 rounded-xl bg-[#fdeee9] text-[#ff5722] flex items-center justify-center shrink-0">
+                    <div className="flex items-start gap-3 my-4 p-4 rounded-lg bg-white border border-[#e9edef] shadow-[0_1px_0.5px_rgba(11,20,26,0.13)] max-w-md mx-auto">
+                      <div className="w-9 h-9 rounded-full bg-[#d9fdd3] text-[#008069] flex items-center justify-center shrink-0">
                         <Sparkles size={18} />
                       </div>
                       <div className="flex flex-col">
-                        <span className="text-sm font-bold text-[#111827]">Dolphin AI Assistant</span>
-                        <p className="text-xs text-[#4b5563] mt-1 leading-relaxed">
-                          Hello <span className="font-semibold text-[#ff5722]">@{username}</span>! How can I assist you today? You can upload policy files, compare travel insurance coverage, or book policies directly.
+                        <span className="text-sm font-bold text-[#111b21]">Dolphin Insurance Support</span>
+                        <p className="text-xs text-[#667781] mt-1 leading-relaxed">
+                          Hello <span className="font-semibold text-[#008069]">@{username}</span>! Ask any question, compare travel policies, or upload travel documents directly.
                         </p>
                       </div>
                     </div>
@@ -333,14 +363,16 @@ export default function ChatWindow() {
                 <div ref={bottomRef} />
               </div>
 
-              {/* Chat Input Dock */}
+              {/* WhatsApp Chat Input Dock */}
               <div className="shrink-0">
                 <ChatInput onSend={handleSend} disabled={loading} />
               </div>
             </div>
 
-            {/* Column 4: Context Details Panel */}
+            {/* Column 4: Context Details Panel (Off by default, toggled via 3 dots) */}
             <ConversationDetails
+              isOpen={detailsOpen}
+              onClose={() => setDetailsOpen(false)}
               isOpenMobile={detailsOpen}
               onCloseMobile={() => setDetailsOpen(false)}
             />

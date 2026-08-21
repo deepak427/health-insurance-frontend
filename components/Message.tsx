@@ -99,38 +99,37 @@ export default function Message({ msg, userId, sessionId, onSend }: Props) {
   const showAttachmentChip = !!userAttachmentName;
 
   return (
-    <div className={`flex gap-2.5 my-2 w-full ${isUser ? "justify-end" : "justify-start"}`}>
-
-      {/* Agent Avatar */}
+    <div className={`flex items-end gap-2 my-1 w-full ${isUser ? "justify-end" : "justify-start"}`}>
+      {/* Left Avatar for Incoming message (like WhatsApp RH circle) */}
       {!isUser && (
-        <div className="w-8 h-8 rounded-lg bg-[#ece7fe] border border-[#7b58dc]/20 text-[#5925dc] shrink-0 flex items-center justify-center overflow-hidden mt-0.5 shadow-2xs">
-          <span className="text-xs font-bold">AI</span>
+        <div className="w-8 h-8 rounded-full bg-[#8ecae6] text-[#023e8a] flex items-center justify-center font-bold text-xs shrink-0 select-none shadow-2xs mb-0.5">
+          DO
         </div>
       )}
 
-      <div className={`flex flex-col ${isUser ? "items-end" : "items-start"}`} style={{ maxWidth: hasExtraContent ? "95%" : "80%" }}>
-        {/* Author Label */}
-        {!isUser && (
-          <div className="flex items-center gap-1.5 mb-1 ml-1">
-            <span className="text-[11px] font-bold text-[#5925dc]">Dolphin Operations</span>
-            <span className="text-[9px] font-semibold text-[#6b7280] bg-[#f1f5f9] px-1 rounded">BOT</span>
-          </div>
-        )}
-
-        {/* Bubble — text only, no cards inside */}
+      <div className={`flex flex-col ${isUser ? "items-end" : "items-start"}`} style={{ maxWidth: hasExtraContent ? "85%" : "65%" }}>
+        {/* WhatsApp Message Bubble */}
         <div
-          className={`px-3.5 py-2.5 text-sm relative border ${
+          className={`relative px-3.5 pt-2 pb-1.5 text-[14.5px] leading-relaxed shadow-[0_1px_0.5px_rgba(11,20,26,0.13)] ${
             isUser
-              ? "bg-[#f4f0ff] text-[#1f2937] border-[#d8b4fe] rounded-2xl rounded-tr-xs shadow-2xs"
-              : "bg-white text-[#1f2937] border-[#e5e7eb] rounded-2xl rounded-tl-xs shadow-2xs"
+              ? "bg-[#d9fdd3] text-[#111b21] rounded-lg rounded-tr-none ml-4"
+              : "bg-white text-[#111b21] rounded-lg rounded-tl-none border border-[#e9edef]/40"
           }`}
-          style={{ wordBreak: "break-word", maxWidth: hasExtraContent ? "100%" : undefined }}
+          style={{ wordBreak: "break-word" }}
         >
+          {/* Author Name for Incoming Agent/Bot message in WhatsApp Blue */}
+          {!isUser && (
+            <div className="flex items-center gap-1.5 mb-1 select-none">
+              <span className="text-[13px] font-bold text-[#027eb5]">Dolphin Operations</span>
+              <span className="text-[9px] font-bold text-[#667781] bg-[#f0f2f5] px-1.5 py-0.2 rounded">BOT</span>
+            </div>
+          )}
+
           {isTyping ? (
-            <div className="flex items-center gap-1.5 py-1 px-1">
-              <span className="w-1.5 h-1.5 rounded-full bg-gray-400 animate-bounce" style={{ animationDelay: "0ms" }} />
-              <span className="w-1.5 h-1.5 rounded-full bg-gray-400 animate-bounce" style={{ animationDelay: "150ms" }} />
-              <span className="w-1.5 h-1.5 rounded-full bg-gray-400 animate-bounce" style={{ animationDelay: "300ms" }} />
+            <div className="flex items-center gap-1.5 py-1.5 px-1">
+              <span className="w-2 h-2 rounded-full bg-[#8696a0] animate-bounce" style={{ animationDelay: "0ms" }} />
+              <span className="w-2 h-2 rounded-full bg-[#8696a0] animate-bounce" style={{ animationDelay: "150ms" }} />
+              <span className="w-2 h-2 rounded-full bg-[#8696a0] animate-bounce" style={{ animationDelay: "300ms" }} />
             </div>
           ) : (
             <>
@@ -184,21 +183,21 @@ export default function Message({ msg, userId, sessionId, onSend }: Props) {
 
           {/* Artifacts (Agent-Generated PDF Downloads) */}
           {!isUser && msg.artifacts && msg.artifacts.filter(isAgentGeneratedArtifact).length > 0 && (
-            <div className="mt-3 pt-3 border-t border-black/5 flex flex-col gap-2">
+            <div className="mt-2.5 pt-2 border-t border-black/5 flex flex-col gap-2">
               {msg.artifacts.filter(isAgentGeneratedArtifact).map((filename) => (
-                <div key={filename} className="flex items-center gap-3">
-                  <div className="w-8 h-8 bg-red-100 rounded flex items-center justify-center text-red-600 shrink-0">
-                    <FileText size={16} />
+                <div key={filename} className="flex items-center gap-3 bg-[#f0f2f5] p-2.5 rounded-lg border border-[#e9edef] max-w-[280px]">
+                  <div className="w-9 h-9 bg-red-100 rounded flex items-center justify-center text-red-600 shrink-0">
+                    <FileText size={18} />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-xs font-bold text-[#1f2937] truncate">{filename}</p>
-                    <p className="text-[10px] text-[#6b7280]">PDF Document</p>
+                    <p className="text-xs font-bold text-[#111b21] truncate">{filename}</p>
+                    <p className="text-[11px] text-[#667781]">PDF Certificate</p>
                   </div>
                   <a
                     href={buildDownloadUrl(userId, sessionId, filename)}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="w-8 h-8 flex items-center justify-center text-[#6b7280] hover:bg-gray-100 rounded"
+                    className="w-8 h-8 flex items-center justify-center text-[#54656f] hover:text-[#008069] hover:bg-white rounded transition-colors"
                     aria-label={`Download ${filename}`}
                   >
                     <Download size={16} />
@@ -210,10 +209,10 @@ export default function Message({ msg, userId, sessionId, onSend }: Props) {
 
           {/* User-uploaded attachment chip */}
           {isUser && showAttachmentChip && (
-            <div className="mt-2 pt-2 border-t border-black/5">
+            <div className="mt-2 pt-1.5 border-t border-black/5">
               {attachmentIsImage ? (
-                // Render image inline — works with base64 in live turn and download URL after refresh
-                <div className="rounded-lg overflow-hidden border border-black/10" style={{ maxWidth: 220 }}>
+                // Render image inline
+                <div className="rounded-lg overflow-hidden border border-black/10 bg-white" style={{ maxWidth: 260 }}>
                   <img
                     src={
                       attachmentData
@@ -222,49 +221,49 @@ export default function Message({ msg, userId, sessionId, onSend }: Props) {
                     }
                     alt={userAttachmentName ?? "attachment"}
                     className="w-full h-auto object-contain block bg-white"
-                    style={{ maxHeight: 160 }}
+                    style={{ maxHeight: 200 }}
                   />
-                  <div className="flex items-center justify-between gap-1.5 px-2 py-1 bg-white/80">
+                  <div className="flex items-center justify-between gap-2 px-2.5 py-1.5 bg-[#f0f2f5] border-t border-[#e9edef]">
                     <div className="flex items-center gap-1.5 min-w-0">
-                      <FileText size={10} className="text-[#6b7280] shrink-0" />
-                      <p className="text-[10px] text-[#6b7280] truncate">{userAttachmentName}</p>
+                      <FileText size={13} className="text-[#667781] shrink-0" />
+                      <p className="text-xs text-[#111b21] font-medium truncate">{userAttachmentName}</p>
                     </div>
                     <a
                       href={buildDownloadUrl(userId, sessionId, userAttachmentName!)}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-[#6b7280] hover:text-[#1f2937]"
+                      className="text-[#667781] hover:text-[#008069]"
                       aria-label="Download image"
                     >
-                      <Download size={11} />
+                      <Download size={14} />
                     </a>
                   </div>
                 </div>
               ) : (
-                // PDF / other document — open via backend artifact endpoint
+                // PDF / other document
                 <a
                   href={buildDownloadUrl(userId, sessionId, userAttachmentName!)}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-white/60 border border-black/10 hover:bg-white transition-colors"
+                  className="inline-flex items-center gap-2.5 px-3 py-2 rounded-lg bg-white/80 border border-black/10 hover:bg-white transition-colors shadow-2xs max-w-[260px]"
                 >
-                  <div className="w-6 h-6 bg-red-100 rounded flex items-center justify-center text-red-600 shrink-0">
-                    <FileText size={12} />
+                  <div className="w-8 h-8 bg-red-100 rounded flex items-center justify-center text-red-600 shrink-0">
+                    <FileText size={16} />
                   </div>
-                  <div className="min-w-0">
-                    <p className="text-[11px] font-semibold text-[#1f2937] truncate max-w-[160px]">{userAttachmentName}</p>
-                    <p className="text-[9px] text-[#6b7280]">Tap to open</p>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-xs font-bold text-[#111b21] truncate">{userAttachmentName}</p>
+                    <p className="text-[10px] text-[#667781]">Attached Document</p>
                   </div>
-                  <Download size={11} className="text-[#6b7280] shrink-0" />
+                  <Download size={14} className="text-[#667781] shrink-0" />
                 </a>
               )}
             </div>
           )}
 
-          {/* Timestamp */}
-          <div className="flex items-center justify-end gap-1 mt-1">
-            <span className={`text-[10px] ${isUser ? "text-[#667781]" : "text-[#adb5bd]"}`}>
-              Just now
+          {/* Timestamp & Checks */}
+          <div className="flex items-center justify-end gap-1 mt-1 select-none">
+            <span className="text-[11px] text-[#667781]">
+              {new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
             </span>
             {isUser && (
               <svg viewBox="0 0 18 11" width="16" height="11" className="text-[#53bdeb]">

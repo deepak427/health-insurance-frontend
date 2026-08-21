@@ -41,8 +41,12 @@ export default function Sidebar({ isOpenMobile, onCloseMobile, onOpenPolicies, o
       }`}
     >
       {/* Brand Header */}
-      <div className={`flex items-center ${collapsed ? "justify-center px-2" : "justify-between px-5"} pt-6 pb-4`}>
-        <div className="flex items-center gap-2.5 min-w-0">
+      <div className={`flex items-center ${collapsed ? "justify-center flex-col gap-2 px-2" : "justify-between px-5"} pt-5 pb-3`}>
+        <button
+          onClick={() => setCollapsed(!collapsed)}
+          className="flex items-center gap-2.5 min-w-0 hover:opacity-85 transition-opacity cursor-pointer text-left"
+          title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+        >
           {/* Modern Dolphin Portal Ring Emblem */}
           <div className="relative w-8 h-8 flex items-center justify-center shrink-0">
             <svg width="32" height="32" viewBox="0 0 36 36" fill="none">
@@ -63,12 +67,20 @@ export default function Sidebar({ isOpenMobile, onCloseMobile, onOpenPolicies, o
               <span className="text-[18px] font-bold tracking-tight text-[#ff5722]">Buddy</span>
             </div>
           )}
-        </div>
+        </button>
 
-        {!collapsed && (
+        {collapsed ? (
+          <button
+            onClick={() => setCollapsed(false)}
+            className="p-1.5 rounded-lg text-[#6b7280] hover:text-[#111827] hover:bg-[#f3f4f6] transition-colors cursor-pointer"
+            title="Expand sidebar"
+          >
+            <PanelLeft size={16} />
+          </button>
+        ) : (
           <button
             onClick={() => setCollapsed(true)}
-            className="p-1 rounded-md text-[#9ca3af] hover:text-[#111827] hover:bg-[#f3f4f6] transition-colors hidden md:block"
+            className="p-1.5 rounded-lg text-[#9ca3af] hover:text-[#111827] hover:bg-[#f3f4f6] transition-colors hidden md:block cursor-pointer"
             title="Collapse sidebar"
           >
             <PanelLeftClose size={16} />
@@ -81,30 +93,30 @@ export default function Sidebar({ isOpenMobile, onCloseMobile, onOpenPolicies, o
         <Link
           href="/"
           onClick={() => { handleNewChat(); onCloseMobile?.(); onClosePolicies?.(); }}
-          className={`flex items-center justify-center gap-2 w-full bg-black text-white hover:bg-neutral-800 transition-all font-semibold shadow-sm ${
-            collapsed ? "py-2.5 rounded-xl px-0" : "py-2.5 px-4 rounded-full text-xs"
+          className={`flex items-center justify-center gap-2 w-full bg-black text-white hover:bg-neutral-800 transition-all font-bold shadow-sm ${
+            collapsed ? "py-2.5 rounded-xl px-0" : "py-3 px-4 rounded-full text-sm"
           }`}
           title="New Conversation / Quote"
         >
-          <Plus size={15} />
+          <Plus size={16} />
           {!collapsed && <span className="truncate">New Conversation</span>}
         </Link>
       </div>
 
       {/* Navigation Menu */}
-      <nav className="flex-1 px-3 py-3 flex flex-col gap-1 text-[13px]">
+      <nav className="flex-1 px-3 py-3 flex flex-col gap-1.5 text-sm">
         {/* Dashboard Link (Dedicated Analytics View) */}
         <Link
           href="/dashboard"
           onClick={() => { onCloseMobile?.(); onClosePolicies?.(); }}
-          className={`flex items-center ${collapsed ? "justify-center px-1.5" : "gap-3 px-3.5"} py-2.5 rounded-xl transition-all ${
+          className={`flex items-center ${collapsed ? "justify-center px-1.5" : "gap-3.5 px-3.5"} py-3 rounded-2xl transition-all ${
             isDashboardActive
-              ? "bg-[#f3f4f6] text-[#111827] font-bold"
-              : "text-[#4b5563] hover:bg-[#f9fafb] hover:text-[#111827] font-medium"
+              ? "bg-[#f3f4f6] text-[#111827] font-black"
+              : "text-[#4b5563] hover:bg-[#f9fafb] hover:text-[#111827] font-semibold"
           }`}
           title="Analytics Dashboard"
         >
-          <LayoutDashboard size={18} className={isDashboardActive ? "text-[#ff5722]" : "text-[#6b7280]"} />
+          <LayoutDashboard size={19} className={isDashboardActive ? "text-[#ff5722]" : "text-[#6b7280]"} />
           {!collapsed && <span className="truncate">Dashboard</span>}
         </Link>
 
@@ -112,28 +124,28 @@ export default function Sidebar({ isOpenMobile, onCloseMobile, onOpenPolicies, o
         <Link
           href="/"
           onClick={() => { onCloseMobile?.(); onClosePolicies?.(); }}
-          className={`flex items-center ${collapsed ? "justify-center px-1.5" : "gap-3 px-3.5"} py-2.5 rounded-xl transition-all ${
+          className={`flex items-center ${collapsed ? "justify-center px-1.5" : "gap-3.5 px-3.5"} py-3 rounded-2xl transition-all ${
             isChatActive
-              ? "bg-[#f3f4f6] text-[#111827] font-bold"
-              : "text-[#4b5563] hover:bg-[#f9fafb] hover:text-[#111827] font-medium"
+              ? "bg-[#f3f4f6] text-[#111827] font-black"
+              : "text-[#4b5563] hover:bg-[#f9fafb] hover:text-[#111827] font-semibold"
           }`}
           title="AI Assistant Chat"
         >
-          <MessageSquare size={18} className={isChatActive ? "text-[#ff5722]" : "text-[#6b7280]"} />
+          <MessageSquare size={19} className={isChatActive ? "text-[#ff5722]" : "text-[#6b7280]"} />
           {!collapsed && <span className="truncate">Buddy Assistant</span>}
         </Link>
 
         {/* Policies & Plans */}
         <button
           onClick={() => { onCloseMobile?.(); onOpenPolicies?.(); }}
-          className={`flex items-center ${collapsed ? "justify-center px-1.5" : "gap-3 px-3.5"} py-2.5 rounded-xl transition-all text-left w-full ${
+          className={`flex items-center ${collapsed ? "justify-center px-1.5" : "gap-3.5 px-3.5"} py-3 rounded-2xl transition-all text-left w-full cursor-pointer ${
             policiesOpen
-              ? "bg-[#f3f4f6] text-[#111827] font-bold"
-              : "text-[#4b5563] hover:bg-[#f9fafb] hover:text-[#111827] font-medium"
+              ? "bg-[#f3f4f6] text-[#111827] font-black"
+              : "text-[#4b5563] hover:bg-[#f9fafb] hover:text-[#111827] font-semibold"
           }`}
           title="Policies & Bookings"
         >
-          <Shield size={18} className={policiesOpen ? "text-[#ff5722]" : "text-[#6b7280]"} />
+          <Shield size={19} className={policiesOpen ? "text-[#ff5722]" : "text-[#6b7280]"} />
           {!collapsed && <span className="truncate">Policies & Plans</span>}
         </button>
 
@@ -141,26 +153,15 @@ export default function Sidebar({ isOpenMobile, onCloseMobile, onOpenPolicies, o
         <Link
           href="/data"
           onClick={() => onCloseMobile?.()}
-          className={`flex items-center ${collapsed ? "justify-center px-1.5" : "gap-3 px-3.5"} py-2.5 rounded-xl transition-all ${
+          className={`flex items-center ${collapsed ? "justify-center px-1.5" : "gap-3.5 px-3.5"} py-3 rounded-2xl transition-all ${
             pathname === "/data"
-              ? "bg-[#f3f4f6] text-[#111827] font-bold"
-              : "text-[#4b5563] hover:bg-[#f9fafb] hover:text-[#111827] font-medium"
+              ? "bg-[#f3f4f6] text-[#111827] font-black"
+              : "text-[#4b5563] hover:bg-[#f9fafb] hover:text-[#111827] font-semibold"
           }`}
-          title="Knowledge Base & FAQs"
+          title="Knowledge Base & Settings"
         >
-          <Database size={18} className={pathname === "/data" ? "text-[#ff5722]" : "text-[#6b7280]"} />
+          <Database size={19} className={pathname === "/data" ? "text-[#ff5722]" : "text-[#6b7280]"} />
           {!collapsed && <span className="truncate">Knowledge Base</span>}
-        </Link>
-
-        {/* Add-ons & VAS */}
-        <Link
-          href="/data"
-          onClick={() => onCloseMobile?.()}
-          className={`flex items-center ${collapsed ? "justify-center px-1.5" : "gap-3 px-3.5"} py-2.5 rounded-xl text-[#4b5563] hover:bg-[#f9fafb] hover:text-[#111827] font-medium transition-all`}
-          title="Add-ons & Value Added Services"
-        >
-          <Share2 size={18} className="text-[#6b7280]" />
-          {!collapsed && <span className="truncate">Add-ons & VAS</span>}
         </Link>
       </nav>
 

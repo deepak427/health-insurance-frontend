@@ -60,33 +60,33 @@ function PolicyCard({ card, onChoose }: { card: PolicyCardData; onChoose: (p: st
   return (
     <div
       className="rounded-2xl border border-[#e5e7eb] bg-white shadow-2xs overflow-hidden flex flex-col justify-between hover:border-[#ff5722]/40 transition-all"
-      style={{ minWidth: 240, maxWidth: 300 }}
+      style={{ minWidth: 260, maxWidth: 320 }}
     >
       <div>
         {/* Header */}
-        <div className="flex items-center gap-2.5 px-3.5 pt-3.5 pb-2">
-          <div className="w-8 h-8 rounded-xl bg-[#fdeee9] border border-[#fbd3c7] flex items-center justify-center shrink-0">
-            <Shield size={15} className="text-[#ff5722]" />
+        <div className="flex items-center gap-3 px-4 pt-4 pb-2.5">
+          <div className="w-9 h-9 rounded-xl bg-[#fdeee9] border border-[#fbd3c7] flex items-center justify-center shrink-0">
+            <Shield size={18} className="text-[#ff5722]" />
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-xs font-bold text-[#111827] leading-tight truncate">{card.name}</p>
+            <p className="text-sm font-black text-[#111827] leading-tight truncate">{card.name}</p>
             {card.company && (
-              <p className="text-[10px] text-[#6b7280] truncate font-medium">{card.company}</p>
+              <p className="text-xs text-[#6b7280] truncate font-medium mt-0.5">{card.company}</p>
             )}
           </div>
         </div>
 
         {/* Premium & Sum Insured */}
         {(card.premium !== undefined || card.sumInsured) && (
-          <div className="flex items-center gap-2 px-3.5 pb-2.5 flex-wrap">
+          <div className="flex items-center gap-2.5 px-4 pb-3 flex-wrap">
             {card.premium !== undefined && (
-              <div className="flex items-center gap-0.5 bg-[#f0fdf4] border border-[#bbf7d0] px-2 py-0.5 rounded-lg">
-                <IndianRupee size={11} className="text-[#15803d] shrink-0" />
-                <span className="text-xs font-black text-[#15803d]">{card.premium}</span>
+              <div className="flex items-center gap-0.5 bg-[#f0fdf4] border border-[#bbf7d0] px-2.5 py-1 rounded-xl">
+                <IndianRupee size={13} className="text-[#15803d] shrink-0" />
+                <span className="text-sm font-black text-[#15803d]">{card.premium}</span>
               </div>
             )}
             {card.sumInsured && (
-              <span className="text-[10px] font-semibold text-[#4b5563] bg-[#f3f4f6] px-2 py-0.5 rounded-lg">
+              <span className="text-xs font-bold text-[#4b5563] bg-[#f3f4f6] px-2.5 py-1 rounded-xl">
                 Cover: {card.sumInsured}
               </span>
             )}
@@ -95,11 +95,11 @@ function PolicyCard({ card, onChoose }: { card: PolicyCardData; onChoose: (p: st
 
         {/* Highlights */}
         {card.highlights && card.highlights.length > 0 && (
-          <div className="flex flex-col gap-1 px-3.5 pb-3">
+          <div className="flex flex-col gap-1.5 px-4 pb-3.5">
             {card.highlights.map((h, j) => (
-              <div key={j} className="flex items-start gap-1.5">
-                <CheckCircle2 size={12} className="text-[#00a86b] mt-0.5 shrink-0" />
-                <span className="text-[11px] text-[#374151] leading-tight font-normal">{h}</span>
+              <div key={j} className="flex items-start gap-2">
+                <CheckCircle2 size={14} className="text-[#00a86b] mt-0.5 shrink-0" />
+                <span className="text-xs text-[#374151] leading-tight font-medium">{h}</span>
               </div>
             ))}
           </div>
@@ -107,10 +107,10 @@ function PolicyCard({ card, onChoose }: { card: PolicyCardData; onChoose: (p: st
       </div>
 
       {/* Action CTA */}
-      <div className="p-2 border-t border-[#f1f5f9] bg-[#f9fafb]">
+      <div className="p-2.5 border-t border-[#f1f5f9] bg-[#f9fafb]">
         <button
           onClick={() => onChoose(card.prompt || `I'd like to book the ${card.name} plan`)}
-          className="w-full text-xs font-bold text-white bg-[#ff5722] hover:bg-[#f4511e] py-2 rounded-xl transition-all text-center shadow-2xs"
+          className="w-full text-xs font-bold text-white bg-[#ff5722] hover:bg-[#f4511e] py-2.5 rounded-xl transition-all text-center shadow-2xs cursor-pointer"
         >
           {card.action || "Choose this plan"}
         </button>
@@ -121,12 +121,12 @@ function PolicyCard({ card, onChoose }: { card: PolicyCardData; onChoose: (p: st
 
 function ConfirmCard({ card, onChoose }: { card: PolicyCardData; onChoose: (p: string) => void }) {
   const rows = [
-    card.destination   && { icon: <MapPin size={12} className="text-[#6b7280]" />,    label: "Destination",  value: card.destination },
-    card.travelDates   && { icon: <Calendar size={12} className="text-[#6b7280]" />,  label: "Dates",        value: card.travelDates },
-    card.travellers    && { icon: <Users size={12} className="text-[#6b7280]" />,      label: "Travellers",   value: card.travellers },
-    card.sumInsured    && { icon: <Shield size={12} className="text-[#6b7280]" />,     label: "Cover",        value: card.sumInsured },
+    card.destination   && { icon: <MapPin size={14} className="text-[#6b7280]" />,    label: "Destination",  value: card.destination },
+    card.travelDates   && { icon: <Calendar size={14} className="text-[#6b7280]" />,  label: "Dates",        value: card.travelDates },
+    card.travellers    && { icon: <Users size={14} className="text-[#6b7280]" />,      label: "Travellers",   value: card.travellers },
+    card.sumInsured    && { icon: <Shield size={14} className="text-[#6b7280]" />,     label: "Cover",        value: card.sumInsured },
     card.premium !== undefined && {
-      icon: <IndianRupee size={12} className="text-[#15803d]" />,
+      icon: <IndianRupee size={14} className="text-[#15803d]" />,
       label: "Premium",
       value: `₹${card.premium}`,
     },
@@ -134,27 +134,27 @@ function ConfirmCard({ card, onChoose }: { card: PolicyCardData; onChoose: (p: s
 
   return (
     <div
-      className="rounded-2xl border-2 border-[#ff5722] bg-white shadow-md overflow-hidden flex flex-col justify-between"
-      style={{ minWidth: 260, maxWidth: 340 }}
+      className="rounded-3xl border-2 border-[#ff5722] bg-white shadow-md overflow-hidden flex flex-col justify-between"
+      style={{ minWidth: 280, maxWidth: 360 }}
     >
       <div>
         {/* Header */}
-        <div className="bg-[#fdeee9] px-4 pt-3.5 pb-2.5 flex items-center gap-2.5">
-          <BadgeCheck size={18} className="text-[#ff5722] shrink-0" />
+        <div className="bg-[#fdeee9] px-5 pt-4 pb-3 flex items-center gap-3">
+          <BadgeCheck size={22} className="text-[#ff5722] shrink-0" />
           <div className="min-w-0">
-            <p className="text-xs font-black text-[#111827] leading-tight truncate">{card.name}</p>
-            {card.company && <p className="text-[10px] text-[#6b7280] font-medium">{card.company}</p>}
+            <p className="text-sm font-black text-[#111827] leading-tight truncate">{card.name}</p>
+            {card.company && <p className="text-xs text-[#6b7280] font-semibold mt-0.5">{card.company}</p>}
           </div>
         </div>
 
         {/* Summary rows */}
         {rows.length > 0 && (
-          <div className="px-4 py-3 flex flex-col gap-2">
+          <div className="px-5 py-3.5 flex flex-col gap-2.5">
             {rows.map((row, i) => (
-              <div key={i} className="flex items-center gap-2 text-xs">
+              <div key={i} className="flex items-center gap-2.5 text-xs">
                 {row.icon}
-                <span className="text-[10px] text-[#6b7280] font-medium w-16 shrink-0">{row.label}</span>
-                <span className="text-[11px] font-bold text-[#111827] truncate">{row.value}</span>
+                <span className="text-xs text-[#6b7280] font-semibold w-20 shrink-0">{row.label}</span>
+                <span className="text-xs font-black text-[#111827] truncate">{row.value}</span>
               </div>
             ))}
           </div>
@@ -162,16 +162,16 @@ function ConfirmCard({ card, onChoose }: { card: PolicyCardData; onChoose: (p: s
       </div>
 
       {/* Buttons */}
-      <div className="p-2 border-t border-[#e5e7eb] bg-[#f9fafb] flex gap-2">
+      <div className="p-3 border-t border-[#e5e7eb] bg-[#f9fafb] flex gap-2.5">
         <button
           onClick={() => onChoose(card.cancelPrompt || "Cancel the booking")}
-          className="flex-1 text-xs font-semibold text-[#4b5563] py-2 rounded-xl hover:bg-gray-200 transition-colors text-center"
+          className="flex-1 text-xs font-bold text-[#4b5563] py-2.5 rounded-xl hover:bg-gray-200 transition-colors text-center cursor-pointer"
         >
           Cancel
         </button>
         <button
           onClick={() => onChoose(card.prompt || `Yes, confirm the booking for ${card.name}`)}
-          className="flex-1 text-xs font-bold text-white bg-black hover:bg-neutral-800 py-2 rounded-xl transition-colors shadow-2xs text-center"
+          className="flex-1 text-xs font-black text-white bg-black hover:bg-neutral-800 py-2.5 rounded-xl transition-colors shadow-2xs text-center cursor-pointer"
         >
           {card.action || "Confirm Booking"}
         </button>
@@ -183,46 +183,48 @@ function ConfirmCard({ card, onChoose }: { card: PolicyCardData; onChoose: (p: s
 function AddonCard({ card, onChoose }: { card: PolicyCardData; onChoose: (p: string) => void }) {
   return (
     <div
-      className="rounded-[10px] border border-[#e5e7eb] bg-white shadow-sm overflow-hidden"
-      style={{ minWidth: 220, maxWidth: 280 }}
+      className="rounded-2xl border border-[#e5e7eb] bg-white shadow-2xs overflow-hidden flex flex-col justify-between"
+      style={{ minWidth: 240, maxWidth: 300 }}
     >
-      {/* Header */}
-      <div className="flex items-center gap-2 px-3 pt-3 pb-2 bg-[#f8fafc]">
-        <div className="w-7 h-7 rounded-lg bg-[#fffbeb] border border-[#fde68a] flex items-center justify-center shrink-0">
-          <Sparkles size={13} className="text-[#d97706]" />
+      <div>
+        {/* Header */}
+        <div className="flex items-center gap-2.5 px-4 pt-3.5 pb-2 bg-[#f9fafb]">
+          <div className="w-8 h-8 rounded-xl bg-[#fffbeb] border border-[#fde68a] flex items-center justify-center shrink-0">
+            <Sparkles size={15} className="text-[#d97706]" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-xs font-bold text-[#111827] leading-tight truncate">{card.name}</p>
+            {card.price && (
+              <p className="text-xs text-[#00a86b] font-bold mt-0.5">{card.price}</p>
+            )}
+          </div>
         </div>
-        <div className="flex-1 min-w-0">
-          <p className="text-xs font-bold text-[#1f2937] leading-tight truncate">{card.name}</p>
-          {card.price && (
-            <p className="text-[10px] text-[#00a86b] font-semibold">{card.price}</p>
-          )}
-        </div>
+
+        {/* Description */}
+        {card.description && (
+          <p className="text-xs text-[#6b7280] px-4 pt-2 pb-1.5 leading-relaxed font-normal">{card.description}</p>
+        )}
+
+        {/* Highlights */}
+        {card.highlights && card.highlights.length > 0 && (
+          <div className="flex flex-col gap-1 px-4 pb-3">
+            {card.highlights.map((h, j) => (
+              <div key={j} className="flex items-start gap-1.5">
+                <CheckCircle2 size={12} className="text-[#d97706] mt-0.5 shrink-0" />
+                <span className="text-xs text-[#374151] leading-tight font-medium">{h}</span>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
-      {/* Description */}
-      {card.description && (
-        <p className="text-[10px] text-[#6b7280] px-3 pt-1.5 pb-1 leading-tight">{card.description}</p>
-      )}
-
-      {/* Highlights */}
-      {card.highlights && card.highlights.length > 0 && (
-        <div className="flex flex-col gap-0.5 px-3 pb-2">
-          {card.highlights.map((h, j) => (
-            <div key={j} className="flex items-start gap-1.5">
-              <CheckCircle2 size={10} className="text-[#d97706] mt-0.5 shrink-0" />
-              <span className="text-[10px] text-[#374151] leading-tight">{h}</span>
-            </div>
-          ))}
-        </div>
-      )}
-
       {/* Action */}
-      <div className="border-t border-[#f1f5f9]">
+      <div className="p-2 border-t border-[#f1f5f9] bg-[#f9fafb]">
         <button
           onClick={() => onChoose(card.prompt || `Add ${card.name} addon`)}
-          className="w-full flex items-center justify-center gap-1.5 text-xs font-semibold text-[#d97706] py-2.5 hover:bg-[#fffbeb] transition-colors"
+          className="w-full flex items-center justify-center gap-1.5 text-xs font-bold text-[#d97706] py-2 rounded-xl hover:bg-[#fffbeb] transition-colors"
         >
-          <PlusCircle size={13} />
+          <PlusCircle size={14} />
           {card.action || "Add this addon"}
         </button>
       </div>
@@ -233,47 +235,49 @@ function AddonCard({ card, onChoose }: { card: PolicyCardData; onChoose: (p: str
 function VasCard({ card, onChoose }: { card: PolicyCardData; onChoose: (p: string) => void }) {
   return (
     <div
-      className="rounded-[10px] border border-[#e5e7eb] bg-white shadow-sm overflow-hidden"
-      style={{ minWidth: 220, maxWidth: 280 }}
+      className="rounded-2xl border border-[#e5e7eb] bg-white shadow-2xs overflow-hidden flex flex-col justify-between"
+      style={{ minWidth: 240, maxWidth: 300 }}
     >
-      {/* Header */}
-      <div className="flex items-center gap-2 px-3 pt-3 pb-2 bg-[#f0f9ff]">
-        <div className="w-7 h-7 rounded-lg bg-[#e0f2fe] border border-[#bae6fd] flex items-center justify-center shrink-0">
-          <HeartPulse size={13} className="text-[#0284c7]" />
+      <div>
+        {/* Header */}
+        <div className="flex items-center gap-2.5 px-4 pt-3.5 pb-2 bg-[#f0f9ff]">
+          <div className="w-8 h-8 rounded-xl bg-[#e0f2fe] border border-[#bae6fd] flex items-center justify-center shrink-0">
+            <HeartPulse size={15} className="text-[#0284c7]" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-xs font-bold text-[#111827] leading-tight truncate">{card.name}</p>
+            {card.price && (
+              <p className="text-xs text-[#0284c7] font-bold mt-0.5">{card.price}</p>
+            )}
+          </div>
+          <span className="text-[10px] font-bold text-[#0284c7] bg-[#e0f2fe] px-2 py-0.5 rounded-full shrink-0">VAS</span>
         </div>
-        <div className="flex-1 min-w-0">
-          <p className="text-xs font-bold text-[#1f2937] leading-tight truncate">{card.name}</p>
-          {card.price && (
-            <p className="text-[10px] text-[#0284c7] font-semibold">{card.price}</p>
-          )}
-        </div>
-        <span className="text-[8px] font-bold text-[#0284c7] bg-[#e0f2fe] px-1.5 py-0.5 rounded-full shrink-0">VAS</span>
+
+        {/* Description */}
+        {card.description && (
+          <p className="text-xs text-[#6b7280] px-4 pt-2 pb-1.5 leading-relaxed font-normal">{card.description}</p>
+        )}
+
+        {/* Highlights */}
+        {card.highlights && card.highlights.length > 0 && (
+          <div className="flex flex-col gap-1 px-4 pb-3">
+            {card.highlights.map((h, j) => (
+              <div key={j} className="flex items-start gap-1.5">
+                <CheckCircle2 size={12} className="text-[#0284c7] mt-0.5 shrink-0" />
+                <span className="text-xs text-[#374151] leading-tight font-medium">{h}</span>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
-      {/* Description */}
-      {card.description && (
-        <p className="text-[10px] text-[#6b7280] px-3 pt-1.5 pb-1 leading-tight">{card.description}</p>
-      )}
-
-      {/* Highlights */}
-      {card.highlights && card.highlights.length > 0 && (
-        <div className="flex flex-col gap-0.5 px-3 pb-2">
-          {card.highlights.map((h, j) => (
-            <div key={j} className="flex items-start gap-1.5">
-              <CheckCircle2 size={10} className="text-[#0284c7] mt-0.5 shrink-0" />
-              <span className="text-[10px] text-[#374151] leading-tight">{h}</span>
-            </div>
-          ))}
-        </div>
-      )}
-
       {/* Action */}
-      <div className="border-t border-[#f1f5f9]">
+      <div className="p-2 border-t border-[#f1f5f9] bg-[#f9fafb]">
         <button
           onClick={() => onChoose(card.prompt || `Add ${card.name} VAS`)}
-          className="w-full flex items-center justify-center gap-1.5 text-xs font-semibold text-[#0284c7] py-2.5 hover:bg-[#f0f9ff] transition-colors"
+          className="w-full flex items-center justify-center gap-1.5 text-xs font-bold text-[#0284c7] py-2 rounded-xl hover:bg-[#f0f9ff] transition-colors"
         >
-          <PlusCircle size={13} />
+          <PlusCircle size={14} />
           {card.action || "Add this service"}
         </button>
       </div>

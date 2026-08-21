@@ -1,6 +1,6 @@
 "use client";
 import { useRef, useState, KeyboardEvent } from "react";
-import { Send, Paperclip, X, FileText, Sparkles } from "lucide-react";
+import { Send, Paperclip, X, FileText, Sparkles, Plus } from "lucide-react";
 
 interface Props {
   onSend: (text: string, file?: { mimeType: string; data: string; name: string }) => void;
@@ -109,32 +109,32 @@ export default function ChatInput({ onSend, disabled }: Props) {
   }
 
   return (
-    <div className="px-4 md:px-6 py-3 bg-white border-t border-[#e5e7eb]">
+    <div className="px-4 py-2.5 bg-[#f0f2f5] border-t border-[#e9edef]">
       <div className="flex flex-col gap-2">
         {/* File Preview Badge */}
         {file && (
-          <div className="flex items-center gap-2 px-2.5 py-1 rounded-md bg-[#f3f4f6] text-[#111827] border border-[#e5e7eb] self-start text-xs shadow-2xs">
-            <FileText size={13} className="text-[#ff5722]" />
+          <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white text-[#111b21] border border-[#e9edef] self-start text-xs shadow-xs">
+            <FileText size={15} className="text-[#008069]" />
             <span className="truncate max-w-xs font-semibold">{file.name}</span>
             <button
               onClick={() => setFile(null)}
-              className="w-4 h-4 flex items-center justify-center rounded hover:bg-gray-200 text-[#6b7280]"
+              className="w-4 h-4 flex items-center justify-center rounded hover:bg-gray-200 text-[#667781] cursor-pointer"
             >
-              <X size={12} />
+              <X size={13} />
             </button>
           </div>
         )}
 
-        {/* Input Bar */}
-        <div className="flex items-end gap-2 p-1.5 bg-[#f9fafb] border border-[#d1d5db] focus-within:border-[#ff5722] focus-within:ring-1 focus-within:ring-[#ff5722] rounded-2xl transition-all">
-          {/* Attach Button */}
+        {/* WhatsApp Input Bar */}
+        <div className="flex items-center gap-2">
+          {/* Plus / Attach Button */}
           <button
             onClick={() => fileRef.current?.click()}
             disabled={disabled}
-            className="w-8 h-8 shrink-0 rounded-xl flex items-center justify-center text-[#6b7280] hover:text-[#111827] hover:bg-white transition-colors disabled:opacity-50 mb-0.5"
-            title="Upload Document / PDF / Image"
+            className="w-10 h-10 shrink-0 rounded-full flex items-center justify-center text-[#54656f] hover:text-[#111b21] hover:bg-black/5 transition-colors disabled:opacity-50 cursor-pointer"
+            title="Attach documents or images"
           >
-            <Paperclip size={18} />
+            <Plus size={22} />
           </button>
           <input
             ref={fileRef}
@@ -144,28 +144,55 @@ export default function ChatInput({ onSend, disabled }: Props) {
             onChange={handleFileChange}
           />
 
-          {/* Textarea */}
-          <textarea
-            ref={textareaRef}
-            rows={1}
-            value={text}
-            onChange={handleTextChange}
-            onKeyDown={handleKey}
-            disabled={disabled}
-            placeholder="Type your insurance message or query..."
-            className="flex-1 resize-none bg-transparent text-xs sm:text-sm text-[#111827] placeholder-[#9ca3af] outline-none py-2 px-1 disabled:opacity-50 min-h-[34px]"
-            style={{ maxHeight: "120px" }}
-          />
-
-          {/* Send Button */}
+          {/* Emoji Button */}
           <button
-            onClick={submit}
-            disabled={disabled || (!text.trim() && !file)}
-            className="w-8 h-8 shrink-0 rounded-xl bg-[#ff5722] hover:bg-[#f4511e] text-white flex items-center justify-center transition-colors disabled:opacity-40 mb-0.5 shadow-sm"
-            title="Send Message"
+            disabled={disabled}
+            onClick={() => { setText(t => t + " 👍"); textareaRef.current?.focus(); }}
+            className="w-10 h-10 shrink-0 rounded-full flex items-center justify-center text-[#54656f] hover:text-[#111b21] hover:bg-black/5 transition-colors disabled:opacity-50 cursor-pointer"
+            title="Emojis"
           >
-            <Send size={14} className="-ml-0.5" />
+            <span className="text-xl leading-none">😀</span>
           </button>
+
+          {/* Input Box */}
+          <div className="flex-1 flex items-center bg-white rounded-lg px-3.5 py-1 shadow-2xs border border-transparent focus-within:border-[#00a884]/30">
+            <textarea
+              ref={textareaRef}
+              rows={1}
+              value={text}
+              onChange={handleTextChange}
+              onKeyDown={handleKey}
+              disabled={disabled}
+              placeholder="Type a message"
+              className="w-full resize-none bg-transparent text-[15px] text-[#111b21] placeholder-[#54656f] outline-none py-1.5 disabled:opacity-50 min-h-[28px]"
+              style={{ maxHeight: "120px" }}
+            />
+          </div>
+
+          {/* WhatsApp Send Button or Mic Icon */}
+          {text.trim() || file ? (
+            <button
+              onClick={submit}
+              disabled={disabled}
+              className="w-10 h-10 shrink-0 rounded-full bg-[#008069] hover:bg-[#00a884] text-white flex items-center justify-center transition-all disabled:opacity-40 shadow-xs cursor-pointer"
+              title="Send Message"
+            >
+              <Send size={18} className="-ml-0.5" />
+            </button>
+          ) : (
+            <button
+              disabled={disabled}
+              onClick={() => { setText("Check my current travel insurance policy"); textareaRef.current?.focus(); }}
+              className="w-10 h-10 shrink-0 rounded-full flex items-center justify-center text-[#54656f] hover:text-[#111b21] hover:bg-black/5 transition-colors cursor-pointer"
+              title="Voice message / Quick prompt"
+            >
+              {/* WhatsApp Microphone SVG */}
+              <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor">
+                <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"/>
+                <path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/>
+              </svg>
+            </button>
+          )}
         </div>
       </div>
     </div>

@@ -1,31 +1,24 @@
 @import "tailwindcss";
 
 :root {
-  /* XLSync Modern Enterprise Palette */
-  --bg-app: #f4f5f8;
-  --bg-sidebar: #ffffff;
-  --bg-card: #ffffff;
-  --bg-card-hover: #f9fafb;
-  --bg-active-pill: #f3f4f6;
-  
-  --brand-coral: #ff5722;
-  --brand-coral-hover: #f4511e;
-  --brand-blue: #2563eb;
-  --brand-purple: #6366f1;
-  --brand-emerald: #00a86b;
-  --brand-cream: #faebd7;
-  --brand-peach: #fdeee9;
-  --brand-dark-pill: #111827;
-  
-  --text-main: #111827;
-  --text-secondary: #4b5563;
-  --text-muted: #6b7280;
-  --text-light: #9ca3af;
-  
-  --border-subtle: #e5e7eb;
-  --border-strong: #d1d5db;
-  
-  --font-sans: "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  /* WhatsApp Web Theme Colors */
+  --wa-bg-app: #efeae2;
+  --wa-bg-panel: #ffffff;
+  --wa-bg-header: #f0f2f5;
+  --wa-bg-input: #f0f2f5;
+  --wa-bg-bubble-in: #ffffff;
+  --wa-bg-bubble-out: #d9fdd3;
+  --wa-border: #e9edef;
+  --wa-green-primary: #008069;
+  --wa-green-accent: #00a884;
+  --wa-green-badge: #25d366;
+  --wa-green-pill: #d9fdd3;
+  --wa-text-primary: #111b21;
+  --wa-text-secondary: #667781;
+  --wa-text-muted: #8696a0;
+  --wa-check-blue: #53bdeb;
+
+  --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
 }
 
 * {
@@ -35,15 +28,26 @@
 html, body {
   margin: 0;
   padding: 0;
-  background: var(--bg-app);
-  color: var(--text-main);
+  background: var(--wa-bg-app);
+  color: var(--wa-text-primary);
   font-family: var(--font-sans);
-  font-size: 14px;
+  font-size: 15px;
   font-weight: 400;
-  line-height: 1.5;
+  line-height: 1.55;
   height: 100%;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+/* Authentic WhatsApp Web Chat Wallpaper Background with Soft Muted Overlay */
+.whatsapp-chat-bg {
+  background-color: #efeae2;
+  background-image: 
+    linear-gradient(rgba(239, 234, 226, 0.90), rgba(239, 234, 226, 0.90)),
+    url("/whatsappbg.webp");
+  background-repeat: repeat;
+  background-size: 412px auto;
+  background-position: center;
 }
 
 /* Custom Scrollbar */
@@ -53,25 +57,25 @@ html, body {
 ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
 
 /* ── Agent message markdown prose ─────────────────────────────────────────── */
-.agent-prose { font-size: 0.875rem; font-weight: 400; color: #1f2937; line-height: 1.55; }
+.agent-prose { font-size: 0.95rem; font-weight: 400; color: #111827; line-height: 1.65; }
 
 /* Headings */
-.agent-h1 { font-size: 1.1rem; font-weight: 700; color: #111827; margin: 0.6rem 0 0.35rem; line-height: 1.25; letter-spacing: -0.015em; }
-.agent-h2 { font-size: 0.98rem; font-weight: 700; color: #111827; margin: 0.5rem 0 0.28rem; line-height: 1.25; letter-spacing: -0.01em; }
-.agent-h3 { font-size: 0.9rem; font-weight: 600; color: #1f2937; margin: 0.45rem 0 0.22rem; line-height: 1.3; }
-.agent-h4 { font-size: 0.85rem; font-weight: 600; color: #374151; margin: 0.35rem 0 0.18rem; }
+.agent-h1 { font-size: 1.25rem; font-weight: 800; color: #111827; margin: 0.75rem 0 0.4rem; line-height: 1.3; letter-spacing: -0.02em; }
+.agent-h2 { font-size: 1.1rem; font-weight: 700; color: #111827; margin: 0.65rem 0 0.35rem; line-height: 1.3; letter-spacing: -0.015em; }
+.agent-h3 { font-size: 1.0rem; font-weight: 700; color: #1f2937; margin: 0.55rem 0 0.3rem; line-height: 1.35; }
+.agent-h4 { font-size: 0.92rem; font-weight: 600; color: #374151; margin: 0.45rem 0 0.25rem; }
 
 /* Paragraphs */
-.agent-p { margin: 0.35rem 0; line-height: 1.55; }
+.agent-p { margin: 0.45rem 0; line-height: 1.65; }
 .agent-p:first-child { margin-top: 0; }
 .agent-p:last-child { margin-bottom: 0; }
 
 /* Lists */
-.agent-ul { list-style-type: disc; padding-left: 1.3rem; margin: 0.35rem 0; }
-.agent-ol { list-style-type: decimal; padding-left: 1.3rem; margin: 0.35rem 0; }
-.agent-li { margin: 0.2rem 0; line-height: 1.5; }
+.agent-ul { list-style-type: disc; padding-left: 1.4rem; margin: 0.45rem 0; }
+.agent-ol { list-style-type: decimal; padding-left: 1.4rem; margin: 0.45rem 0; }
+.agent-li { margin: 0.25rem 0; line-height: 1.6; }
 .agent-li > .agent-ul,
-.agent-li > .agent-ol { margin: 0.15rem 0 0.15rem 0; }
+.agent-li > .agent-ol { margin: 0.2rem 0 0.2rem 0; }
 
 /* Inline emphasis */
 .agent-strong { font-weight: 700; color: #111827; }
@@ -79,59 +83,60 @@ html, body {
 
 /* Inline code */
 .agent-code-inline {
-  background: #f1f5f9;
-  color: #5925dc;
-  padding: 0.1rem 0.35rem;
-  border-radius: 4px;
-  font-size: 0.84em;
+  background: #f3f4f6;
+  color: #ff5722;
+  padding: 0.12rem 0.4rem;
+  border-radius: 6px;
+  font-size: 0.88em;
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-  border: 1px solid #e2e8f0;
+  font-weight: 600;
+  border: 1px solid #e5e7eb;
 }
 
 /* Code block */
 .agent-pre {
-  background: #f8fafc;
-  border: 1px solid #e2e8f0;
-  border-radius: 6px;
-  padding: 0.65rem 0.85rem;
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  padding: 0.8rem 1rem;
   overflow-x: auto;
-  margin: 0.45rem 0;
-  font-size: 0.82rem;
+  margin: 0.6rem 0;
+  font-size: 0.88rem;
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-  line-height: 1.45;
-  color: #1e293b;
+  line-height: 1.5;
+  color: #111827;
 }
 
 /* Blockquote */
 .agent-blockquote {
-  border-left: 3px solid #7b58dc;
-  margin: 0.45rem 0;
-  padding: 0.35rem 0.7rem;
-  background: #f8f6fe;
-  border-radius: 0 4px 4px 0;
-  color: #5925dc;
-  font-size: 0.85rem;
+  border-left: 3.5px solid #ff5722;
+  margin: 0.6rem 0;
+  padding: 0.45rem 0.85rem;
+  background: #fdeee9;
+  border-radius: 0 8px 8px 0;
+  color: #855141;
+  font-size: 0.92rem;
 }
 
 /* Divider */
-.agent-hr { border: none; border-top: 1px solid #e5e7eb; margin: 0.6rem 0; }
+.agent-hr { border: none; border-top: 1px solid #e5e7eb; margin: 0.75rem 0; }
 
 /* Tables */
-.agent-table-wrapper { overflow-x: auto; margin: 0.5rem 0; border-radius: 6px; border: 1px solid #e5e7eb; }
-.agent-table { width: 100%; border-collapse: collapse; font-size: 0.84rem; }
-.agent-thead { background: #f8fafc; }
+.agent-table-wrapper { overflow-x: auto; margin: 0.65rem 0; border-radius: 10px; border: 1px solid #e5e7eb; }
+.agent-table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+.agent-thead { background: #f9fafb; }
 .agent-th {
   text-align: left;
-  padding: 0.45rem 0.7rem;
-  font-weight: 600;
-  color: #374151;
+  padding: 0.55rem 0.85rem;
+  font-weight: 700;
+  color: #111827;
   border-bottom: 1px solid #e5e7eb;
   white-space: nowrap;
 }
-.agent-td { padding: 0.4rem 0.7rem; color: #1f2937; border-bottom: 1px solid #f1f5f9; }
+.agent-td { padding: 0.5rem 0.85rem; color: #374151; border-bottom: 1px solid #f1f5f9; }
 .agent-tr:last-child .agent-td { border-bottom: none; }
-.agent-tr:hover .agent-td { background: #f8fafc; }
+.agent-tr:hover .agent-td { background: #f9fafb; }
 
 /* Links */
-.agent-link { color: #5925dc; text-decoration: underline; text-underline-offset: 2px; }
-.agent-link:hover { color: #7b58dc; }
+.agent-link { color: #ff5722; font-weight: 600; text-decoration: underline; text-underline-offset: 2px; }
+.agent-link:hover { color: #f4511e; }
