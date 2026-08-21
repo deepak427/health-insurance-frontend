@@ -553,76 +553,134 @@ export default function DataPage() {
     }
   }
 
-  const DolphinLogo = () => (
-    <svg width="24" height="24" viewBox="0 0 24 24" fill="white">
-      <path d="M12.984 8.783c-1.332-1.936-3.792-3.14-6.425-3.14-1.295 0-2.527.31-3.626.866.52-2.316 2.584-4.062 5.067-4.062 2.85 0 5.161 2.31 5.161 5.16 0 .438-.057.863-.163 1.267a5.122 5.122 0 0 1-.014-.091zm9.324 7.64c-.958-3.325-3.418-5.748-6.685-6.683-.81-.233-1.666-.363-2.545-.38l-1.077-.021c.542.484 1.002 1.05 1.353 1.68l.215.385c.896 1.62 1.34 3.535 1.272 5.518l-.01.32c1.78-.184 3.393-1.052 4.544-2.355l1.636-1.848.067-1.127a5.534 5.534 0 0 0 .108-.501.996.996 0 0 1-.878.508c-.28 0-.546-.118-.737-.324l-2.072-2.222c-.383-.412-.358-1.055.054-1.439.412-.383 1.055-.357 1.439.055l1.838 1.973c.123.131.295.205.474.205h.001zm-5.75-8.52c-.615-.466-1.286-.867-1.998-1.196-1.293-.598-2.678-.897-4.113-.897-.992 0-1.97.16-2.91.468C3.896 7.425 1.155 9.775.228 12.87l-.147.494 2.112-2.348c.15-.167.315-.327.491-.478l.42-.355c.784-.663 1.678-1.168 2.657-1.498.412-.138.835-.23 1.264-.275l.435-.046c1.67-.176 3.336.262 4.673 1.233.15.108.297.22.441.336l.244.195c1.455 1.164 2.378 2.85 2.628 4.757.065.498.077 1.002.036 1.5l-.019.227c-.234 2.809-1.956 5.176-4.524 6.184l-2.028.794 3.385.163c2.72.13 5.37-1.195 6.953-3.488l2.257-3.265.172-.45c.162-.42.274-.858.337-1.309.055-.398-.016-.807-.205-1.158l-.946-1.745c-.464-.856-1.11-1.577-1.91-2.136z"/>
-    </svg>
-  );
-
   const isCatalog = activeInfo.mode === "addon-catalog" || activeInfo.mode === "vas-catalog";
 
   return (
-    <main className="h-screen w-screen flex overflow-hidden">
-      <div className="flex flex-1 w-full h-full bg-white overflow-hidden">
+    <main className="h-screen w-screen flex bg-[#f4f5f8] overflow-hidden font-sans">
+      <div className="flex flex-1 w-full h-full bg-[#f4f5f8] overflow-hidden">
 
-        {/* Navy sidebar */}
-        <aside className="hidden md:flex flex-col w-[220px] bg-[#0a192f] text-white shrink-0">
-          <div className="flex items-center gap-3 px-5 py-5">
-            <DolphinLogo />
-            <h1 className="text-[15px] font-black tracking-[-0.02em]">Dolphin <span className="text-[#00a86b]">Portal</span></h1>
+        {/* XLSync Modern White Sidebar */}
+        <aside className="hidden md:flex flex-col w-[240px] bg-white text-[#111827] border-r border-[#e5e7eb] shrink-0 select-none">
+          {/* Brand Header */}
+          <div className="flex items-center justify-between px-5 pt-6 pb-4">
+            <div className="flex items-center gap-2.5">
+              <div className="relative w-8 h-8 flex items-center justify-center shrink-0">
+                <svg width="32" height="32" viewBox="0 0 36 36" fill="none">
+                  <circle cx="18" cy="18" r="15" stroke="url(#xlsync_grad_data)" strokeWidth="3" strokeLinecap="round" strokeDasharray="75 25" />
+                  <circle cx="18" cy="18" r="4" fill="#2563eb" />
+                  <defs>
+                    <linearGradient id="xlsync_grad_data" x1="0" y1="0" x2="36" y2="36" gradientUnits="userSpaceOnUse">
+                      <stop stopColor="#ff5722" />
+                      <stop offset="0.5" stopColor="#6366f1" />
+                      <stop offset="1" stopColor="#00a86b" />
+                    </linearGradient>
+                  </defs>
+                </svg>
+              </div>
+              <div className="flex items-center gap-0.5">
+                <span className="text-[20px] font-black tracking-tight text-[#111827]">XL</span>
+                <span className="text-[20px] font-medium tracking-tight text-[#6366f1]">Sync</span>
+              </div>
+            </div>
           </div>
-          <div className="px-3 mt-1">
-            <Link href="/" className="flex items-center gap-3 px-4 py-2.5 rounded-lg text-xs text-[#94a3b8] hover:bg-[#132742] hover:text-white transition-colors">
-              <ArrowLeft size={16} /><span>Back to Hub</span>
+
+          <div className="px-4 py-2">
+            <Link
+              href="/"
+              className="flex items-center justify-center gap-2 w-full bg-black text-white hover:bg-neutral-800 transition-all font-semibold rounded-full py-2.5 px-4 text-xs shadow-sm"
+            >
+              <ArrowLeft size={14} />
+              <span>Back to Dashboard</span>
             </Link>
           </div>
 
-          <p className="px-5 mt-5 mb-1.5 text-[10px] font-bold uppercase tracking-wider text-[#94a3b8]">Data</p>
+          {/* Navigation Tabs */}
+          <div className="px-5 mt-4 mb-1 text-[11px] font-bold uppercase tracking-wider text-[#9ca3af]">
+            Configuration
+          </div>
           <nav className="px-3 flex flex-col gap-1">
             {TABS.filter(t => !["addons","vas"].includes(t.key)).map(tab => (
-              <button key={tab.key} onClick={() => loadTab(tab.key)}
-                className={`flex items-center gap-3 px-4 py-2.5 rounded-lg text-xs transition-colors text-left w-full relative ${
-                  activeTab === tab.key ? "bg-[#132742] text-white font-semibold" : "text-[#94a3b8] hover:bg-[#132742] hover:text-white font-light"
-                }`}>
-                {activeTab === tab.key && <span className="absolute left-0 top-2 bottom-2 w-1 bg-[#00a86b] rounded-r-md" />}
-                {tab.icon}<span className="truncate">{tab.label}</span>
+              <button
+                key={tab.key}
+                onClick={() => loadTab(tab.key)}
+                className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs transition-all text-left w-full ${
+                  activeTab === tab.key
+                    ? "bg-[#f3f4f6] text-[#111827] font-bold"
+                    : "text-[#4b5563] hover:bg-[#f9fafb] hover:text-[#111827] font-medium"
+                }`}
+              >
+                <span className={activeTab === tab.key ? "text-[#ff5722]" : "text-[#6b7280]"}>{tab.icon}</span>
+                <span className="truncate">{tab.label}</span>
               </button>
             ))}
           </nav>
 
-          <p className="px-5 mt-5 mb-1.5 text-[10px] font-bold uppercase tracking-wider text-[#94a3b8]">Catalog</p>
+          <div className="px-5 mt-5 mb-1 text-[11px] font-bold uppercase tracking-wider text-[#9ca3af]">
+            Catalogs
+          </div>
           <nav className="px-3 flex flex-col gap-1">
             {TABS.filter(t => ["addons","vas"].includes(t.key)).map(tab => (
-              <button key={tab.key} onClick={() => loadTab(tab.key)}
-                className={`flex items-center gap-3 px-4 py-2.5 rounded-lg text-xs transition-colors text-left w-full relative ${
-                  activeTab === tab.key ? "bg-[#132742] text-white font-semibold" : "text-[#94a3b8] hover:bg-[#132742] hover:text-white font-light"
-                }`}>
-                {activeTab === tab.key && <span className="absolute left-0 top-2 bottom-2 w-1 rounded-r-md" style={{ background: tab.accent }} />}
+              <button
+                key={tab.key}
+                onClick={() => loadTab(tab.key)}
+                className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs transition-all text-left w-full ${
+                  activeTab === tab.key
+                    ? "bg-[#f3f4f6] text-[#111827] font-bold"
+                    : "text-[#4b5563] hover:bg-[#f9fafb] hover:text-[#111827] font-medium"
+                }`}
+              >
                 <span style={{ color: activeTab === tab.key ? tab.accent : undefined }}>{tab.icon}</span>
                 <span className="truncate">{tab.label}</span>
               </button>
             ))}
           </nav>
+
+          {/* Bottom user */}
+          <div className="mt-auto p-4 border-t border-[#e5e7eb]">
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-full bg-black text-white flex items-center justify-center text-xs font-bold shrink-0">
+                XS
+              </div>
+              <div className="flex flex-col min-w-0">
+                <span className="text-xs font-bold text-[#111827] truncate leading-tight">Super Admin</span>
+                <span className="text-[10px] text-[#9ca3af] truncate leading-tight">Knowledge Base Mode</span>
+              </div>
+            </div>
+          </div>
         </aside>
 
         {/* Main content */}
-        <div className="flex flex-col flex-1 min-w-0 overflow-hidden">
-          <header className="flex items-center justify-between px-6 py-4 border-b border-[#e5e7eb] shrink-0">
+        <div className="flex flex-col flex-1 min-w-0 overflow-hidden bg-[#f4f5f8]">
+          {/* Header */}
+          <header className="flex items-center justify-between px-6 py-4 bg-white border-b border-[#e5e7eb] shrink-0">
             <div className="flex items-center gap-3">
-              <span style={{ color: activeInfo.accent ?? "#00a86b" }}>{activeInfo.icon}</span>
+              <div className="w-9 h-9 rounded-xl bg-[#f3f4f6] flex items-center justify-center" style={{ color: activeInfo.accent ?? "#ff5722" }}>
+                {activeInfo.icon}
+              </div>
               <div>
-                <h2 className="text-sm font-bold text-[#1f2937]">{activeInfo.label}</h2>
-                <p className="text-xs text-[#6b7280] mt-0.5">{activeInfo.description}</p>
+                <h1 className="text-lg font-bold text-[#111827] tracking-tight">{activeInfo.label}</h1>
+                <p className="text-xs text-[#6b7280]">{activeInfo.description}</p>
               </div>
             </div>
             <div className="flex items-center gap-2">
-              <button onClick={() => loadTab(activeTab)}
-                className="flex items-center gap-1.5 text-xs font-semibold px-3 py-2 rounded border border-[#e5e7eb] hover:bg-gray-50 text-[#6b7280]">
+              <Link
+                href="/"
+                className="md:hidden flex items-center gap-1 text-xs font-semibold px-3 py-2 rounded-xl bg-gray-100 text-[#111827]"
+              >
+                <ArrowLeft size={13} /> Back
+              </Link>
+              <button
+                onClick={() => loadTab(activeTab)}
+                className="flex items-center gap-1.5 text-xs font-semibold px-3.5 py-2 rounded-xl border border-[#d1d5db] bg-white hover:bg-gray-50 text-[#4b5563] shadow-2xs transition-all"
+              >
                 <RefreshCw size={13} className={status === "loading" ? "animate-spin" : ""} />Reload
               </button>
               {!isCatalog && (
-                <button onClick={handleSave} disabled={status === "saving" || !loaded}
-                  className="flex items-center gap-2 text-xs font-semibold px-4 py-2 rounded bg-[#00a86b] hover:bg-[#008f5a] text-white disabled:opacity-50">
+                <button
+                  onClick={handleSave}
+                  disabled={status === "saving" || !loaded}
+                  className="flex items-center gap-2 text-xs font-semibold px-4 py-2 rounded-xl bg-[#ff5722] hover:bg-[#f4511e] text-white disabled:opacity-50 shadow-sm transition-all"
+                >
                   <Save size={13} />{status === "saving" ? "Saving…" : "Save Changes"}
                 </button>
               )}
@@ -634,42 +692,49 @@ export default function DataPage() {
               status === "saved" ? "bg-[#f0fdf4] text-[#166534] border-[#bbf7d0]" : "bg-red-50 text-red-700 border-red-200"
             }`}>
               {status === "saved"
-                ? <><CheckCircle size={14} className="shrink-0" /><span>Saved — agent picks up changes immediately.</span></>
+                ? <><CheckCircle size={14} className="shrink-0" /><span>Saved successfully.</span></>
                 : <><AlertCircle size={14} className="shrink-0" /><span>{errorMsg}</span></>}
             </div>
           )}
 
           {status === "loading" ? (
             <div className="flex flex-col items-center justify-center flex-1 gap-2 text-[#6b7280]">
-              <RefreshCw size={22} className="animate-spin text-[#00a86b]" />
-              <span className="text-sm">Loading…</span>
+              <RefreshCw size={22} className="animate-spin text-[#ff5722]" />
+              <span className="text-sm">Loading data…</span>
             </div>
           ) : activeInfo.mode === "addon-catalog" ? (
             <AddonCatalogEditor catalog={addonCatalog} accent={activeInfo.accent} onSave={handleCatalogSave} />
           ) : activeInfo.mode === "vas-catalog" ? (
             <VasCatalogEditor catalog={vasCatalog} accent={activeInfo.accent} onSave={handleCatalogSave} />
           ) : activeInfo.mode === "prompt" ? (
-            <div className="flex-1 p-6 flex flex-col bg-[#f8fafc] overflow-hidden">
+            <div className="flex-1 p-6 flex flex-col bg-[#f4f5f8] overflow-hidden">
               <p className="text-xs text-[#6b7280] mb-3 leading-relaxed">
                 Plain instructions for how the agent formats replies. Takes priority over defaults. Leave blank to use defaults.
               </p>
-              <div className="flex-1 flex flex-col bg-white border border-[#e5e7eb] rounded-lg overflow-hidden shadow-sm">
-                <div className="flex items-center gap-2 px-4 py-2 bg-gray-50 border-b border-[#e5e7eb] text-xs font-semibold text-[#6b7280]">
-                  <MessageSquareText size={13} className="text-[#00a86b]" />Response Style Instructions
+              <div className="flex-1 flex flex-col bg-white border border-[#e5e7eb] rounded-2xl overflow-hidden shadow-2xs">
+                <div className="flex items-center gap-2 px-4 py-2.5 bg-gray-50 border-b border-[#e5e7eb] text-xs font-semibold text-[#6b7280]">
+                  <MessageSquareText size={13} className="text-[#ff5722]" />Response Style Instructions
                 </div>
-                <textarea value={promptValue} onChange={e => setPromptValue(e.target.value)}
+                <textarea
+                  value={promptValue}
+                  onChange={e => setPromptValue(e.target.value)}
                   placeholder="e.g. Keep responses short and friendly. Use bullet points."
-                  className="w-full flex-1 p-4 text-sm text-[#1f2937] resize-none outline-none leading-relaxed min-h-[240px]" />
+                  className="w-full flex-1 p-4 text-sm text-[#111827] resize-none outline-none leading-relaxed min-h-[240px]"
+                />
               </div>
             </div>
           ) : (
-            <div className="flex-1 p-6 flex flex-col bg-[#f8fafc] overflow-hidden">
-              <div className="flex-1 flex flex-col bg-white border border-[#e5e7eb] rounded-lg overflow-hidden shadow-sm">
-                <div className="flex items-center px-4 py-2 bg-gray-50 border-b border-[#e5e7eb] text-xs font-semibold text-[#6b7280]">
-                  <Code2 size={13} className="text-[#0369a1] mr-2" />{activeTab}.json
+            <div className="flex-1 p-6 flex flex-col bg-[#f4f5f8] overflow-hidden">
+              <div className="flex-1 flex flex-col bg-white border border-[#e5e7eb] rounded-2xl overflow-hidden shadow-2xs">
+                <div className="flex items-center px-4 py-2.5 bg-gray-50 border-b border-[#e5e7eb] text-xs font-semibold text-[#6b7280]">
+                  <Code2 size={13} className="text-[#2563eb] mr-2" />{activeTab}.json
                 </div>
-                <textarea value={editorValue} onChange={e => setEditorValue(e.target.value)}
-                  spellCheck={false} className="w-full flex-1 p-4 text-sm font-mono text-[#1f2937] resize-none outline-none" />
+                <textarea
+                  value={editorValue}
+                  onChange={e => setEditorValue(e.target.value)}
+                  spellCheck={false}
+                  className="w-full flex-1 p-4 text-sm font-mono text-[#111827] resize-none outline-none"
+                />
               </div>
             </div>
           )}

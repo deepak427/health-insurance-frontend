@@ -1,31 +1,31 @@
 @import "tailwindcss";
 
 :root {
-  /* GitLab Enterprise Design System Tokens */
-  --bg-app: #f4f7f9;
-  --bg-main: #ffffff;
-  --bg-sidebar: #fbfbfd;
-  --bg-sidebar-active: #ece7fe;
-  --bg-sidebar-hover: #f1f5f9;
+  /* XLSync Modern Enterprise Palette */
+  --bg-app: #f4f5f8;
+  --bg-sidebar: #ffffff;
+  --bg-card: #ffffff;
+  --bg-card-hover: #f9fafb;
+  --bg-active-pill: #f3f4f6;
   
-  --gitlab-purple: #7b58dc;
-  --gitlab-purple-hover: #6e49cb;
-  --gitlab-purple-light: #ece7fe;
-  --gitlab-purple-text: #5925dc;
+  --brand-coral: #ff5722;
+  --brand-coral-hover: #f4511e;
+  --brand-blue: #2563eb;
+  --brand-purple: #6366f1;
+  --brand-emerald: #00a86b;
+  --brand-cream: #faebd7;
+  --brand-peach: #fdeee9;
+  --brand-dark-pill: #111827;
   
-  --accent-emerald: #00a86b;
-  --accent-emerald-light: #ecfdf5;
-  --accent-emerald-border: #a7f3d0;
-  
-  --text-main: #1f2937;
+  --text-main: #111827;
   --text-secondary: #4b5563;
   --text-muted: #6b7280;
-  --text-sidebar: #374151;
+  --text-light: #9ca3af;
   
-  --border-light: #e5e7eb;
-  --border-medium: #d1d5db;
+  --border-subtle: #e5e7eb;
+  --border-strong: #d1d5db;
   
-  --font-sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-sans: "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
 }
 
 * {

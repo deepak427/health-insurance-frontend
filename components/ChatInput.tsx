@@ -72,33 +72,16 @@ export default function ChatInput({ onSend, disabled }: Props) {
   }
 
   return (
-    <div className="px-4 md:px-8 py-3 bg-white border-t border-[#e5e7eb] flex flex-col gap-2">
-      {/* Quick Prompt Suggestions */}
-      <div className="hidden sm:flex items-center gap-1.5 overflow-x-auto pb-0.5 no-scrollbar">
-        <span className="text-[10px] font-bold text-[#9ca3af] uppercase tracking-wide shrink-0 mr-1 flex items-center gap-1">
-          <Sparkles size={11} className="text-[#7b58dc]" /> Suggested:
-        </span>
-        {QUICK_PROMPTS.map((prompt, i) => (
-          <button
-            key={i}
-            onClick={() => onSend(prompt)}
-            disabled={disabled}
-            className="text-[11px] px-2.5 py-1 rounded-full bg-[#f8fafc] border border-[#e5e7eb] text-[#4b5563] hover:bg-[#ece7fe] hover:text-[#5925dc] hover:border-[#d8b4fe] transition-all whitespace-nowrap shrink-0 disabled:opacity-50"
-          >
-            {prompt}
-          </button>
-        ))}
-      </div>
-
+    <div className="px-4 md:px-6 py-3 bg-white border-t border-[#e5e7eb]">
       <div className="flex flex-col gap-2">
         {/* File Preview Badge */}
         {file && (
-          <div className="flex items-center gap-2 px-2.5 py-1 rounded-md bg-[#ece7fe] text-[#5925dc] border border-[#d8b4fe] self-start text-xs shadow-2xs">
-            <FileText size={13} className="text-[#7b58dc]" />
+          <div className="flex items-center gap-2 px-2.5 py-1 rounded-md bg-[#f3f4f6] text-[#111827] border border-[#e5e7eb] self-start text-xs shadow-2xs">
+            <FileText size={13} className="text-[#ff5722]" />
             <span className="truncate max-w-xs font-semibold">{file.name}</span>
             <button
               onClick={() => setFile(null)}
-              className="w-4 h-4 flex items-center justify-center rounded hover:bg-white/60 text-[#5925dc]"
+              className="w-4 h-4 flex items-center justify-center rounded hover:bg-gray-200 text-[#6b7280]"
             >
               <X size={12} />
             </button>
@@ -106,15 +89,15 @@ export default function ChatInput({ onSend, disabled }: Props) {
         )}
 
         {/* Input Bar */}
-        <div className="flex items-end gap-2 p-1 bg-[#f8fafc] border border-[#d1d5db] focus-within:border-[#7b58dc] focus-within:ring-1 focus-within:ring-[#7b58dc] rounded-xl transition-all">
+        <div className="flex items-end gap-2 p-1.5 bg-[#f9fafb] border border-[#d1d5db] focus-within:border-[#ff5722] focus-within:ring-1 focus-within:ring-[#ff5722] rounded-2xl transition-all">
           {/* Attach Button */}
           <button
             onClick={() => fileRef.current?.click()}
             disabled={disabled}
-            className="w-8 h-8 shrink-0 rounded-lg flex items-center justify-center text-[#6b7280] hover:text-[#1f2937] hover:bg-white transition-colors disabled:opacity-50 mb-0.5"
+            className="w-8 h-8 shrink-0 rounded-xl flex items-center justify-center text-[#6b7280] hover:text-[#111827] hover:bg-white transition-colors disabled:opacity-50 mb-0.5"
             title="Upload Document / PDF / Image"
           >
-            <Paperclip size={17} />
+            <Paperclip size={18} />
           </button>
           <input
             ref={fileRef}
@@ -132,8 +115,8 @@ export default function ChatInput({ onSend, disabled }: Props) {
             onChange={handleTextChange}
             onKeyDown={handleKey}
             disabled={disabled}
-            placeholder="Type your insurance query or ask to book / compare..."
-            className="flex-1 resize-none bg-transparent text-xs sm:text-sm text-[#1f2937] placeholder-[#9ca3af] outline-none py-2 px-1 disabled:opacity-50 min-h-[34px]"
+            placeholder="Type your insurance message or query..."
+            className="flex-1 resize-none bg-transparent text-xs sm:text-sm text-[#111827] placeholder-[#9ca3af] outline-none py-2 px-1 disabled:opacity-50 min-h-[34px]"
             style={{ maxHeight: "120px" }}
           />
 
@@ -141,7 +124,7 @@ export default function ChatInput({ onSend, disabled }: Props) {
           <button
             onClick={submit}
             disabled={disabled || (!text.trim() && !file)}
-            className="w-8 h-8 shrink-0 rounded-lg bg-[#7b58dc] hover:bg-[#6e49cb] text-white flex items-center justify-center transition-colors disabled:opacity-40 mb-0.5 shadow-2xs"
+            className="w-8 h-8 shrink-0 rounded-xl bg-[#ff5722] hover:bg-[#f4511e] text-white flex items-center justify-center transition-colors disabled:opacity-40 mb-0.5 shadow-sm"
             title="Send Message"
           >
             <Send size={14} className="-ml-0.5" />
