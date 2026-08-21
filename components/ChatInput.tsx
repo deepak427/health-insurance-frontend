@@ -109,16 +109,16 @@ export default function ChatInput({ onSend, disabled }: Props) {
   }
 
   return (
-    <div className="px-4 py-2.5 bg-[#f0f2f5] border-t border-[#e9edef]">
-      <div className="flex flex-col gap-2">
+    <div className="px-2 sm:px-4 py-2 bg-[#f0f2f5] border-t border-[#e9edef]">
+      <div className="flex flex-col gap-1.5 sm:gap-2">
         {/* File Preview Badge */}
         {file && (
-          <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white text-[#111b21] border border-[#e9edef] self-start text-xs shadow-xs">
-            <FileText size={15} className="text-[#008069]" />
-            <span className="truncate max-w-xs font-semibold">{file.name}</span>
+          <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white text-[#111b21] border border-[#e9edef] self-start text-xs shadow-xs max-w-full">
+            <FileText size={15} className="text-[#008069] shrink-0" />
+            <span className="truncate max-w-[200px] sm:max-w-xs font-semibold">{file.name}</span>
             <button
               onClick={() => setFile(null)}
-              className="w-4 h-4 flex items-center justify-center rounded hover:bg-gray-200 text-[#667781] cursor-pointer"
+              className="w-4 h-4 flex items-center justify-center rounded hover:bg-gray-200 text-[#667781] cursor-pointer shrink-0"
             >
               <X size={13} />
             </button>
@@ -126,15 +126,15 @@ export default function ChatInput({ onSend, disabled }: Props) {
         )}
 
         {/* WhatsApp Input Bar */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1 sm:gap-2">
           {/* Plus / Attach Button */}
           <button
             onClick={() => fileRef.current?.click()}
             disabled={disabled}
-            className="w-10 h-10 shrink-0 rounded-full flex items-center justify-center text-[#54656f] hover:text-[#111b21] hover:bg-black/5 transition-colors disabled:opacity-50 cursor-pointer"
+            className="w-9 h-9 sm:w-10 sm:h-10 shrink-0 rounded-full flex items-center justify-center text-[#54656f] hover:text-[#111b21] hover:bg-black/5 transition-colors disabled:opacity-50 cursor-pointer"
             title="Attach documents or images"
           >
-            <Plus size={22} />
+            <Plus size={20} className="sm:w-[22px] sm:h-[22px]" />
           </button>
           <input
             ref={fileRef}
@@ -148,14 +148,14 @@ export default function ChatInput({ onSend, disabled }: Props) {
           <button
             disabled={disabled}
             onClick={() => { setText(t => t + " 👍"); textareaRef.current?.focus(); }}
-            className="w-10 h-10 shrink-0 rounded-full flex items-center justify-center text-[#54656f] hover:text-[#111b21] hover:bg-black/5 transition-colors disabled:opacity-50 cursor-pointer"
+            className="w-9 h-9 sm:w-10 sm:h-10 shrink-0 rounded-full hidden xs:flex items-center justify-center text-[#54656f] hover:text-[#111b21] hover:bg-black/5 transition-colors disabled:opacity-50 cursor-pointer"
             title="Emojis"
           >
-            <span className="text-xl leading-none">😀</span>
+            <span className="text-lg sm:text-xl leading-none">😀</span>
           </button>
 
           {/* Input Box */}
-          <div className="flex-1 flex items-center bg-white rounded-lg px-3.5 py-1 shadow-2xs border border-transparent focus-within:border-[#00a884]/30">
+          <div className="flex-1 flex items-center bg-white rounded-lg px-3 py-1 shadow-2xs border border-transparent focus-within:border-[#00a884]/30 min-w-0">
             <textarea
               ref={textareaRef}
               rows={1}
@@ -164,7 +164,7 @@ export default function ChatInput({ onSend, disabled }: Props) {
               onKeyDown={handleKey}
               disabled={disabled}
               placeholder="Type a message"
-              className="w-full resize-none bg-transparent text-[15px] text-[#111b21] placeholder-[#54656f] outline-none py-1.5 disabled:opacity-50 min-h-[28px]"
+              className="w-full resize-none bg-transparent text-[14px] sm:text-[15px] text-[#111b21] placeholder-[#54656f] outline-none py-1.5 disabled:opacity-50 min-h-[28px]"
               style={{ maxHeight: "120px" }}
             />
           </div>
@@ -174,20 +174,20 @@ export default function ChatInput({ onSend, disabled }: Props) {
             <button
               onClick={submit}
               disabled={disabled}
-              className="w-10 h-10 shrink-0 rounded-full bg-[#008069] hover:bg-[#00a884] text-white flex items-center justify-center transition-all disabled:opacity-40 shadow-xs cursor-pointer"
+              className="w-9 h-9 sm:w-10 sm:h-10 shrink-0 rounded-full bg-[#008069] hover:bg-[#00a884] text-white flex items-center justify-center transition-all disabled:opacity-40 shadow-xs cursor-pointer"
               title="Send Message"
             >
-              <Send size={18} className="-ml-0.5" />
+              <Send size={16} className="-ml-0.5 sm:w-[18px] sm:h-[18px]" />
             </button>
           ) : (
             <button
               disabled={disabled}
               onClick={() => { setText("Check my current travel insurance policy"); textareaRef.current?.focus(); }}
-              className="w-10 h-10 shrink-0 rounded-full flex items-center justify-center text-[#54656f] hover:text-[#111b21] hover:bg-black/5 transition-colors cursor-pointer"
+              className="w-9 h-9 sm:w-10 sm:h-10 shrink-0 rounded-full flex items-center justify-center text-[#54656f] hover:text-[#111b21] hover:bg-black/5 transition-colors cursor-pointer"
               title="Voice message / Quick prompt"
             >
               {/* WhatsApp Microphone SVG */}
-              <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor">
+              <svg viewBox="0 0 24 24" width="20" height="20" className="sm:w-6 sm:h-6" fill="currentColor">
                 <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"/>
                 <path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/>
               </svg>

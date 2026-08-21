@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import {
   ArrowLeft, Save, RefreshCw, CheckCircle, AlertCircle, Database,
-  Code2, MessageSquareText, Puzzle, HeartPulse, Plus, Pencil, Trash2, X, Check,
+  Code2, MessageSquareText, Puzzle, HeartPulse, Plus, Pencil, Trash2, X, Check, Menu
 } from "lucide-react";
 import Link from "next/link";
 import { fetchData, saveData, DataKey } from "@/lib/api";
@@ -492,6 +492,7 @@ export default function DataPage() {
   const [loaded, setLoaded] = useState(false);
   const [status, setStatus] = useState<"idle" | "loading" | "saving" | "saved" | "error">("idle");
   const [errorMsg, setErrorMsg] = useState("");
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const activeInfo = TABS.find((t) => t.key === activeTab)!;
 
@@ -555,133 +556,159 @@ export default function DataPage() {
 
   const isCatalog = activeInfo.mode === "addon-catalog" || activeInfo.mode === "vas-catalog";
 
+  const sidebarContent = (
+    <div className="flex flex-col h-full bg-white text-[#111827] select-none">
+      {/* Brand Header */}
+      <div className="flex items-center justify-between px-5 pt-6 pb-4">
+        <div className="flex items-center gap-3">
+          <div className="relative w-8 h-8 flex items-center justify-center shrink-0">
+            <svg width="32" height="32" viewBox="0 0 36 36" fill="none">
+              <circle cx="18" cy="18" r="15" stroke="url(#dolphin_grad_data)" strokeWidth="3" strokeLinecap="round" strokeDasharray="75 25" />
+              <circle cx="18" cy="18" r="4" fill="#ff5722" />
+              <defs>
+                <linearGradient id="dolphin_grad_data" x1="0" y1="0" x2="36" y2="36" gradientUnits="userSpaceOnUse">
+                  <stop stopColor="#ff5722" />
+                  <stop offset="0.5" stopColor="#6366f1" />
+                  <stop offset="1" stopColor="#00a86b" />
+                </linearGradient>
+              </defs>
+            </svg>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <span className="text-[18px] font-black tracking-tight text-[#111827]">Dolphin</span>
+            <span className="text-[18px] font-medium tracking-tight text-[#ff5722]">Buddy</span>
+          </div>
+        </div>
+        <button
+          onClick={() => setSidebarOpen(false)}
+          className="md:hidden p-1.5 text-gray-400 hover:text-gray-600 rounded-lg"
+        >
+          <X size={18} />
+        </button>
+      </div>
+
+      <div className="px-4 py-2">
+        <Link
+          href="/"
+          className="flex items-center justify-center gap-2 w-full bg-black text-white hover:bg-neutral-800 transition-all font-bold rounded-full py-3 px-4 text-sm shadow-sm"
+        >
+          <ArrowLeft size={16} />
+          <span>Back to Chat</span>
+        </Link>
+      </div>
+
+      {/* Navigation Tabs */}
+      <div className="px-5 mt-4 mb-1.5 text-xs font-black uppercase tracking-wider text-[#9ca3af]">
+        Configuration
+      </div>
+      <nav className="px-3 flex flex-col gap-1.5 text-sm">
+        {TABS.filter(t => !["addons","vas"].includes(t.key)).map(tab => (
+          <button
+            key={tab.key}
+            onClick={() => { loadTab(tab.key); setSidebarOpen(false); }}
+            className={`flex items-center gap-3.5 px-3.5 py-3 rounded-2xl transition-all text-left w-full cursor-pointer ${
+              activeTab === tab.key
+                ? "bg-[#f3f4f6] text-[#111827] font-black"
+                : "text-[#4b5563] hover:bg-[#f9fafb] hover:text-[#111827] font-semibold"
+            }`}
+          >
+            <span className={activeTab === tab.key ? "text-[#ff5722]" : "text-[#6b7280]"}>{tab.icon}</span>
+            <span className="truncate">{tab.label}</span>
+          </button>
+        ))}
+      </nav>
+
+      <div className="px-5 mt-5 mb-1.5 text-xs font-black uppercase tracking-wider text-[#9ca3af]">
+        Catalogs
+      </div>
+      <nav className="px-3 flex flex-col gap-1.5 text-sm">
+        {TABS.filter(t => ["addons","vas"].includes(t.key)).map(tab => (
+          <button
+            key={tab.key}
+            onClick={() => { loadTab(tab.key); setSidebarOpen(false); }}
+            className={`flex items-center gap-3.5 px-3.5 py-3 rounded-2xl transition-all text-left w-full cursor-pointer ${
+              activeTab === tab.key
+                ? "bg-[#f3f4f6] text-[#111827] font-black"
+                : "text-[#4b5563] hover:bg-[#f9fafb] hover:text-[#111827] font-semibold"
+            }`}
+          >
+            <span style={{ color: activeTab === tab.key ? tab.accent : undefined }}>{tab.icon}</span>
+            <span className="truncate">{tab.label}</span>
+          </button>
+        ))}
+      </nav>
+
+      {/* Bottom user */}
+      <div className="mt-auto p-4 border-t border-[#e5e7eb]">
+        <div className="flex items-center gap-2.5">
+          <div className="w-9 h-9 rounded-full bg-black text-white flex items-center justify-center text-xs font-bold shrink-0">
+            DB
+          </div>
+          <div className="flex flex-col min-w-0">
+            <span className="text-xs font-bold text-[#111827] truncate leading-tight">Admin Console</span>
+            <span className="text-[11px] text-[#9ca3af] truncate leading-tight">Knowledge Base & VAS</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
   return (
     <main className="h-screen w-screen flex bg-[#f4f5f8] overflow-hidden font-sans">
       <div className="flex flex-1 w-full h-full bg-[#f4f5f8] overflow-hidden">
 
-        {/* Modern White Sidebar */}
-        <aside className="hidden md:flex flex-col w-[260px] bg-white text-[#111827] border-r border-[#e5e7eb] shrink-0 select-none">
-          {/* Brand Header */}
-          <div className="flex items-center justify-between px-5 pt-6 pb-4">
-            <div className="flex items-center gap-3">
-              <div className="relative w-8 h-8 flex items-center justify-center shrink-0">
-                <svg width="32" height="32" viewBox="0 0 36 36" fill="none">
-                  <circle cx="18" cy="18" r="15" stroke="url(#dolphin_grad_data)" strokeWidth="3" strokeLinecap="round" strokeDasharray="75 25" />
-                  <circle cx="18" cy="18" r="4" fill="#ff5722" />
-                  <defs>
-                    <linearGradient id="dolphin_grad_data" x1="0" y1="0" x2="36" y2="36" gradientUnits="userSpaceOnUse">
-                      <stop stopColor="#ff5722" />
-                      <stop offset="0.5" stopColor="#6366f1" />
-                      <stop offset="1" stopColor="#00a86b" />
-                    </linearGradient>
-                  </defs>
-                </svg>
-              </div>
-              <div className="flex items-center gap-1.5">
-                <span className="text-[18px] font-black tracking-tight text-[#111827]">Dolphin</span>
-                <span className="text-[18px] font-medium tracking-tight text-[#ff5722]">Buddy</span>
-              </div>
-            </div>
-          </div>
-
-          <div className="px-4 py-2">
-            <Link
-              href="/"
-              className="flex items-center justify-center gap-2 w-full bg-black text-white hover:bg-neutral-800 transition-all font-bold rounded-full py-3 px-4 text-sm shadow-sm"
-            >
-              <ArrowLeft size={16} />
-              <span>Back to Chat</span>
-            </Link>
-          </div>
-
-          {/* Navigation Tabs */}
-          <div className="px-5 mt-4 mb-1.5 text-xs font-black uppercase tracking-wider text-[#9ca3af]">
-            Configuration
-          </div>
-          <nav className="px-3 flex flex-col gap-1.5 text-sm">
-            {TABS.filter(t => !["addons","vas"].includes(t.key)).map(tab => (
-              <button
-                key={tab.key}
-                onClick={() => loadTab(tab.key)}
-                className={`flex items-center gap-3.5 px-3.5 py-3 rounded-2xl transition-all text-left w-full cursor-pointer ${
-                  activeTab === tab.key
-                    ? "bg-[#f3f4f6] text-[#111827] font-black"
-                    : "text-[#4b5563] hover:bg-[#f9fafb] hover:text-[#111827] font-semibold"
-                }`}
-              >
-                <span className={activeTab === tab.key ? "text-[#ff5722]" : "text-[#6b7280]"}>{tab.icon}</span>
-                <span className="truncate">{tab.label}</span>
-              </button>
-            ))}
-          </nav>
-
-          <div className="px-5 mt-5 mb-1.5 text-xs font-black uppercase tracking-wider text-[#9ca3af]">
-            Catalogs
-          </div>
-          <nav className="px-3 flex flex-col gap-1.5 text-sm">
-            {TABS.filter(t => ["addons","vas"].includes(t.key)).map(tab => (
-              <button
-                key={tab.key}
-                onClick={() => loadTab(tab.key)}
-                className={`flex items-center gap-3.5 px-3.5 py-3 rounded-2xl transition-all text-left w-full cursor-pointer ${
-                  activeTab === tab.key
-                    ? "bg-[#f3f4f6] text-[#111827] font-black"
-                    : "text-[#4b5563] hover:bg-[#f9fafb] hover:text-[#111827] font-semibold"
-                }`}
-              >
-                <span style={{ color: activeTab === tab.key ? tab.accent : undefined }}>{tab.icon}</span>
-                <span className="truncate">{tab.label}</span>
-              </button>
-            ))}
-          </nav>
-
-          {/* Bottom user */}
-          <div className="mt-auto p-4 border-t border-[#e5e7eb]">
-            <div className="flex items-center gap-2.5">
-              <div className="w-9 h-9 rounded-full bg-black text-white flex items-center justify-center text-xs font-bold shrink-0">
-                DB
-              </div>
-              <div className="flex flex-col min-w-0">
-                <span className="text-xs font-bold text-[#111827] truncate leading-tight">Admin Console</span>
-                <span className="text-[11px] text-[#9ca3af] truncate leading-tight">Knowledge Base & VAS</span>
-              </div>
-            </div>
-          </div>
+        {/* Desktop Sidebar */}
+        <aside className="hidden md:flex flex-col w-[260px] bg-white border-r border-[#e5e7eb] shrink-0 select-none">
+          {sidebarContent}
         </aside>
+
+        {/* Mobile Drawer */}
+        {sidebarOpen && (
+          <div className="fixed inset-0 z-50 flex md:hidden">
+            <div className="fixed inset-0 bg-black/40 backdrop-blur-xs" onClick={() => setSidebarOpen(false)} />
+            <aside className="relative flex flex-col h-full shadow-2xl z-10 w-[270px] bg-white animate-in slide-in-from-left duration-200">
+              {sidebarContent}
+            </aside>
+          </div>
+        )}
 
         {/* Main content */}
         <div className="flex flex-col flex-1 min-w-0 overflow-hidden bg-[#f4f5f8]">
           {/* Header */}
-          <header className="flex items-center justify-between px-6 py-4 bg-white border-b border-[#e5e7eb] shrink-0">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-2xl bg-[#fdeee9] flex items-center justify-center" style={{ color: activeInfo.accent ?? "#ff5722" }}>
+          <header className="flex items-center justify-between px-3 sm:px-6 py-3.5 sm:py-4 bg-white border-b border-[#e5e7eb] shrink-0 gap-2">
+            <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
+              <button
+                onClick={() => setSidebarOpen(true)}
+                className="md:hidden p-2 text-[#6b7280] hover:bg-gray-100 rounded-xl border border-gray-200 bg-white cursor-pointer shrink-0"
+                title="Open Navigation"
+              >
+                <Menu size={18} />
+              </button>
+              <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-2xl bg-[#fdeee9] flex items-center justify-center shrink-0" style={{ color: activeInfo.accent ?? "#ff5722" }}>
                 {activeInfo.icon}
               </div>
-              <div>
-                <h1 className="text-lg font-black text-[#111827] tracking-tight">{activeInfo.label}</h1>
-                <p className="text-xs text-[#6b7280] font-medium">{activeInfo.description}</p>
+              <div className="min-w-0">
+                <h1 className="text-base sm:text-lg font-black text-[#111827] tracking-tight truncate">{activeInfo.label}</h1>
+                <p className="text-[11px] sm:text-xs text-[#6b7280] font-medium hidden xs:block truncate">{activeInfo.description}</p>
               </div>
             </div>
-            <div className="flex items-center gap-2.5">
-              <Link
-                href="/"
-                className="md:hidden flex items-center gap-1 text-xs font-bold px-3 py-2 rounded-xl bg-gray-100 text-[#111827]"
-              >
-                <ArrowLeft size={14} /> Back
-              </Link>
+            <div className="flex items-center gap-1.5 sm:gap-2.5 shrink-0">
               <button
                 onClick={() => loadTab(activeTab)}
-                className="flex items-center gap-1.5 text-xs font-bold px-4 py-2.5 rounded-xl border border-[#e5e7eb] bg-white hover:bg-gray-50 text-[#374151] shadow-2xs transition-all cursor-pointer"
+                className="flex items-center gap-1 sm:gap-1.5 text-xs font-bold px-2.5 sm:px-4 py-2 sm:py-2.5 rounded-xl border border-[#e5e7eb] bg-white hover:bg-gray-50 text-[#374151] shadow-2xs transition-all cursor-pointer"
+                title="Reload"
               >
-                <RefreshCw size={14} className={status === "loading" ? "animate-spin" : ""} />Reload
+                <RefreshCw size={14} className={status === "loading" ? "animate-spin" : ""} />
+                <span className="hidden sm:inline">Reload</span>
               </button>
               {!isCatalog && (
                 <button
                   onClick={handleSave}
                   disabled={status === "saving" || !loaded}
-                  className="flex items-center gap-2 text-xs font-black px-4 py-2.5 rounded-xl bg-black hover:bg-neutral-800 text-white disabled:opacity-50 shadow-2xs transition-all cursor-pointer"
+                  className="flex items-center gap-1.5 text-xs font-black px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl bg-black hover:bg-neutral-800 text-white disabled:opacity-50 shadow-2xs transition-all cursor-pointer"
                 >
-                  <Save size={14} />{status === "saving" ? "Saving…" : "Save Changes"}
+                  <Save size={14} />
+                  <span>{status === "saving" ? "Saving…" : "Save"}</span>
                 </button>
               )}
             </div>

@@ -13,7 +13,7 @@ interface Props {
 }
 
 export default function ConversationDetails({ isOpen, onClose, isOpenMobile, onCloseMobile }: Props) {
-  const { messages, userId, sessionId, handleNewChat } = useChatContext();
+  const { messages, userId, sessionId, handleNewChat, openDocumentPreview } = useChatContext();
   const [docsOpen, setDocsOpen] = useState(true);
   const [metadataOpen, setMetadataOpen] = useState(true);
 
@@ -118,62 +118,130 @@ export default function ConversationDetails({ isOpen, onClose, isOpenMobile, onC
                 <p className="text-xs text-[#9ca3af] text-center py-4">No documents attached yet.</p>
               ) : (
                 <>
-                  {agentDocs.map((filename, i) => (
-                    <div key={`agent-${i}`} className="flex items-center gap-2 bg-[#f9fafb] p-2.5 rounded-xl border border-[#e5e7eb] hover:border-[#ff5722] transition-all">
-                      <div className="w-8 h-8 bg-[#fdeee9] text-[#ff5722] rounded-lg flex items-center justify-center shrink-0">
-                        <FileCheck size={15} />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-xs font-semibold text-[#111827] truncate" title={filename}>{filename}</p>
-                        <p className="text-[10px] text-[#6b7280]">Generated Policy Guide</p>
-                      </div>
-                      <a
-                        href={buildDownloadUrl(userId, sessionId, filename)}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="w-7 h-7 flex items-center justify-center text-[#6b7280] hover:text-[#ff5722] hover:bg-white rounded-lg transition-colors shrink-0"
-                        title="Download Document"
+                  {agentDocs.map((filename, i) => {
+                    const docUrl = buildDownloadUrl(userId, sessionId, filename);
+                    return (
+                      <div
+                        key={`agent-${i}`}
+                        onClick={() =>
+                          openDocumentPreview({
+                            url: docUrl,
+                            title: filename,
+                            filename,
+                            mimeType: "application/pdf",
+                          })
+                        }
+                        className="flex items-center gap-2 bg-[#f9fafb] p-2.5 rounded-xl border border-[#e5e7eb] hover:border-[#ff5722] hover:bg-white transition-all cursor-pointer group"
+                        title={`Click to view ${filename}`}
                       >
-                        <Download size={14} />
-                      </a>
-                    </div>
-                  ))}
+                        <div className="w-8 h-8 bg-[#fdeee9] text-[#ff5722] rounded-lg flex items-center justify-center shrink-0 group-hover:bg-[#fbd3c7] transition-colors">
+                          <FileCheck size={15} />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs font-semibold text-[#111827] truncate group-hover:text-[#ff5722] transition-colors" title={filename}>
+                            {filename}
+                          </p>
+                          <p className="text-[10px] text-[#6b7280]">Generated Policy Guide</p>
+                        </div>
+                        <a
+                          href={docUrl}
+                          download={filename}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          onClick={(e) => e.stopPropagation()}
+                          className="w-7 h-7 flex items-center justify-center text-[#6b7280] hover:text-[#ff5722] hover:bg-gray-100 rounded-lg transition-colors shrink-0"
+                          title="Download Document"
+                        >
+                          <Download size={14} />
+                        </a>
+                      </div>
+                    );
+                  })}
 
                   {userDocs.map((doc, i) => {
                     const isImage = doc.mimeType.startsWith("image/");
-                    if (isImage && doc.data) {
+                    const downloadUrl = buildDownloadUrl(userId, sessionId, doc.name);
+                    const previewUrl = isImage && doc.data ? `data:${doc.mimeType};base64,${doc.data}` : downloadUrl;
+
+                    if (isImage) {
                       return (
-                        <div key={`user-${i}`} className="flex flex-col bg-white rounded-xl border border-[#e5e7eb] overflow-hidden">
-                          <img
-                            src={`data:${doc.mimeType};base64,${doc.data}`}
-                            alt={doc.name}
-                            className="w-full object-cover"
-                            style={{ maxHeight: 90 }}
-                          />
-                          <div className="flex items-center gap-2 px-2.5 py-1.5 bg-[#f9fafb]">
-                            <FileText size={11} className="text-[#6b7280] shrink-0" />
-                            <p className="text-[10px] font-semibold text-[#111827] truncate">{doc.name}</p>
+                        <div
+                          key={`user-${i}`}
+                          onClick={() =>
+                            openDocumentPreview({
+                              url: previewUrl,
+                              title: doc.name,
+                              filename: doc.name,
+                              isImage: true,
+                              downloadUrl,
+                            })
+                          }
+                          className="flex flex-col bg-white rounded-xl border border-[#e5e7eb] overflow-hidden hover:border-[#ff5722] transition-all cursor-pointer group"
+                          title={`Click to view ${doc.name}`}
+                        >
+                          <div className="relative overflow-hidden bg-gray-50 flex items-center justify-center">
+                            <img
+                              src={previewUrl}
+                              alt={doc.name}
+                              className="w-full object-cover group-hover:scale-103 transition-transform"
+                              style={{ maxHeight: 90 }}
+                            />
+                          </div>
+                          <div className="flex items-center justify-between gap-2 px-2.5 py-1.5 bg-[#f9fafb]">
+                            <div className="flex items-center gap-1.5 min-w-0">
+                              <FileText size={11} className="text-[#6b7280] shrink-0" />
+                              <p className="text-[10px] font-semibold text-[#111827] truncate">{doc.name}</p>
+                            </div>
+                            <a
+                              href={downloadUrl}
+                              download={doc.name}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              onClick={(e) => e.stopPropagation()}
+                              className="text-[#6b7280] hover:text-[#ff5722] p-1 rounded hover:bg-white transition-colors shrink-0"
+                              title="Download Document"
+                            >
+                              <Download size={12} />
+                            </a>
                           </div>
                         </div>
                       );
                     }
                     return (
-                      <a
+                      <div
                         key={`user-${i}`}
-                        href={buildDownloadUrl(userId, sessionId, doc.name)}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex items-center gap-2 bg-[#f9fafb] p-2.5 rounded-xl border border-[#e5e7eb] hover:bg-white transition-colors"
+                        onClick={() =>
+                          openDocumentPreview({
+                            url: downloadUrl,
+                            title: doc.name,
+                            filename: doc.name,
+                            mimeType: doc.mimeType,
+                          })
+                        }
+                        className="flex items-center gap-2 bg-[#f9fafb] p-2.5 rounded-xl border border-[#e5e7eb] hover:bg-white hover:border-[#ff5722] transition-all cursor-pointer group"
+                        title={`Click to view ${doc.name}`}
                       >
-                        <div className="w-8 h-8 bg-amber-100 text-amber-700 rounded-lg flex items-center justify-center shrink-0">
+                        <div className="w-8 h-8 bg-amber-100 text-amber-700 rounded-lg flex items-center justify-center shrink-0 group-hover:bg-amber-200 transition-colors">
                           <FileText size={15} />
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p className="text-xs font-semibold text-[#111827] truncate">{doc.name}</p>
+                          <p className="text-xs font-semibold text-[#111827] truncate group-hover:text-[#ff5722] transition-colors">
+                            {doc.name}
+                          </p>
                           <p className="text-[10px] text-[#6b7280]">User Upload</p>
                         </div>
-                        <Download size={13} className="text-[#9ca3af] shrink-0" />
-                      </a>
+                        <a
+                          href={downloadUrl}
+                          download={doc.name}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          onClick={(e) => e.stopPropagation()}
+                          className="w-7 h-7 flex items-center justify-center text-[#9ca3af] hover:text-[#ff5722] hover:bg-gray-100 rounded-lg transition-colors shrink-0"
+                          title="Download Document"
+                        >
+                          <Download size={13} />
+                        </a>
+                      </div>
                     );
                   })}
                 </>

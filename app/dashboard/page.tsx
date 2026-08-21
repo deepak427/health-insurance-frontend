@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import {
   LayoutDashboard, Shield, FileText, Share2, Database, Coins, Calendar,
   ChevronDown, RefreshCw, Plus, Building, ShieldCheck, ArrowRight,
-  ExternalLink, Download, Users, ArrowUpRight, CheckCircle2, Clock, AlertCircle
+  ExternalLink, Download, Users, ArrowUpRight, CheckCircle2, Clock, AlertCircle, Menu
 } from "lucide-react";
 import Link from "next/link";
 import Sidebar from "@/components/Sidebar";
@@ -62,35 +62,44 @@ export default function DashboardPage() {
       <div className="flex flex-col flex-1 min-w-0 h-full overflow-y-auto bg-[#f4f5f8]">
         
         {/* ── Top Dashboard Header ── */}
-        <div className="px-5 md:px-8 pt-6 pb-4 bg-[#f4f5f8] shrink-0 border-b border-[#e5e7eb]">
-          <div className="flex flex-wrap items-center justify-between gap-4">
-            {/* Title & Subtitle */}
-            <div>
-              <div className="flex items-center gap-2">
-                <h1 className="text-2xl md:text-3xl font-black text-[#111827] tracking-tight">
-                  Dashboard
-                </h1>
-                <span className="text-[10px] font-bold bg-[#00a86b] text-white px-2 py-0.5 rounded-full">
-                  LIVE
-                </span>
+        <div className="px-4 sm:px-6 md:px-8 pt-4 sm:pt-6 pb-4 bg-[#f4f5f8] shrink-0 border-b border-[#e5e7eb]">
+          <div className="flex flex-wrap items-center justify-between gap-3 sm:gap-4">
+            {/* Title & Subtitle + Mobile Menu Trigger */}
+            <div className="flex items-center gap-3">
+              <button
+                className="md:hidden p-2 text-[#6b7280] hover:bg-gray-100 rounded-xl border border-gray-200 bg-white cursor-pointer shrink-0"
+                onClick={() => setSidebarOpen(true)}
+                title="Open Navigation"
+              >
+                <Menu size={18} />
+              </button>
+              <div>
+                <div className="flex items-center gap-2">
+                  <h1 className="text-xl sm:text-2xl md:text-3xl font-black text-[#111827] tracking-tight">
+                    Dashboard
+                  </h1>
+                  <span className="text-[10px] font-bold bg-[#00a86b] text-white px-2 py-0.5 rounded-full">
+                    LIVE
+                  </span>
+                </div>
+                <p className="text-xs text-[#6b7280] mt-0.5 font-normal line-clamp-1 sm:line-clamp-none">
+                  Overview of policies, quotes, carrier distribution, and AI activity.
+                </p>
               </div>
-              <p className="text-xs text-[#6b7280] mt-0.5 font-normal">
-                Overview of policies, quotes, carrier distribution, and AI activity across your network.
-              </p>
             </div>
 
             {/* Top Filters & Quick Actions */}
-            <div className="flex items-center gap-2.5 flex-wrap">
+            <div className="flex items-center gap-2 sm:gap-2.5 flex-wrap">
               {/* Partner Dropdown */}
-              <div className="flex items-center gap-1.5 bg-white border border-[#e5e7eb] rounded-xl px-3 py-1.5 text-xs font-medium text-[#374151] shadow-2xs">
-                <span>{selectedPartner}</span>
-                <ChevronDown size={14} className="text-[#9ca3af]" />
+              <div className="flex items-center gap-1.5 bg-white border border-[#e5e7eb] rounded-xl px-2.5 sm:px-3 py-1.5 text-xs font-medium text-[#374151] shadow-2xs">
+                <span className="truncate max-w-[110px] sm:max-w-none">{selectedPartner}</span>
+                <ChevronDown size={14} className="text-[#9ca3af] shrink-0" />
               </div>
 
               {/* Destination Dropdown */}
-              <div className="flex items-center gap-1.5 bg-white border border-[#e5e7eb] rounded-xl px-3 py-1.5 text-xs font-medium text-[#374151] shadow-2xs">
-                <span>{selectedDestination}</span>
-                <ChevronDown size={14} className="text-[#9ca3af]" />
+              <div className="flex items-center gap-1.5 bg-white border border-[#e5e7eb] rounded-xl px-2.5 sm:px-3 py-1.5 text-xs font-medium text-[#374151] shadow-2xs">
+                <span className="truncate max-w-[110px] sm:max-w-none">{selectedDestination}</span>
+                <ChevronDown size={14} className="text-[#9ca3af] shrink-0" />
               </div>
 
               {/* Date Range */}

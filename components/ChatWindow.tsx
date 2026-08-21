@@ -10,10 +10,11 @@ import Message from "./Message";
 import ChatInput from "./ChatInput";
 import UsernameModal from "./UsernameModal";
 import PoliciesPanel from "./PoliciesPanel";
+import DocumentModal from "./DocumentModal";
 import {
   AlertCircle, Search, Phone, MoreVertical, ShieldCheck, Bell, ChevronDown,
   Menu, Users, Info, Coins, Plus, X, Check, Loader2, Calendar, FileText,
-  Building, Shield, Activity, Sparkles, ChevronUp, ChevronRight
+  Building, Shield, Activity, Sparkles, ChevronUp, ChevronRight, MessageSquare
 } from "lucide-react";
 
 export default function ChatWindow() {
@@ -26,6 +27,8 @@ export default function ChatWindow() {
     loading,
     error,
     walletBalance,
+    previewDoc,
+    closeDocumentPreview,
     refreshWallet,
     setWalletBalance,
     setMessages,
@@ -183,11 +186,11 @@ export default function ChatWindow() {
       <div className="flex flex-col flex-1 min-w-0 h-full relative overflow-hidden bg-[#f4f5f8]">
         
         {/* ── Sleek Top Navigation Header ── */}
-        <header className="h-[52px] px-4 md:px-6 flex items-center justify-between border-b border-[#e5e7eb] bg-white shrink-0 z-20 shadow-2xs">
+        <header className="h-[52px] px-2.5 sm:px-4 md:px-6 flex items-center justify-between border-b border-[#e5e7eb] bg-white shrink-0 z-20 shadow-2xs">
           {/* Left: Mobile trigger & Breadcrumb */}
-          <div className="flex items-center gap-2.5 min-w-0">
+          <div className="flex items-center gap-1.5 sm:gap-2.5 min-w-0">
             <button
-              className="md:hidden p-1.5 -ml-1 text-[#6b7280] hover:bg-gray-100 rounded-lg border border-gray-200"
+              className="md:hidden p-1.5 text-[#6b7280] hover:bg-gray-100 rounded-lg border border-gray-200"
               onClick={() => setSidebarOpen(true)}
               title="Open Navigation"
             >
@@ -195,20 +198,21 @@ export default function ChatWindow() {
             </button>
 
             {/* Breadcrumb Trail */}
-            <div className="flex items-center gap-1.5 text-xs text-[#6b7280] truncate">
-              <span className="font-bold text-[#111827]">Dolphin Buddy</span>
-              <span className="text-[#d1d5db]">/</span>
+            <div className="flex items-center gap-1 sm:gap-1.5 text-xs text-[#6b7280] truncate">
+              <span className="font-bold text-[#111827]">Dolphin</span>
+              <span className="text-[#d1d5db] hidden xs:inline">/</span>
               <span className="text-[#4b5563] hidden sm:inline">AI Travel Assistant</span>
               <span className="text-[#d1d5db] hidden sm:inline">/</span>
               <span className="flex items-center gap-1 text-[#ff5722] font-semibold">
                 <span className="w-2 h-2 rounded-full bg-[#00a86b] animate-pulse" />
-                Live Session
+                <span className="hidden xs:inline">Live Session</span>
+                <span className="xs:hidden">Live</span>
               </span>
             </div>
           </div>
 
           {/* Right: Actions & Wallet Dock */}
-          <div className="flex items-center gap-2.5 shrink-0">
+          <div className="flex items-center gap-1.5 sm:gap-2.5 shrink-0">
             {/* Quick New Chat Button */}
             <button
               onClick={() => handleNewChat()}
@@ -222,24 +226,24 @@ export default function ChatWindow() {
             {/* Wallet Credits Badge */}
             <button
               onClick={() => setShowWalletModal(true)}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#ecfdf5] border border-[#a7f3d0] hover:bg-[#d1fae5] transition-all text-[#065f46] text-xs font-bold shadow-2xs cursor-pointer"
+              className="flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl bg-[#ecfdf5] border border-[#a7f3d0] hover:bg-[#d1fae5] transition-all text-[#065f46] text-xs font-bold shadow-2xs cursor-pointer"
               title="Manage Wallet Credits"
             >
               <Coins size={14} className="text-[#00a86b]" />
               <span>₹{walletBalance.toLocaleString()}</span>
-              <span className="text-[10px] bg-[#00a86b] text-white px-1.5 py-0.2 rounded-full font-bold ml-0.5">
+              <span className="hidden sm:inline text-[10px] bg-[#00a86b] text-white px-1.5 py-0.2 rounded-full font-bold ml-0.5">
                 + Top up
               </span>
             </button>
 
             {/* Notifications */}
-            <div className="relative p-1 text-[#6b7280] hover:text-[#111827] cursor-pointer">
+            <div className="relative p-1 text-[#6b7280] hover:text-[#111827] cursor-pointer hidden sm:block">
               <Bell size={16} />
               <span className="absolute top-0 right-0 w-2 h-2 bg-[#ff5722] rounded-full" />
             </div>
 
             {/* User Avatar */}
-            <div className="flex items-center gap-2 pl-2 border-l border-[#e5e7eb]">
+            <div className="flex items-center gap-2 pl-1 sm:pl-2 border-l border-[#e5e7eb]">
               <div className="w-7 h-7 rounded-full bg-black text-white flex items-center justify-center text-[11px] font-bold shrink-0">
                 {(username || "DP").slice(0, 2).toUpperCase()}
               </div>
@@ -265,21 +269,30 @@ export default function ChatWindow() {
             {/* Column 3: WhatsApp Chat Stream */}
             <div className="flex flex-col flex-1 min-w-0 h-full bg-[#efeae2] relative">
               {/* WhatsApp Web Chat Header Bar */}
-              <div className="px-4 py-2.5 border-b border-[#e9edef] flex items-center justify-between bg-[#f0f2f5] shrink-0">
-                <div className="flex items-center gap-3 min-w-0">
+              <div className="px-2.5 sm:px-4 py-2 sm:py-2.5 border-b border-[#e9edef] flex items-center justify-between bg-[#f0f2f5] shrink-0">
+                <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+                  {/* Mobile Thread List Drawer Trigger */}
+                  <button
+                    onClick={() => setListOpen(true)}
+                    className="lg:hidden p-1.5 -ml-1 text-[#54656f] hover:text-[#111b21] hover:bg-black/5 rounded-full transition-colors cursor-pointer"
+                    title="Open Conversations"
+                  >
+                    <MessageSquare size={18} />
+                  </button>
+
                   {/* Contact Avatar */}
-                  <div className="w-10 h-10 rounded-full bg-[#008069] text-white flex items-center justify-center font-bold text-sm shrink-0 select-none shadow-2xs">
-                    <Shield size={19} />
+                  <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-[#008069] text-white flex items-center justify-center font-bold text-xs sm:text-sm shrink-0 select-none shadow-2xs">
+                    <Shield size={17} />
                   </div>
                   <div className="flex flex-col min-w-0">
                     <div className="flex items-center gap-2">
-                      <span className="text-[16px] font-bold text-[#111b21] truncate leading-tight">
+                      <span className="text-[14px] sm:text-[16px] font-bold text-[#111b21] truncate leading-tight">
                         Dolphin Operations
                       </span>
                     </div>
-                    <span className="text-[12px] text-[#008069] font-medium truncate leading-tight mt-0.5 flex items-center gap-1.5">
-                      <span className="w-2 h-2 rounded-full bg-[#00a86b] animate-pulse" />
-                      Online · Travel Insurance Agent
+                    <span className="text-[11px] sm:text-[12px] text-[#008069] font-medium truncate leading-tight mt-0.5 flex items-center gap-1">
+                      <span className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-[#00a86b] animate-pulse" />
+                      <span className="truncate">Online · Insurance Agent</span>
                     </span>
                   </div>
                 </div>
@@ -381,6 +394,9 @@ export default function ChatWindow() {
 
         {/* Policies overlay */}
         <PoliciesPanel isOpen={policiesOpen} onClose={() => setPoliciesOpen(false)} />
+
+        {/* In-App Document Preview Modal */}
+        <DocumentModal doc={previewDoc} onClose={closeDocumentPreview} />
 
         {/* ── Wallet Management Modal ── */}
         {showWalletModal && (

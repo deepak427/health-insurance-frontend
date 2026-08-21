@@ -27,9 +27,9 @@ export default function UsernameModal({ onSubmit }: Props) {
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#1f2937]/50 backdrop-blur-sm px-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#1f2937]/50 backdrop-blur-sm px-3 sm:px-4 py-4 overflow-y-auto">
       <div
-        className="bg-white rounded-[24px] shadow-2xl w-full max-w-[380px] p-8 flex flex-col items-center border border-[#e5e7eb]"
+        className="bg-white rounded-[24px] shadow-2xl w-full max-w-[380px] p-5 sm:p-8 flex flex-col items-center border border-[#e5e7eb] my-auto"
         style={{ boxShadow: "0 24px 60px rgba(0,0,0,0.08)" }}
       >
         {/* Avatar — matches Dolphin Buddy ring */}

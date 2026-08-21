@@ -2,10 +2,11 @@
 import { useState, useEffect } from "react";
 import {
   X, Shield, RefreshCw, Search, FileText, Calendar, Users,
-  DollarSign, MapPin, Pencil, Trash2, AlertTriangle, Check,
+  DollarSign, MapPin, Pencil, Trash2, AlertTriangle, Check, Download,
 } from "lucide-react";
 import { fetchBookings, updateBooking, cancelBooking, Booking, buildBookingDownloadUrl, BASE_URL, APP_NAME } from "@/lib/api";
 import { getOrCreateSession } from "@/lib/session";
+import DocumentModal, { PreviewDocument } from "./DocumentModal";
 
 interface Props {
   isOpen: boolean;
@@ -41,6 +42,9 @@ export default function PoliciesPanel({ isOpen, onClose }: Props) {
   // Cancel state
   const [cancelRef, setCancelRef] = useState<string | null>(null);
   const [cancelSaving, setCancelSaving] = useState(false);
+
+  // Document preview state
+  const [previewDoc, setPreviewDoc] = useState<PreviewDocument | null>(null);
 
   async function loadBookings() {
     setLoading(true);
@@ -147,35 +151,35 @@ export default function PoliciesPanel({ isOpen, onClose }: Props) {
   return (
     <div className="absolute inset-0 z-20 flex flex-col bg-[#f4f5f8] text-[#111827]">
       {/* Header */}
-      <div className="flex items-center justify-between px-6 py-4 bg-white border-b border-[#e5e7eb] shrink-0 shadow-2xs">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-2xl bg-[#fdeee9] border border-[#fbd3c7] flex items-center justify-center text-[#ff5722] shadow-2xs">
-            <Shield size={20} />
+      <div className="flex items-center justify-between px-3.5 sm:px-6 py-3 sm:py-4 bg-white border-b border-[#e5e7eb] shrink-0 shadow-2xs gap-2">
+        <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
+          <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-2xl bg-[#fdeee9] border border-[#fbd3c7] flex items-center justify-center text-[#ff5722] shadow-2xs shrink-0">
+            <Shield size={19} />
           </div>
-          <div>
+          <div className="min-w-0">
             <div className="flex items-center gap-2">
-              <h2 className="text-base font-black text-[#111827] tracking-tight">Policies & Bookings</h2>
-              <span className="text-[11px] font-bold bg-[#ecfdf5] text-[#065f46] px-2.5 py-0.5 rounded-full border border-[#a7f3d0]">
-                {bookings.length} {bookings.length === 1 ? "policy" : "policies"}
+              <h2 className="text-sm sm:text-base font-black text-[#111827] tracking-tight truncate">Policies & Bookings</h2>
+              <span className="text-[10px] sm:text-[11px] font-bold bg-[#ecfdf5] text-[#065f46] px-2 py-0.5 rounded-full border border-[#a7f3d0] shrink-0">
+                {bookings.length}
               </span>
             </div>
-            <p className="text-xs text-[#6b7280] font-normal mt-0.5">
+            <p className="text-[11px] sm:text-xs text-[#6b7280] font-normal mt-0.5 hidden xs:block truncate">
               Live underwritten certificates, traveler details, and policy operation history.
             </p>
           </div>
         </div>
-        <div className="flex items-center gap-2.5">
+        <div className="flex items-center gap-1.5 sm:gap-2.5 shrink-0">
           <button
             onClick={loadBookings}
             disabled={loading}
-            className="flex items-center gap-2 text-xs font-bold px-3.5 py-2 rounded-xl border border-[#e5e7eb] bg-white hover:bg-gray-50 text-[#374151] transition-all shadow-2xs disabled:opacity-40"
+            className="flex items-center gap-1.5 text-xs font-bold px-2.5 sm:px-3.5 py-1.5 sm:py-2 rounded-xl border border-[#e5e7eb] bg-white hover:bg-gray-50 text-[#374151] transition-all shadow-2xs disabled:opacity-40"
           >
             <RefreshCw size={13} className={loading ? "animate-spin text-[#ff5722]" : ""} />
-            Refresh
+            <span className="hidden sm:inline">Refresh</span>
           </button>
           <button
             onClick={onClose}
-            className="p-2 rounded-xl text-[#6b7280] hover:text-[#111827] hover:bg-gray-100 transition-colors"
+            className="p-1.5 sm:p-2 rounded-xl text-[#6b7280] hover:text-[#111827] hover:bg-gray-100 transition-colors"
             title="Close panel"
           >
             <X size={18} />
@@ -184,20 +188,20 @@ export default function PoliciesPanel({ isOpen, onClose }: Props) {
       </div>
 
       {/* Search & Filter Bar */}
-      <div className="px-6 py-3.5 bg-white border-b border-[#e5e7eb] shrink-0 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
+      <div className="px-3.5 sm:px-6 py-2.5 sm:py-3.5 bg-white border-b border-[#e5e7eb] shrink-0 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-2.5 sm:gap-3">
         {/* Search Input */}
-        <div className="relative flex-1 max-w-md">
+        <div className="relative flex-1 max-w-full md:max-w-md">
           <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#9ca3af]" />
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search by reference, policy name, traveler, destination..."
+            placeholder="Search reference, policy, traveler..."
             className="w-full pl-10 pr-4 py-2 text-xs font-medium bg-[#f9fafb] border border-[#e5e7eb] rounded-xl outline-none focus:border-[#ff5722] transition-colors text-[#111827] placeholder:text-[#9ca3af]"
           />
         </div>
 
         {/* Filter Pills */}
-        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 md:pb-0">
+        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 md:pb-0 no-scrollbar">
           {filterTabs.map((tab) => {
             const isActive = activeFilter === tab.id;
             return (
@@ -395,44 +399,78 @@ export default function PoliciesPanel({ isOpen, onClose }: Props) {
 
                         if (isImage && isUserDoc) {
                           return (
-                            <a
+                            <div
                               key={filename}
-                              href={href}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="inline-flex items-center gap-2 max-w-[230px] bg-white border border-[#e5e7eb] rounded-xl p-1.5 pr-3 hover:border-[#ff5722] hover:shadow-2xs transition-all"
-                              title={filename}
+                              onClick={() =>
+                                setPreviewDoc({
+                                  url: href,
+                                  title: label,
+                                  filename,
+                                  isImage: true,
+                                  downloadUrl: href,
+                                })
+                              }
+                              className="inline-flex items-center gap-2 max-w-[230px] bg-white border border-[#e5e7eb] rounded-xl p-1.5 pr-2.5 hover:border-[#ff5722] hover:shadow-2xs transition-all cursor-pointer group"
+                              title={`Click to view ${filename}`}
                             >
                               <img
                                 src={href}
                                 alt={filename}
-                                className="w-8 h-8 rounded-lg object-cover shrink-0 border border-gray-100"
+                                className="w-8 h-8 rounded-lg object-cover shrink-0 border border-gray-100 group-hover:scale-105 transition-transform"
                                 onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
                               />
                               <div className="min-w-0 flex-1">
-                                <p className="text-xs font-bold text-[#111827] truncate">{label}</p>
-                                <p className="text-[10px] text-[#6b7280]">Photo ID</p>
+                                <p className="text-xs font-bold text-[#111827] truncate group-hover:text-[#ff5722] transition-colors">{label}</p>
+                                <p className="text-[10px] text-[#6b7280]">Photo ID · View</p>
                               </div>
-                            </a>
+                              <a
+                                href={href}
+                                download={filename}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                onClick={(e) => e.stopPropagation()}
+                                className="p-1 text-[#6b7280] hover:text-[#ff5722] hover:bg-gray-100 rounded-lg transition-colors shrink-0"
+                                title="Download Document"
+                              >
+                                <Download size={13} />
+                              </a>
+                            </div>
                           );
                         }
 
                         return (
-                          <a
+                          <div
                             key={filename}
-                            href={href}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className={`inline-flex items-center gap-2 max-w-[240px] text-xs font-bold px-3 py-2 rounded-xl border transition-all shadow-2xs ${
+                            onClick={() =>
+                              setPreviewDoc({
+                                url: href,
+                                title: label,
+                                filename,
+                                mimeType: "application/pdf",
+                                downloadUrl: href,
+                              })
+                            }
+                            className={`inline-flex items-center gap-2 max-w-[250px] text-xs font-bold px-3 py-2 rounded-xl border transition-all shadow-2xs cursor-pointer group ${
                               isUserDoc
                                 ? "bg-white border-[#e5e7eb] text-[#374151] hover:border-[#ff5722] hover:text-[#ff5722]"
-                                : "bg-[#ecfdf5] border-[#a7f3d0] text-[#065f46] hover:bg-[#d1fae5]"
+                                : "bg-[#ecfdf5] border-[#a7f3d0] text-[#065f46] hover:bg-[#d1fae5] hover:border-[#6ee7b7]"
                             }`}
-                            title={filename}
+                            title={`Click to view ${filename}`}
                           >
                             <FileText size={14} className={isUserDoc ? "text-[#ff5722]" : "text-[#00a86b]"} />
-                            <span className="truncate">{label}</span>
-                          </a>
+                            <span className="truncate flex-1">{label}</span>
+                            <a
+                              href={href}
+                              download={filename}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              onClick={(e) => e.stopPropagation()}
+                              className="p-0.5 hover:opacity-75 text-inherit transition-opacity shrink-0"
+                              title="Download Document"
+                            >
+                              <Download size={13} />
+                            </a>
+                          </div>
                         );
                       })}
                     </div>
@@ -583,6 +621,9 @@ export default function PoliciesPanel({ isOpen, onClose }: Props) {
           </div>
         </div>
       )}
+
+      {/* Document In-App Preview Modal */}
+      <DocumentModal doc={previewDoc} onClose={() => setPreviewDoc(null)} />
     </div>
   );
 }

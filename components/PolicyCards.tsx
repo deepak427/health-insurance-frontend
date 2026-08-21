@@ -1,5 +1,21 @@
 "use client";
-import { Shield, CheckCircle2, IndianRupee, MapPin, Calendar, Users, BadgeCheck, PlusCircle, Sparkles, HeartPulse, FileSpreadsheet, ExternalLink, Clock } from "lucide-react";
+import { useState } from "react";
+import {
+  Shield,
+  CheckCircle2,
+  IndianRupee,
+  MapPin,
+  Calendar,
+  Users,
+  BadgeCheck,
+  PlusCircle,
+  Sparkles,
+  HeartPulse,
+  FileSpreadsheet,
+  ExternalLink,
+  Clock,
+  Check,
+} from "lucide-react";
 
 export interface PolicyCardData {
   type?: "policy" | "confirm" | "addon" | "vas";
@@ -59,8 +75,7 @@ export interface BookingTableProps {
 function PolicyCard({ card, onChoose }: { card: PolicyCardData; onChoose: (p: string) => void }) {
   return (
     <div
-      className="rounded-2xl border border-[#e5e7eb] bg-white shadow-2xs overflow-hidden flex flex-col justify-between hover:border-[#ff5722]/40 transition-all"
-      style={{ minWidth: 260, maxWidth: 320 }}
+      className="rounded-2xl border border-[#e5e7eb] bg-white shadow-2xs overflow-hidden flex flex-col justify-between hover:border-[#ff5722]/40 transition-all w-full sm:w-[280px] max-w-[340px]"
     >
       <div>
         {/* Header */}
@@ -121,10 +136,10 @@ function PolicyCard({ card, onChoose }: { card: PolicyCardData; onChoose: (p: st
 
 function ConfirmCard({ card, onChoose }: { card: PolicyCardData; onChoose: (p: string) => void }) {
   const rows = [
-    card.destination   && { icon: <MapPin size={14} className="text-[#6b7280]" />,    label: "Destination",  value: card.destination },
-    card.travelDates   && { icon: <Calendar size={14} className="text-[#6b7280]" />,  label: "Dates",        value: card.travelDates },
-    card.travellers    && { icon: <Users size={14} className="text-[#6b7280]" />,      label: "Travellers",   value: card.travellers },
-    card.sumInsured    && { icon: <Shield size={14} className="text-[#6b7280]" />,     label: "Cover",        value: card.sumInsured },
+    card.destination && { icon: <MapPin size={14} className="text-[#6b7280]" />, label: "Destination", value: card.destination },
+    card.travelDates && { icon: <Calendar size={14} className="text-[#6b7280]" />, label: "Dates", value: card.travelDates },
+    card.travellers && { icon: <Users size={14} className="text-[#6b7280]" />, label: "Travellers", value: card.travellers },
+    card.sumInsured && { icon: <Shield size={14} className="text-[#6b7280]" />, label: "Cover", value: card.sumInsured },
     card.premium !== undefined && {
       icon: <IndianRupee size={14} className="text-[#15803d]" />,
       label: "Premium",
@@ -134,8 +149,7 @@ function ConfirmCard({ card, onChoose }: { card: PolicyCardData; onChoose: (p: s
 
   return (
     <div
-      className="rounded-3xl border-2 border-[#ff5722] bg-white shadow-md overflow-hidden flex flex-col justify-between"
-      style={{ minWidth: 280, maxWidth: 360 }}
+      className="rounded-3xl border-2 border-[#ff5722] bg-white shadow-md overflow-hidden flex flex-col justify-between w-full sm:w-[320px] max-w-[360px]"
     >
       <div>
         {/* Header */}
@@ -180,105 +194,216 @@ function ConfirmCard({ card, onChoose }: { card: PolicyCardData; onChoose: (p: s
   );
 }
 
-function AddonCard({ card, onChoose }: { card: PolicyCardData; onChoose: (p: string) => void }) {
+// ── Multi-Select Add-ons Component (Compact List Cards) ────────────────────────
+
+export function MultiSelectAddons({ cards, onChoose }: Props) {
+  const [selectedKeys, setSelectedKeys] = useState<Set<string>>(new Set());
+
+  const toggleKey = (key: string) => {
+    setSelectedKeys((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) {
+        next.delete(key);
+      } else {
+        next.add(key);
+      }
+      return next;
+    });
+  };
+
+  const handleAddSelected = () => {
+    if (selectedKeys.size === 0) return;
+    const selectedList = cards.filter((c) => selectedKeys.has(c.key || c.name));
+    const keysToSend = selectedList.map((c) => c.key || c.name).join(", ");
+    onChoose(`Add ${keysToSend} addons`);
+  };
+
   return (
-    <div
-      className="rounded-2xl border border-[#e5e7eb] bg-white shadow-2xs overflow-hidden flex flex-col justify-between"
-      style={{ minWidth: 240, maxWidth: 300 }}
-    >
-      <div>
-        {/* Header */}
-        <div className="flex items-center gap-2.5 px-4 pt-3.5 pb-2 bg-[#f9fafb]">
-          <div className="w-8 h-8 rounded-xl bg-[#fffbeb] border border-[#fde68a] flex items-center justify-center shrink-0">
-            <Sparkles size={15} className="text-[#d97706]" />
+    <div className="w-full max-w-lg rounded-2xl border border-[#e5e7eb] bg-white shadow-2xs overflow-hidden">
+      {/* Header */}
+      <div className="flex items-center justify-between px-3.5 py-2.5 bg-[#f9fafb] border-b border-[#f1f5f9]">
+        <div className="flex items-center gap-2">
+          <div className="w-6 h-6 rounded-lg bg-[#fffbeb] border border-[#fde68a] flex items-center justify-center shrink-0">
+            <Sparkles size={13} className="text-[#d97706]" />
           </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-xs font-bold text-[#111827] leading-tight truncate">{card.name}</p>
-            {card.price && (
-              <p className="text-xs text-[#00a86b] font-bold mt-0.5">{card.price}</p>
-            )}
+          <div>
+            <p className="text-xs font-bold text-[#111827]">Available Add-ons</p>
+            <p className="text-[10px] text-[#6b7280]">Select one or multiple add-ons</p>
           </div>
         </div>
-
-        {/* Description */}
-        {card.description && (
-          <p className="text-xs text-[#6b7280] px-4 pt-2 pb-1.5 leading-relaxed font-normal">{card.description}</p>
-        )}
-
-        {/* Highlights */}
-        {card.highlights && card.highlights.length > 0 && (
-          <div className="flex flex-col gap-1 px-4 pb-3">
-            {card.highlights.map((h, j) => (
-              <div key={j} className="flex items-start gap-1.5">
-                <CheckCircle2 size={12} className="text-[#d97706] mt-0.5 shrink-0" />
-                <span className="text-xs text-[#374151] leading-tight font-medium">{h}</span>
-              </div>
-            ))}
-          </div>
-        )}
+        <span className="text-[10px] font-bold text-[#d97706] bg-[#fffbeb] px-2 py-0.5 rounded-full border border-[#fde68a]">
+          {selectedKeys.size} selected
+        </span>
       </div>
 
-      {/* Action */}
-      <div className="p-2 border-t border-[#f1f5f9] bg-[#f9fafb]">
+      {/* Compact List */}
+      <div className="divide-y divide-[#f1f5f9] max-h-72 overflow-y-auto">
+        {cards.map((card, i) => {
+          const itemKey = card.key || card.name;
+          const isSelected = selectedKeys.has(itemKey);
+
+          return (
+            <div
+              key={i}
+              onClick={() => toggleKey(itemKey)}
+              className={`flex items-center gap-3 px-3.5 py-2.5 cursor-pointer transition-colors ${
+                isSelected ? "bg-[#fff8f5] hover:bg-[#ffede6]" : "hover:bg-[#f9fafb]"
+              }`}
+            >
+              {/* Checkbox */}
+              <div
+                className={`w-4 h-4 rounded flex items-center justify-center shrink-0 transition-all ${
+                  isSelected
+                    ? "bg-[#ff5722] text-white"
+                    : "border border-[#d1d5db] bg-white"
+                }`}
+              >
+                {isSelected && <Check size={11} strokeWidth={3} />}
+              </div>
+
+              {/* Content */}
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center justify-between gap-2">
+                  <p className="text-xs font-bold text-[#111827] truncate leading-tight">{card.name}</p>
+                  {card.price && (
+                    <span className="text-xs font-bold text-[#00a86b] shrink-0">{card.price}</span>
+                  )}
+                </div>
+                {card.description && (
+                  <p className="text-[11px] text-[#6b7280] truncate leading-tight mt-0.5">
+                    {card.description}
+                  </p>
+                )}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Action Footer */}
+      <div className="p-2.5 bg-[#f9fafb] border-t border-[#f1f5f9] flex items-center justify-between gap-3">
+        <span className="text-[11px] text-[#6b7280]">
+          {selectedKeys.size > 0 ? `${selectedKeys.size} item(s) selected` : "Select add-on(s) above"}
+        </span>
         <button
-          onClick={() => onChoose(card.prompt || `Add ${card.name} addon`)}
-          className="w-full flex items-center justify-center gap-1.5 text-xs font-bold text-[#d97706] py-2 rounded-xl hover:bg-[#fffbeb] transition-colors"
+          onClick={handleAddSelected}
+          disabled={selectedKeys.size === 0}
+          className={`flex items-center gap-1.5 text-xs font-bold px-4 py-2 rounded-xl transition-all shadow-2xs ${
+            selectedKeys.size > 0
+              ? "bg-[#ff5722] hover:bg-[#f4511e] text-white cursor-pointer"
+              : "bg-gray-200 text-gray-400 cursor-not-allowed"
+          }`}
         >
-          <PlusCircle size={14} />
-          {card.action || "Add this addon"}
+          <PlusCircle size={13} />
+          {selectedKeys.size > 0 ? `Add Selected (${selectedKeys.size})` : "Add Add-ons"}
         </button>
       </div>
     </div>
   );
 }
 
-function VasCard({ card, onChoose }: { card: PolicyCardData; onChoose: (p: string) => void }) {
+// ── Multi-Select VAS Component (Compact List Cards) ───────────────────────────
+
+export function MultiSelectVas({ cards, onChoose }: Props) {
+  const [selectedKeys, setSelectedKeys] = useState<Set<string>>(new Set());
+
+  const toggleKey = (key: string) => {
+    setSelectedKeys((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) {
+        next.delete(key);
+      } else {
+        next.add(key);
+      }
+      return next;
+    });
+  };
+
+  const handleAddSelected = () => {
+    if (selectedKeys.size === 0) return;
+    const selectedList = cards.filter((c) => selectedKeys.has(c.key || c.name));
+    const keysToSend = selectedList.map((c) => c.key || c.name).join(", ");
+    onChoose(`Add ${keysToSend} VAS`);
+  };
+
   return (
-    <div
-      className="rounded-2xl border border-[#e5e7eb] bg-white shadow-2xs overflow-hidden flex flex-col justify-between"
-      style={{ minWidth: 240, maxWidth: 300 }}
-    >
-      <div>
-        {/* Header */}
-        <div className="flex items-center gap-2.5 px-4 pt-3.5 pb-2 bg-[#f0f9ff]">
-          <div className="w-8 h-8 rounded-xl bg-[#e0f2fe] border border-[#bae6fd] flex items-center justify-center shrink-0">
-            <HeartPulse size={15} className="text-[#0284c7]" />
+    <div className="w-full max-w-lg rounded-2xl border border-[#e5e7eb] bg-white shadow-2xs overflow-hidden">
+      {/* Header */}
+      <div className="flex items-center justify-between px-3.5 py-2.5 bg-[#f0f9ff] border-b border-[#e0f2fe]">
+        <div className="flex items-center gap-2">
+          <div className="w-6 h-6 rounded-lg bg-[#e0f2fe] border border-[#bae6fd] flex items-center justify-center shrink-0">
+            <HeartPulse size={13} className="text-[#0284c7]" />
           </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-xs font-bold text-[#111827] leading-tight truncate">{card.name}</p>
-            {card.price && (
-              <p className="text-xs text-[#0284c7] font-bold mt-0.5">{card.price}</p>
-            )}
+          <div>
+            <p className="text-xs font-bold text-[#111827]">Agency Value-Added Services (VAS)</p>
+            <p className="text-[10px] text-[#6b7280]">Select one or multiple agency services</p>
           </div>
-          <span className="text-[10px] font-bold text-[#0284c7] bg-[#e0f2fe] px-2 py-0.5 rounded-full shrink-0">VAS</span>
         </div>
-
-        {/* Description */}
-        {card.description && (
-          <p className="text-xs text-[#6b7280] px-4 pt-2 pb-1.5 leading-relaxed font-normal">{card.description}</p>
-        )}
-
-        {/* Highlights */}
-        {card.highlights && card.highlights.length > 0 && (
-          <div className="flex flex-col gap-1 px-4 pb-3">
-            {card.highlights.map((h, j) => (
-              <div key={j} className="flex items-start gap-1.5">
-                <CheckCircle2 size={12} className="text-[#0284c7] mt-0.5 shrink-0" />
-                <span className="text-xs text-[#374151] leading-tight font-medium">{h}</span>
-              </div>
-            ))}
-          </div>
-        )}
+        <span className="text-[10px] font-bold text-[#0284c7] bg-[#e0f2fe] px-2 py-0.5 rounded-full border border-[#bae6fd]">
+          {selectedKeys.size} selected
+        </span>
       </div>
 
-      {/* Action */}
-      <div className="p-2 border-t border-[#f1f5f9] bg-[#f9fafb]">
+      {/* Compact List */}
+      <div className="divide-y divide-[#f1f5f9] max-h-72 overflow-y-auto">
+        {cards.map((card, i) => {
+          const itemKey = card.key || card.name;
+          const isSelected = selectedKeys.has(itemKey);
+
+          return (
+            <div
+              key={i}
+              onClick={() => toggleKey(itemKey)}
+              className={`flex items-center gap-3 px-3.5 py-2.5 cursor-pointer transition-colors ${
+                isSelected ? "bg-[#f0f9ff] hover:bg-[#e0f2fe]" : "hover:bg-[#f9fafb]"
+              }`}
+            >
+              {/* Checkbox */}
+              <div
+                className={`w-4 h-4 rounded flex items-center justify-center shrink-0 transition-all ${
+                  isSelected
+                    ? "bg-[#0284c7] text-white"
+                    : "border border-[#d1d5db] bg-white"
+                }`}
+              >
+                {isSelected && <Check size={11} strokeWidth={3} />}
+              </div>
+
+              {/* Content */}
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center justify-between gap-2">
+                  <p className="text-xs font-bold text-[#111827] truncate leading-tight">{card.name}</p>
+                  {card.price && (
+                    <span className="text-xs font-bold text-[#0284c7] shrink-0">{card.price}</span>
+                  )}
+                </div>
+                {card.description && (
+                  <p className="text-[11px] text-[#6b7280] truncate leading-tight mt-0.5">
+                    {card.description}
+                  </p>
+                )}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Action Footer */}
+      <div className="p-2.5 bg-[#f9fafb] border-t border-[#f1f5f9] flex items-center justify-between gap-3">
+        <span className="text-[11px] text-[#6b7280]">
+          {selectedKeys.size > 0 ? `${selectedKeys.size} service(s) selected` : "Select service(s) above"}
+        </span>
         <button
-          onClick={() => onChoose(card.prompt || `Add ${card.name} VAS`)}
-          className="w-full flex items-center justify-center gap-1.5 text-xs font-bold text-[#0284c7] py-2 rounded-xl hover:bg-[#f0f9ff] transition-colors"
+          onClick={handleAddSelected}
+          disabled={selectedKeys.size === 0}
+          className={`flex items-center gap-1.5 text-xs font-bold px-4 py-2 rounded-xl transition-all shadow-2xs ${
+            selectedKeys.size > 0
+              ? "bg-[#0284c7] hover:bg-[#0369a1] text-white cursor-pointer"
+              : "bg-gray-200 text-gray-400 cursor-not-allowed"
+          }`}
         >
-          <PlusCircle size={14} />
-          {card.action || "Add this service"}
+          <PlusCircle size={13} />
+          {selectedKeys.size > 0 ? `Add Selected (${selectedKeys.size})` : "Add Services"}
         </button>
       </div>
     </div>
@@ -286,24 +411,36 @@ function VasCard({ card, onChoose }: { card: PolicyCardData; onChoose: (p: strin
 }
 
 export default function PolicyCards({ cards, onChoose }: Props) {
+  const policyOrConfirmCards = cards.filter((c) => c.type !== "addon" && c.type !== "vas");
+  const addonCards = cards.filter((c) => c.type === "addon");
+  const vasCards = cards.filter((c) => c.type === "vas");
+
   return (
-    <>
-      {cards.map((card, i) =>
-        card.type === "confirm" ? (
-          <ConfirmCard key={i} card={card} onChoose={onChoose} />
-        ) : card.type === "addon" ? (
-          <AddonCard key={i} card={card} onChoose={onChoose} />
-        ) : card.type === "vas" ? (
-          <VasCard key={i} card={card} onChoose={onChoose} />
-        ) : (
-          <PolicyCard key={i} card={card} onChoose={onChoose} />
-        )
+    <div className="flex flex-col gap-3 w-full">
+      {policyOrConfirmCards.length > 0 && (
+        <div className="flex flex-row gap-3 flex-wrap">
+          {policyOrConfirmCards.map((card, i) =>
+            card.type === "confirm" ? (
+              <ConfirmCard key={i} card={card} onChoose={onChoose} />
+            ) : (
+              <PolicyCard key={i} card={card} onChoose={onChoose} />
+            )
+          )}
+        </div>
       )}
-    </>
+
+      {addonCards.length > 0 && (
+        <MultiSelectAddons cards={addonCards} onChoose={onChoose} />
+      )}
+
+      {vasCards.length > 0 && (
+        <MultiSelectVas cards={vasCards} onChoose={onChoose} />
+      )}
+    </div>
   );
 }
 
-// ── Booking History Cards ─────────────────────────────────────────────────────
+// ── Compact Booking History Cards (Max 4, Small Height) ─────────────────────────
 
 const STATUS_STYLES: Record<string, { bg: string; text: string; dot: string }> = {
   confirmed:    { bg: "bg-[#f0fdf4]", text: "text-[#16a34a]", dot: "bg-[#16a34a]" },
@@ -316,58 +453,55 @@ function statusStyle(s?: string) {
   return STATUS_STYLES[s ?? "confirmed"] ?? STATUS_STYLES["confirmed"];
 }
 
-function BookingCard({ booking, onChoose }: { booking: BookingCardData; onChoose: (p: string) => void }) {
+function CompactBookingCard({ booking, onChoose }: { booking: BookingCardData; onChoose: (p: string) => void }) {
   const st = statusStyle(booking.status);
   return (
     <div
-      className="rounded-2xl border border-[#e5e7eb] bg-white shadow-2xs overflow-hidden flex flex-col justify-between hover:border-[#ff5722]/40 transition-all"
-      style={{ minWidth: 240, maxWidth: 290 }}
+      className="rounded-xl border border-[#e5e7eb] bg-white shadow-2xs hover:border-[#ff5722]/50 transition-all p-3 flex flex-col justify-between gap-2 w-full sm:w-[240px] max-w-[280px]"
     >
-      {/* Header */}
-      <div className="flex items-center gap-2 px-3.5 pt-3.5 pb-2 bg-[#f9fafb]">
-        <div className="w-8 h-8 rounded-xl bg-[#fdeee9] border border-[#fbd3c7] flex items-center justify-center shrink-0">
-          <Shield size={14} className="text-[#ff5722]" />
+      {/* Top row: Title, ref, status */}
+      <div className="flex items-start justify-between gap-1.5">
+        <div className="min-w-0 flex-1">
+          <p className="text-xs font-bold text-[#111827] truncate leading-tight">{booking.policy}</p>
+          <span className="text-[10px] font-mono text-[#ff5722] font-semibold">{booking.ref}</span>
         </div>
-        <div className="flex-1 min-w-0">
-          <p className="text-xs font-bold text-[#111827] leading-tight truncate">{booking.policy}</p>
-          <p className="text-[10px] font-mono text-[#ff5722] font-semibold">{booking.ref}</p>
-        </div>
-        <span className={`text-[8px] font-bold px-2 py-0.5 rounded-full shrink-0 flex items-center gap-1 ${st.bg} ${st.text}`}>
-          <span className={`w-1.5 h-1.5 rounded-full ${st.dot}`} />
+        <span className={`text-[8px] font-bold px-1.5 py-0.5 rounded-full shrink-0 flex items-center gap-1 ${st.bg} ${st.text}`}>
+          <span className={`w-1 h-1 rounded-full ${st.dot}`} />
           {(booking.status ?? "confirmed").replace("_", " ")}
         </span>
       </div>
 
-      {/* Details */}
-      <div className="flex flex-col gap-1.5 px-3.5 py-2.5 text-xs">
+      {/* Middle row: Destination & Dates in single compact line */}
+      <div className="flex items-center gap-2 text-[11px] text-[#6b7280] truncate">
         {booking.destination && (
-          <div className="flex items-center gap-1.5">
-            <MapPin size={11} className="text-[#9ca3af] shrink-0" />
-            <span className="text-[#4b5563] truncate">{booking.destination}</span>
-          </div>
+          <span className="flex items-center gap-1 truncate">
+            <MapPin size={10} className="text-[#9ca3af] shrink-0" />
+            <span className="truncate">{booking.destination}</span>
+          </span>
         )}
         {booking.dates && (
-          <div className="flex items-center gap-1.5">
-            <Calendar size={11} className="text-[#9ca3af] shrink-0" />
-            <span className="text-[#4b5563] truncate">{booking.dates}</span>
-          </div>
-        )}
-        {booking.premium && (
-          <div className="flex items-center gap-1.5">
-            <IndianRupee size={11} className="text-[#00a86b] shrink-0" />
-            <span className="font-black text-[#111827]">{booking.premium}</span>
-          </div>
+          <span className="flex items-center gap-1 shrink-0">
+            <Calendar size={10} className="text-[#9ca3af] shrink-0" />
+            <span>{booking.dates}</span>
+          </span>
         )}
       </div>
 
-      {/* Action */}
-      <div className="p-2 border-t border-[#f1f5f9] bg-[#f9fafb]">
+      {/* Bottom row: Premium & Action Button */}
+      <div className="flex items-center justify-between gap-2 pt-1 border-t border-[#f1f5f9]">
+        <div className="flex items-center text-xs font-black text-[#111827]">
+          {booking.premium ? (
+            <span className="text-[#00a86b]">{booking.premium}</span>
+          ) : (
+            <span className="text-[#9ca3af] text-[10px]">--</span>
+          )}
+        </div>
         <button
           onClick={() => onChoose(booking.prompt || `Show me full details for booking ${booking.ref}`)}
-          className="w-full flex items-center justify-center gap-1.5 text-xs font-bold text-[#111827] hover:text-[#ff5722] py-2 rounded-xl border border-[#e5e7eb] hover:bg-white transition-colors"
+          className="flex items-center gap-1 text-[10px] font-bold text-[#111827] hover:text-[#ff5722] px-2 py-1 rounded-lg border border-[#e5e7eb] hover:bg-[#f9fafb] transition-colors cursor-pointer"
         >
-          <ExternalLink size={12} />
-          View Details
+          <ExternalLink size={10} />
+          Details
         </button>
       </div>
     </div>
@@ -375,12 +509,15 @@ function BookingCard({ booking, onChoose }: { booking: BookingCardData; onChoose
 }
 
 export function BookingCards({ bookings, onChoose }: BookingCardsProps) {
+  // Show at most 4 small cards
+  const displayBookings = bookings.slice(0, 4);
+
   return (
-    <>
-      {bookings.map((b, i) => (
-        <BookingCard key={i} booking={b} onChoose={onChoose} />
+    <div className="flex flex-row gap-2.5 flex-wrap">
+      {displayBookings.map((b, i) => (
+        <CompactBookingCard key={i} booking={b} onChoose={onChoose} />
       ))}
-    </>
+    </div>
   );
 }
 
@@ -390,14 +527,14 @@ export function BookingsTable({ rows }: BookingTableProps) {
   const handleExcel = async () => {
     const XLSX = await import("xlsx");
     const data = rows.map((r) => ({
-      "Reference":   r.ref,
-      "Policy":      r.policy,
-      "Destination": r.destination ?? "",
+      "Reference":    r.ref,
+      "Policy":       r.policy,
+      "Destination":  r.destination ?? "",
       "Travel Dates": r.dates ?? "",
-      "Travellers":  r.travellers ?? "",
-      "Premium":     r.premium ?? "",
-      "Status":      r.status ?? "",
-      "Created":     r.created ?? "",
+      "Travellers":   r.travellers ?? "",
+      "Premium":      r.premium ?? "",
+      "Status":       r.status ?? "",
+      "Created":      r.created ?? "",
     }));
     const ws = XLSX.utils.json_to_sheet(data);
     // Column widths
@@ -408,9 +545,9 @@ export function BookingsTable({ rows }: BookingTableProps) {
   };
 
   return (
-    <div className="rounded-2xl border border-[#e5e7eb] bg-white shadow-sm overflow-hidden w-full" style={{ minWidth: 520 }}>
+    <div className="rounded-2xl border border-[#e5e7eb] bg-white shadow-sm overflow-hidden w-full max-w-full">
       {/* Table header bar */}
-      <div className="flex items-center justify-between px-4 py-3 bg-[#f9fafb] border-b border-[#e5e7eb]">
+      <div className="flex items-center justify-between px-3 sm:px-4 py-2.5 sm:py-3 bg-[#f9fafb] border-b border-[#e5e7eb]">
         <div className="flex items-center gap-2">
           <Clock size={14} className="text-[#6b7280]" />
           <span className="text-xs font-bold text-[#111827]">Booking History</span>
@@ -418,16 +555,17 @@ export function BookingsTable({ rows }: BookingTableProps) {
         </div>
         <button
           onClick={handleExcel}
-          className="flex items-center gap-1.5 text-xs font-bold text-white bg-black hover:bg-neutral-800 px-3 py-1.5 rounded-xl transition-all shadow-2xs"
+          className="flex items-center gap-1.5 text-xs font-bold text-white bg-black hover:bg-neutral-800 px-2.5 sm:px-3 py-1.5 rounded-xl transition-all shadow-2xs cursor-pointer"
         >
           <FileSpreadsheet size={13} />
-          Export Excel
+          <span className="hidden sm:inline">Export Excel</span>
+          <span className="sm:hidden">Excel</span>
         </button>
       </div>
 
       {/* Table */}
-      <div className="overflow-x-auto">
-        <table className="w-full text-xs">
+      <div className="overflow-x-auto w-full">
+        <table className="w-full min-w-[500px] text-xs">
           <thead>
             <tr className="border-b border-[#e5e7eb] bg-white text-[#6b7280]">
               {["Ref", "Policy", "Destination", "Dates", "Premium", "Status"].map((h) => (

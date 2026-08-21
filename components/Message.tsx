@@ -1,8 +1,9 @@
 "use client";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import { Download, FileText } from "lucide-react";
+import { Download, FileText, Eye } from "lucide-react";
 import { buildDownloadUrl, isAgentGeneratedArtifact } from "@/lib/api";
+import { useChatContext } from "@/context/ChatContext";
 import PolicyCards, { PolicyCardData, BookingCards, BookingsTable, BookingCardData, BookingTableRow } from "./PolicyCards";
 
 export interface Msg {
@@ -33,10 +34,32 @@ function parseContent(raw: string): ParsedContent {
   let bookingTable: BookingTableRow[] | null = null;
 
   const displayText = raw
-    .replace(/<!--(?:POLICY|ADDON|VAS)_CARDS:([\s\S]*?)-->/g, (_, json) => {
+    .replace(/<!--POLICY_CARDS:([\s\S]*?)-->/g, (_, json) => {
       try {
         const parsed = JSON.parse(json.trim());
         const arr: PolicyCardData[] = Array.isArray(parsed) ? parsed : [parsed];
+        cards.push(...arr);
+      } catch {}
+      return "";
+    })
+    .replace(/<!--ADDON_CARDS:([\s\S]*?)-->/g, (_, json) => {
+      try {
+        const parsed = JSON.parse(json.trim());
+        const arr: PolicyCardData[] = (Array.isArray(parsed) ? parsed : [parsed]).map((item) => ({
+          ...item,
+          type: "addon" as const,
+        }));
+        cards.push(...arr);
+      } catch {}
+      return "";
+    })
+    .replace(/<!--VAS_CARDS:([\s\S]*?)-->/g, (_, json) => {
+      try {
+        const parsed = JSON.parse(json.trim());
+        const arr: PolicyCardData[] = (Array.isArray(parsed) ? parsed : [parsed]).map((item) => ({
+          ...item,
+          type: "vas" as const,
+        }));
         cards.push(...arr);
       } catch {}
       return "";
@@ -62,6 +85,7 @@ function parseContent(raw: string): ParsedContent {
 }
 
 export default function Message({ msg, userId, sessionId, onSend }: Props) {
+  const { openDocumentPreview } = useChatContext();
   const isUser = msg.role === "user";
   const isTyping = !isUser && !msg.text && (!msg.artifacts || msg.artifacts.length === 0);
 
@@ -107,7 +131,11 @@ export default function Message({ msg, userId, sessionId, onSend }: Props) {
         </div>
       )}
 
-      <div className={`flex flex-col ${isUser ? "items-end" : "items-start"}`} style={{ maxWidth: hasExtraContent ? "85%" : "65%" }}>
+      <div
+        className={`flex flex-col ${isUser ? "items-end" : "items-start"} max-w-[92%] sm:max-w-[80%] md:max-w-[70%] lg:max-w-[65%] ${
+          hasExtraContent ? "!max-w-[98%] sm:!max-w-[92%] lg:!max-w-[85%]" : ""
+        }`}
+      >
         {/* WhatsApp Message Bubble */}
         <div
           className={`relative px-3.5 pt-2 pb-1.5 text-[14.5px] leading-relaxed shadow-[0_1px_0.5px_rgba(11,20,26,0.13)] ${
@@ -181,29 +209,52 @@ export default function Message({ msg, userId, sessionId, onSend }: Props) {
             </>
           )}
 
-          {/* Artifacts (Agent-Generated PDF Downloads) */}
+          {/* Artifacts (Agent-Generated PDF Guides/Certificates) */}
           {!isUser && msg.artifacts && msg.artifacts.filter(isAgentGeneratedArtifact).length > 0 && (
             <div className="mt-2.5 pt-2 border-t border-black/5 flex flex-col gap-2">
-              {msg.artifacts.filter(isAgentGeneratedArtifact).map((filename) => (
-                <div key={filename} className="flex items-center gap-3 bg-[#f0f2f5] p-2.5 rounded-lg border border-[#e9edef] max-w-[280px]">
-                  <div className="w-9 h-9 bg-red-100 rounded flex items-center justify-center text-red-600 shrink-0">
-                    <FileText size={18} />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-xs font-bold text-[#111b21] truncate">{filename}</p>
-                    <p className="text-[11px] text-[#667781]">PDF Certificate</p>
-                  </div>
-                  <a
-                    href={buildDownloadUrl(userId, sessionId, filename)}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="w-8 h-8 flex items-center justify-center text-[#54656f] hover:text-[#008069] hover:bg-white rounded transition-colors"
-                    aria-label={`Download ${filename}`}
+              {msg.artifacts.filter(isAgentGeneratedArtifact).map((filename) => {
+                const docUrl = buildDownloadUrl(userId, sessionId, filename);
+                return (
+                  <div
+                    key={filename}
+                    onClick={() =>
+                      openDocumentPreview({
+                        url: docUrl,
+                        title: filename,
+                        filename,
+                        mimeType: "application/pdf",
+                      })
+                    }
+                    className="flex items-center gap-3 bg-[#f0f2f5] hover:bg-[#e9edef] p-2.5 rounded-lg border border-[#e9edef] max-w-[280px] cursor-pointer transition-all group"
+                    title={`Click to view ${filename}`}
                   >
-                    <Download size={16} />
-                  </a>
-                </div>
-              ))}
+                    <div className="w-9 h-9 bg-red-100 group-hover:bg-red-200 rounded flex items-center justify-center text-red-600 shrink-0 transition-colors">
+                      <FileText size={18} />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-bold text-[#111b21] truncate group-hover:text-[#008069] transition-colors">
+                        {filename}
+                      </p>
+                      <p className="text-[11px] text-[#667781] flex items-center gap-1">
+                        <span>PDF Document</span>
+                        <span className="text-[9px] bg-white px-1.5 py-0.2 rounded border border-gray-200">Preview</span>
+                      </p>
+                    </div>
+                    <a
+                      href={docUrl}
+                      download={filename}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onClick={(e) => e.stopPropagation()}
+                      className="w-8 h-8 flex items-center justify-center text-[#54656f] hover:text-[#008069] hover:bg-white rounded transition-colors shrink-0"
+                      aria-label={`Download ${filename}`}
+                      title="Download file directly"
+                    >
+                      <Download size={16} />
+                    </a>
+                  </div>
+                );
+              })}
             </div>
           )}
 
@@ -211,51 +262,110 @@ export default function Message({ msg, userId, sessionId, onSend }: Props) {
           {isUser && showAttachmentChip && (
             <div className="mt-2 pt-1.5 border-t border-black/5">
               {attachmentIsImage ? (
-                // Render image inline
-                <div className="rounded-lg overflow-hidden border border-black/10 bg-white" style={{ maxWidth: 260 }}>
-                  <img
-                    src={
-                      attachmentData
-                        ? `data:${attachmentMime};base64,${attachmentData}`
-                        : buildDownloadUrl(userId, sessionId, userAttachmentName!)
-                    }
-                    alt={userAttachmentName ?? "attachment"}
-                    className="w-full h-auto object-contain block bg-white"
-                    style={{ maxHeight: 200 }}
-                  />
-                  <div className="flex items-center justify-between gap-2 px-2.5 py-1.5 bg-[#f0f2f5] border-t border-[#e9edef]">
-                    <div className="flex items-center gap-1.5 min-w-0">
-                      <FileText size={13} className="text-[#667781] shrink-0" />
-                      <p className="text-xs text-[#111b21] font-medium truncate">{userAttachmentName}</p>
+                // Render image preview
+                (() => {
+                  const imgSrc = attachmentData
+                    ? `data:${attachmentMime};base64,${attachmentData}`
+                    : buildDownloadUrl(userId, sessionId, userAttachmentName!);
+                  const downloadSrc = buildDownloadUrl(userId, sessionId, userAttachmentName!);
+                  return (
+                    <div className="rounded-lg overflow-hidden border border-black/10 bg-white" style={{ maxWidth: 260 }}>
+                      <div
+                        onClick={() =>
+                          openDocumentPreview({
+                            url: imgSrc,
+                            title: userAttachmentName!,
+                            filename: userAttachmentName!,
+                            isImage: true,
+                            downloadUrl: downloadSrc,
+                          })
+                        }
+                        className="cursor-pointer group relative overflow-hidden bg-gray-50 flex items-center justify-center"
+                      >
+                        <img
+                          src={imgSrc}
+                          alt={userAttachmentName ?? "attachment"}
+                          className="w-full h-auto object-contain block bg-white group-hover:scale-102 transition-transform"
+                          style={{ maxHeight: 200 }}
+                        />
+                        <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white">
+                          <span className="bg-black/60 px-2.5 py-1 rounded-full text-xs font-semibold flex items-center gap-1 shadow-sm">
+                            <Eye size={13} /> View
+                          </span>
+                        </div>
+                      </div>
+                      <div className="flex items-center justify-between gap-2 px-2.5 py-1.5 bg-[#f0f2f5] border-t border-[#e9edef]">
+                        <div
+                          onClick={() =>
+                            openDocumentPreview({
+                              url: imgSrc,
+                              title: userAttachmentName!,
+                              filename: userAttachmentName!,
+                              isImage: true,
+                              downloadUrl: downloadSrc,
+                            })
+                          }
+                          className="flex items-center gap-1.5 min-w-0 cursor-pointer flex-1"
+                        >
+                          <FileText size={13} className="text-[#667781] shrink-0" />
+                          <p className="text-xs text-[#111b21] font-medium truncate">{userAttachmentName}</p>
+                        </div>
+                        <a
+                          href={downloadSrc}
+                          download={userAttachmentName!}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          onClick={(e) => e.stopPropagation()}
+                          className="text-[#667781] hover:text-[#008069] p-1 rounded hover:bg-white transition-colors shrink-0"
+                          aria-label="Download image"
+                          title="Download image"
+                        >
+                          <Download size={14} />
+                        </a>
+                      </div>
                     </div>
-                    <a
-                      href={buildDownloadUrl(userId, sessionId, userAttachmentName!)}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-[#667781] hover:text-[#008069]"
-                      aria-label="Download image"
-                    >
-                      <Download size={14} />
-                    </a>
-                  </div>
-                </div>
+                  );
+                })()
               ) : (
                 // PDF / other document
-                <a
-                  href={buildDownloadUrl(userId, sessionId, userAttachmentName!)}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2.5 px-3 py-2 rounded-lg bg-white/80 border border-black/10 hover:bg-white transition-colors shadow-2xs max-w-[260px]"
-                >
-                  <div className="w-8 h-8 bg-red-100 rounded flex items-center justify-center text-red-600 shrink-0">
-                    <FileText size={16} />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="text-xs font-bold text-[#111b21] truncate">{userAttachmentName}</p>
-                    <p className="text-[10px] text-[#667781]">Attached Document</p>
-                  </div>
-                  <Download size={14} className="text-[#667781] shrink-0" />
-                </a>
+                (() => {
+                  const docUrl = buildDownloadUrl(userId, sessionId, userAttachmentName!);
+                  return (
+                    <div
+                      onClick={() =>
+                        openDocumentPreview({
+                          url: docUrl,
+                          title: userAttachmentName!,
+                          filename: userAttachmentName!,
+                          mimeType: attachmentMime,
+                        })
+                      }
+                      className="inline-flex items-center gap-2.5 px-3 py-2 rounded-lg bg-white/90 border border-black/10 hover:bg-white hover:border-[#008069] transition-all shadow-2xs max-w-[260px] cursor-pointer group"
+                      title={`Click to view ${userAttachmentName}`}
+                    >
+                      <div className="w-8 h-8 bg-red-100 rounded flex items-center justify-center text-red-600 shrink-0 group-hover:bg-red-200 transition-colors">
+                        <FileText size={16} />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-xs font-bold text-[#111b21] truncate group-hover:text-[#008069] transition-colors">
+                          {userAttachmentName}
+                        </p>
+                        <p className="text-[10px] text-[#667781]">Attached Document · View</p>
+                      </div>
+                      <a
+                        href={docUrl}
+                        download={userAttachmentName!}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        onClick={(e) => e.stopPropagation()}
+                        className="p-1 text-[#667781] hover:text-[#008069] hover:bg-black/5 rounded transition-colors shrink-0"
+                        title="Download file directly"
+                      >
+                        <Download size={14} />
+                      </a>
+                    </div>
+                  );
+                })()
               )}
             </div>
           )}

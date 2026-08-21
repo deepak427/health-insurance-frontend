@@ -5,6 +5,8 @@ import { createSession, listSessions, getSession, deleteSession, eventsToMessage
 import { getUsername, getOrCreateSession, newSession, setActiveSession } from "@/lib/session";
 import type { Msg } from "@/components/Message";
 
+import type { PreviewDocument } from "@/components/DocumentModal";
+
 export interface ChatSessionMeta {
   id: string;
   preview: string;
@@ -21,6 +23,9 @@ interface ChatContextValue {
   error: string | null;
   sessions: ChatSessionMeta[];
   walletBalance: number;
+  previewDoc: PreviewDocument | null;
+  openDocumentPreview: (doc: PreviewDocument) => void;
+  closeDocumentPreview: () => void;
   setWalletBalance: (v: number) => void;
   refreshWallet: () => Promise<void>;
   setMessages: React.Dispatch<React.SetStateAction<Msg[]>>;
@@ -76,6 +81,15 @@ export function ChatProvider({ children }: { children: ReactNode }) {
   const [error, setError] = useState<string | null>(null);
   const [sessions, setSessions] = useState<ChatSessionMeta[]>([]);
   const [walletBalance, setWalletBalance] = useState<number>(0);
+  const [previewDoc, setPreviewDoc] = useState<PreviewDocument | null>(null);
+
+  const openDocumentPreview = useCallback((doc: PreviewDocument) => {
+    setPreviewDoc(doc);
+  }, []);
+
+  const closeDocumentPreview = useCallback(() => {
+    setPreviewDoc(null);
+  }, []);
 
   const refreshWallet = useCallback(async (uid?: string) => {
     const id = uid || userId;
@@ -238,6 +252,9 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       error,
       sessions,
       walletBalance,
+      previewDoc,
+      openDocumentPreview,
+      closeDocumentPreview,
       setWalletBalance,
       refreshWallet,
       setMessages,
