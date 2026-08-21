@@ -1,9 +1,10 @@
 "use client";
 
 import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from "react";
-import { createSession, listSessions, getSession, deleteSession, eventsToMessages, sessionPreview, ADKSession, fetchWallet } from "@/lib/api";
+import { createSession, listSessions, getSession, deleteSession, eventsToMessages, sessionPreview, ADKSession, fetchWallet, fetchUserCampaignMessages, markCampaignMessagesSeen } from "@/lib/api";
 import { getUsername, getOrCreateSession, newSession, setActiveSession } from "@/lib/session";
 import type { Msg } from "@/components/Message";
+import { useRef } from "react";
 
 import type { PreviewDocument } from "@/components/DocumentModal";
 
@@ -146,6 +147,39 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     }
   }, [sessionReady, userId, sessionId]);
 
+  const processedCampaignIds = useRef<Set<string>>(new Set());
+
+  const checkCampaignMessages = useCallback(async (uid?: string) => {
+    const id = uid || userId;
+    if (!id) return;
+    try {
+      const unseen = await fetchUserCampaignMessages(id, true);
+      if (unseen && unseen.length > 0) {
+        const newMsgs: Msg[] = [];
+        const seenIds: string[] = [];
+        for (const item of unseen) {
+          if (!processedCampaignIds.current.has(item.id)) {
+            processedCampaignIds.current.add(item.id);
+            seenIds.push(item.id);
+            newMsgs.push({
+              role: "agent",
+              text: `📢 **${item.title}**\n\n${item.message}`,
+            });
+          }
+        }
+        if (newMsgs.length > 0) {
+          setMessages((prev) => [...prev, ...newMsgs]);
+          setSessionReadyRaw(true);
+        }
+        if (seenIds.length > 0) {
+          await markCampaignMessagesSeen(id, seenIds);
+        }
+      }
+    } catch {
+      // ignore network errors during poll
+    }
+  }, [userId]);
+
   useEffect(() => {
     const name = getUsername();
     if (name) {
@@ -165,8 +199,18 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       }).catch(() => setSessionReadyRaw(null));
       refreshSessionList(uid);
       refreshWallet(uid);
+      checkCampaignMessages(uid);
     }
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Live polling for scheduled campaign broadcasts every 5 seconds
+  useEffect(() => {
+    if (!userId) return;
+    const interval = setInterval(() => {
+      checkCampaignMessages(userId);
+    }, 5000);
+    return () => clearInterval(interval);
+  }, [userId, checkCampaignMessages]);
 
   const setUsername = useCallback((name: string) => {
     import("@/lib/session").then(({ setUsername: save }) => save(name));

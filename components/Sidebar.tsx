@@ -3,7 +3,7 @@
 import { useState } from "react";
 import {
   LayoutDashboard, Shield, FileText, Share2, Search, Database, LogOut,
-  PanelLeftClose, PanelLeft, Plus, IndianRupee, MessageSquare, Sparkles
+  PanelLeftClose, PanelLeft, Plus, IndianRupee, MessageSquare, Sparkles, Megaphone
 } from "lucide-react";
 import Link from "next/link";
 import { useChatContext } from "@/context/ChatContext";
@@ -16,9 +16,21 @@ interface Props {
   onOpenPolicies?: () => void;
   onClosePolicies?: () => void;
   policiesOpen?: boolean;
+  onOpenCampaigns?: () => void;
+  onCloseCampaigns?: () => void;
+  campaignsOpen?: boolean;
 }
 
-export default function Sidebar({ isOpenMobile, onCloseMobile, onOpenPolicies, onClosePolicies, policiesOpen }: Props) {
+export default function Sidebar({
+  isOpenMobile,
+  onCloseMobile,
+  onOpenPolicies,
+  onClosePolicies,
+  policiesOpen,
+  onOpenCampaigns,
+  onCloseCampaigns,
+  campaignsOpen,
+}: Props) {
   const { logout, username, handleNewChat } = useChatContext();
   const [collapsed, setCollapsed] = useState(false);
   const pathname = usePathname();
@@ -147,6 +159,20 @@ export default function Sidebar({ isOpenMobile, onCloseMobile, onOpenPolicies, o
         >
           <Shield size={19} className={policiesOpen ? "text-[#ff5722]" : "text-[#6b7280]"} />
           {!collapsed && <span className="truncate">Policies & Plans</span>}
+        </button>
+
+        {/* Campaigns & Broadcasts */}
+        <button
+          onClick={() => { onCloseMobile?.(); onOpenCampaigns?.(); }}
+          className={`flex items-center ${collapsed ? "justify-center px-1.5" : "gap-3.5 px-3.5"} py-3 rounded-2xl transition-all text-left w-full cursor-pointer ${
+            campaignsOpen
+              ? "bg-[#f3f4f6] text-[#111827] font-black"
+              : "text-[#4b5563] hover:bg-[#f9fafb] hover:text-[#111827] font-semibold"
+          }`}
+          title="Broadcast Campaigns"
+        >
+          <Megaphone size={19} className={campaignsOpen ? "text-[#ff5722]" : "text-[#6b7280]"} />
+          {!collapsed && <span className="truncate">Campaigns</span>}
         </button>
 
         {/* Knowledge Base */}

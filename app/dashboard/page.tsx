@@ -9,6 +9,7 @@ import {
 import Link from "next/link";
 import Sidebar from "@/components/Sidebar";
 import PoliciesPanel from "@/components/PoliciesPanel";
+import CampaignsPanel from "@/components/CampaignsPanel";
 import UsernameModal from "@/components/UsernameModal";
 import { useChatContext } from "@/context/ChatContext";
 import { fetchDashboardStats, DashboardStats, buildBookingDownloadUrl } from "@/lib/api";
@@ -19,6 +20,7 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [policiesOpen, setPoliciesOpen] = useState(false);
+  const [campaignsOpen, setCampaignsOpen] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   // Filters
@@ -53,9 +55,12 @@ export default function DashboardPage() {
       <Sidebar
         isOpenMobile={sidebarOpen}
         onCloseMobile={() => setSidebarOpen(false)}
-        onOpenPolicies={() => setPoliciesOpen(true)}
+        onOpenPolicies={() => { setPoliciesOpen(true); setCampaignsOpen(false); }}
         onClosePolicies={() => setPoliciesOpen(false)}
         policiesOpen={policiesOpen}
+        onOpenCampaigns={() => { setCampaignsOpen(true); setPoliciesOpen(false); }}
+        onCloseCampaigns={() => setCampaignsOpen(false)}
+        campaignsOpen={campaignsOpen}
       />
 
       {/* Main Content Area */}
@@ -555,6 +560,9 @@ export default function DashboardPage() {
 
       {/* Policies overlay */}
       <PoliciesPanel isOpen={policiesOpen} onClose={() => setPoliciesOpen(false)} />
+
+      {/* Campaigns overlay */}
+      <CampaignsPanel isOpen={campaignsOpen} onClose={() => setCampaignsOpen(false)} />
     </div>
   );
 }

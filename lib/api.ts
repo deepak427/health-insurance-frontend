@@ -462,3 +462,85 @@ export async function fetchDashboardStats(userId?: string): Promise<DashboardSta
   }
   return res.json();
 }
+
+// ── Campaigns API ─────────────────────────────────────────────────────────────
+export interface Campaign {
+  id: string;
+  title: string;
+  message: string;
+  filter_type: string;
+  filter_value: number;
+  scheduled_at: string;
+  status: "scheduled" | "running" | "completed" | "draft" | "cancelled";
+  target_count: number;
+  delivered_count: number;
+  created_at: string;
+  sent_at?: string | null;
+}
+
+export interface CampaignMessage {
+  id: string;
+  campaign_id: string;
+  user_id: string;
+  session_id?: string;
+  title: string;
+  message: string;
+  created_at: string;
+  delivered_at?: string;
+  is_seen: number;
+}
+
+export async function fetchCampaigns(): Promise<Campaign[]> {
+  const res = await fetch(`${BASE_URL}/campaigns`);
+  if (!res.ok) return [];
+  const data = await res.json();
+  return data.campaigns || [];
+}
+
+export async function createCampaign(campaign: {
+  title: string;
+  message: string;
+  filter_type?: string;
+  filter_value?: number;
+  scheduled_at?: string;
+}): Promise<Campaign> {
+  const res = await fetch(`${BASE_URL}/campaigns`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(campaign),
+  });
+  if (!res.ok) throw new Error("Failed to create campaign");
+  return res.json();
+}
+
+export async function runCampaignImmediately(campaignId: string): Promise<Campaign> {
+  const res = await fetch(`${BASE_URL}/campaigns/${campaignId}/run`, {
+    method: "POST",
+  });
+  if (!res.ok) throw new Error("Failed to execute campaign");
+  return res.json();
+}
+
+export async function deleteCampaign(campaignId: string): Promise<void> {
+  const res = await fetch(`${BASE_URL}/campaigns/${campaignId}`, {
+    method: "DELETE",
+  });
+  if (!res.ok) throw new Error("Failed to delete campaign");
+}
+
+export async function fetchUserCampaignMessages(userId: string, unseenOnly = false): Promise<CampaignMessage[]> {
+  if (!userId) return [];
+  const res = await fetch(`${BASE_URL}/campaign-messages/${userId}?unseen_only=${unseenOnly}`);
+  if (!res.ok) return [];
+  const data = await res.json();
+  return data.messages || [];
+}
+
+export async function markCampaignMessagesSeen(userId: string, messageIds?: string[]): Promise<void> {
+  if (!userId) return;
+  await fetch(`${BASE_URL}/campaign-messages/${userId}/mark-seen`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ message_ids: messageIds }),
+  });
+}

@@ -10,6 +10,7 @@ import Message from "./Message";
 import ChatInput from "./ChatInput";
 import UsernameModal from "./UsernameModal";
 import PoliciesPanel from "./PoliciesPanel";
+import CampaignsPanel from "./CampaignsPanel";
 import DocumentModal from "./DocumentModal";
 import {
   AlertCircle, Search, Phone, MoreVertical, ShieldCheck, Bell, ChevronDown,
@@ -47,6 +48,7 @@ export default function ChatWindow() {
   const [listOpen, setListOpen] = useState(false);
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [policiesOpen, setPoliciesOpen] = useState(false);
+  const [campaignsOpen, setCampaignsOpen] = useState(false);
 
   // Dashboard Overview Collapse State
   const [showOverview, setShowOverview] = useState(true);
@@ -177,9 +179,12 @@ export default function ChatWindow() {
       <Sidebar
         isOpenMobile={sidebarOpen}
         onCloseMobile={() => setSidebarOpen(false)}
-        onOpenPolicies={() => setPoliciesOpen(true)}
+        onOpenPolicies={() => { setPoliciesOpen(true); setCampaignsOpen(false); }}
         onClosePolicies={() => setPoliciesOpen(false)}
         policiesOpen={policiesOpen}
+        onOpenCampaigns={() => { setCampaignsOpen(true); setPoliciesOpen(false); }}
+        onCloseCampaigns={() => setCampaignsOpen(false)}
+        campaignsOpen={campaignsOpen}
       />
 
       {/* Main Content Area */}
@@ -394,6 +399,9 @@ export default function ChatWindow() {
 
         {/* Policies overlay */}
         <PoliciesPanel isOpen={policiesOpen} onClose={() => setPoliciesOpen(false)} />
+
+        {/* Campaigns overlay */}
+        <CampaignsPanel isOpen={campaignsOpen} onClose={() => setCampaignsOpen(false)} />
 
         {/* In-App Document Preview Modal */}
         <DocumentModal doc={previewDoc} onClose={closeDocumentPreview} />
