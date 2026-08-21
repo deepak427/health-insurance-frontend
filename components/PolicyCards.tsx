@@ -59,57 +59,58 @@ export interface BookingTableProps {
 function PolicyCard({ card, onChoose }: { card: PolicyCardData; onChoose: (p: string) => void }) {
   return (
     <div
-      className="rounded-[10px] border border-[#e5e7eb] bg-white shadow-sm overflow-hidden"
-      style={{ minWidth: 220, maxWidth: 300 }}
+      className="rounded-2xl border border-[#e5e7eb] bg-white shadow-2xs overflow-hidden flex flex-col justify-between hover:border-[#ff5722]/40 transition-all"
+      style={{ minWidth: 240, maxWidth: 300 }}
     >
-      {/* Header */}
-      <div className="flex items-center gap-2 px-3 pt-3 pb-2">
-        <div className="w-8 h-8 rounded-lg bg-[#f0fdf4] border border-[#bbf7d0] flex items-center justify-center shrink-0">
-          <Shield size={15} className="text-[#00a86b]" />
+      <div>
+        {/* Header */}
+        <div className="flex items-center gap-2.5 px-3.5 pt-3.5 pb-2">
+          <div className="w-8 h-8 rounded-xl bg-[#fdeee9] border border-[#fbd3c7] flex items-center justify-center shrink-0">
+            <Shield size={15} className="text-[#ff5722]" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-xs font-bold text-[#111827] leading-tight truncate">{card.name}</p>
+            {card.company && (
+              <p className="text-[10px] text-[#6b7280] truncate font-medium">{card.company}</p>
+            )}
+          </div>
         </div>
-        <div className="flex-1 min-w-0">
-          <p className="text-xs font-bold text-[#1f2937] leading-tight truncate">{card.name}</p>
-          {card.company && (
-            <p className="text-[10px] text-[#6b7280] truncate">{card.company}</p>
-          )}
-        </div>
+
+        {/* Premium & Sum Insured */}
+        {(card.premium !== undefined || card.sumInsured) && (
+          <div className="flex items-center gap-2 px-3.5 pb-2.5 flex-wrap">
+            {card.premium !== undefined && (
+              <div className="flex items-center gap-0.5 bg-[#f0fdf4] border border-[#bbf7d0] px-2 py-0.5 rounded-lg">
+                <IndianRupee size={11} className="text-[#15803d] shrink-0" />
+                <span className="text-xs font-black text-[#15803d]">{card.premium}</span>
+              </div>
+            )}
+            {card.sumInsured && (
+              <span className="text-[10px] font-semibold text-[#4b5563] bg-[#f3f4f6] px-2 py-0.5 rounded-lg">
+                Cover: {card.sumInsured}
+              </span>
+            )}
+          </div>
+        )}
+
+        {/* Highlights */}
+        {card.highlights && card.highlights.length > 0 && (
+          <div className="flex flex-col gap-1 px-3.5 pb-3">
+            {card.highlights.map((h, j) => (
+              <div key={j} className="flex items-start gap-1.5">
+                <CheckCircle2 size={12} className="text-[#00a86b] mt-0.5 shrink-0" />
+                <span className="text-[11px] text-[#374151] leading-tight font-normal">{h}</span>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
-      {/* Premium & Sum Insured */}
-      {(card.premium !== undefined || card.sumInsured) && (
-        <div className="flex items-center gap-3 px-3 pb-2">
-          {card.premium !== undefined && (
-            <div className="flex items-center gap-0.5">
-              <IndianRupee size={11} className="text-[#00a86b] shrink-0" />
-              <span className="text-sm font-black text-[#1f2937]">{card.premium}</span>
-              <span className="text-[10px] text-[#9ca3af] ml-0.5">/yr</span>
-            </div>
-          )}
-          {card.sumInsured && (
-            <span className="text-[10px] font-light text-[#6b7280] bg-[#f8fafc] border border-[#e5e7eb] px-1.5 py-0.5 rounded">
-              Cover: {card.sumInsured}
-            </span>
-          )}
-        </div>
-      )}
-
-      {/* Highlights */}
-      {card.highlights && card.highlights.length > 0 && (
-        <div className="flex flex-col gap-0.5 px-3 pb-2">
-          {card.highlights.map((h, j) => (
-            <div key={j} className="flex items-start gap-1.5">
-              <CheckCircle2 size={11} className="text-[#00a86b] mt-0.5 shrink-0" />
-              <span className="text-[11px] text-[#374151] leading-tight">{h}</span>
-            </div>
-          ))}
-        </div>
-      )}
-
-      {/* Action */}
-      <div className="border-t border-[#f1f5f9]">
+      {/* Action CTA */}
+      <div className="p-2 border-t border-[#f1f5f9] bg-[#f9fafb]">
         <button
           onClick={() => onChoose(card.prompt || `I'd like to book the ${card.name} plan`)}
-          className="w-full text-xs font-semibold text-[#00a86b] py-2.5 hover:bg-[#f0fdf4] transition-colors text-center"
+          className="w-full text-xs font-bold text-white bg-[#ff5722] hover:bg-[#f4511e] py-2 rounded-xl transition-all text-center shadow-2xs"
         >
           {card.action || "Choose this plan"}
         </button>
@@ -120,12 +121,12 @@ function PolicyCard({ card, onChoose }: { card: PolicyCardData; onChoose: (p: st
 
 function ConfirmCard({ card, onChoose }: { card: PolicyCardData; onChoose: (p: string) => void }) {
   const rows = [
-    card.destination   && { icon: <MapPin size={11} className="text-[#6b7280]" />,    label: "Destination",  value: card.destination },
-    card.travelDates   && { icon: <Calendar size={11} className="text-[#6b7280]" />,  label: "Dates",        value: card.travelDates },
-    card.travellers    && { icon: <Users size={11} className="text-[#6b7280]" />,      label: "Travellers",   value: card.travellers },
-    card.sumInsured    && { icon: <Shield size={11} className="text-[#6b7280]" />,     label: "Cover",        value: card.sumInsured },
+    card.destination   && { icon: <MapPin size={12} className="text-[#6b7280]" />,    label: "Destination",  value: card.destination },
+    card.travelDates   && { icon: <Calendar size={12} className="text-[#6b7280]" />,  label: "Dates",        value: card.travelDates },
+    card.travellers    && { icon: <Users size={12} className="text-[#6b7280]" />,      label: "Travellers",   value: card.travellers },
+    card.sumInsured    && { icon: <Shield size={12} className="text-[#6b7280]" />,     label: "Cover",        value: card.sumInsured },
     card.premium !== undefined && {
-      icon: <IndianRupee size={11} className="text-[#6b7280]" />,
+      icon: <IndianRupee size={12} className="text-[#15803d]" />,
       label: "Premium",
       value: `₹${card.premium}`,
     },
@@ -133,42 +134,44 @@ function ConfirmCard({ card, onChoose }: { card: PolicyCardData; onChoose: (p: s
 
   return (
     <div
-      className="rounded-[10px] border-2 border-[#00a86b] bg-white shadow-sm overflow-hidden"
+      className="rounded-2xl border-2 border-[#ff5722] bg-white shadow-md overflow-hidden flex flex-col justify-between"
       style={{ minWidth: 260, maxWidth: 340 }}
     >
-      {/* Header */}
-      <div className="bg-[#f0fdf4] px-4 pt-3 pb-2 flex items-center gap-2">
-        <BadgeCheck size={18} className="text-[#00a86b] shrink-0" />
-        <div className="min-w-0">
-          <p className="text-xs font-black text-[#1f2937] leading-tight truncate">{card.name}</p>
-          {card.company && <p className="text-[10px] text-[#6b7280]">{card.company}</p>}
+      <div>
+        {/* Header */}
+        <div className="bg-[#fdeee9] px-4 pt-3.5 pb-2.5 flex items-center gap-2.5">
+          <BadgeCheck size={18} className="text-[#ff5722] shrink-0" />
+          <div className="min-w-0">
+            <p className="text-xs font-black text-[#111827] leading-tight truncate">{card.name}</p>
+            {card.company && <p className="text-[10px] text-[#6b7280] font-medium">{card.company}</p>}
+          </div>
         </div>
+
+        {/* Summary rows */}
+        {rows.length > 0 && (
+          <div className="px-4 py-3 flex flex-col gap-2">
+            {rows.map((row, i) => (
+              <div key={i} className="flex items-center gap-2 text-xs">
+                {row.icon}
+                <span className="text-[10px] text-[#6b7280] font-medium w-16 shrink-0">{row.label}</span>
+                <span className="text-[11px] font-bold text-[#111827] truncate">{row.value}</span>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
-      {/* Summary rows */}
-      {rows.length > 0 && (
-        <div className="px-4 py-2 flex flex-col gap-1.5">
-          {rows.map((row, i) => (
-            <div key={i} className="flex items-center gap-2">
-              {row.icon}
-              <span className="text-[10px] text-[#9ca3af] w-16 shrink-0">{row.label}</span>
-              <span className="text-[11px] font-semibold text-[#1f2937] truncate">{row.value}</span>
-            </div>
-          ))}
-        </div>
-      )}
-
       {/* Buttons */}
-      <div className="border-t border-[#e5e7eb] flex">
+      <div className="p-2 border-t border-[#e5e7eb] bg-[#f9fafb] flex gap-2">
         <button
           onClick={() => onChoose(card.cancelPrompt || "Cancel the booking")}
-          className="flex-1 text-xs font-semibold text-[#9ca3af] py-2.5 hover:bg-[#f8fafc] transition-colors border-r border-[#e5e7eb]"
+          className="flex-1 text-xs font-semibold text-[#4b5563] py-2 rounded-xl hover:bg-gray-200 transition-colors text-center"
         >
           Cancel
         </button>
         <button
           onClick={() => onChoose(card.prompt || `Yes, confirm the booking for ${card.name}`)}
-          className="flex-1 text-xs font-black text-white bg-[#00a86b] py-2.5 hover:bg-[#008f5a] transition-colors"
+          className="flex-1 text-xs font-bold text-white bg-black hover:bg-neutral-800 py-2 rounded-xl transition-colors shadow-2xs text-center"
         >
           {card.action || "Confirm Booking"}
         </button>
@@ -313,51 +316,51 @@ function BookingCard({ booking, onChoose }: { booking: BookingCardData; onChoose
   const st = statusStyle(booking.status);
   return (
     <div
-      className="rounded-[10px] border border-[#e5e7eb] bg-white shadow-sm overflow-hidden"
-      style={{ minWidth: 220, maxWidth: 280 }}
+      className="rounded-2xl border border-[#e5e7eb] bg-white shadow-2xs overflow-hidden flex flex-col justify-between hover:border-[#ff5722]/40 transition-all"
+      style={{ minWidth: 240, maxWidth: 290 }}
     >
       {/* Header */}
-      <div className="flex items-center gap-2 px-3 pt-3 pb-2 bg-[#f8fafc]">
-        <div className="w-8 h-8 rounded-lg bg-[#f0fdf4] border border-[#bbf7d0] flex items-center justify-center shrink-0">
-          <Shield size={14} className="text-[#00a86b]" />
+      <div className="flex items-center gap-2 px-3.5 pt-3.5 pb-2 bg-[#f9fafb]">
+        <div className="w-8 h-8 rounded-xl bg-[#fdeee9] border border-[#fbd3c7] flex items-center justify-center shrink-0">
+          <Shield size={14} className="text-[#ff5722]" />
         </div>
         <div className="flex-1 min-w-0">
-          <p className="text-xs font-bold text-[#1f2937] leading-tight truncate">{booking.policy}</p>
-          <p className="text-[10px] font-mono text-[#6b7280]">{booking.ref}</p>
+          <p className="text-xs font-bold text-[#111827] leading-tight truncate">{booking.policy}</p>
+          <p className="text-[10px] font-mono text-[#ff5722] font-semibold">{booking.ref}</p>
         </div>
-        <span className={`text-[8px] font-bold px-1.5 py-0.5 rounded-full shrink-0 flex items-center gap-1 ${st.bg} ${st.text}`}>
+        <span className={`text-[8px] font-bold px-2 py-0.5 rounded-full shrink-0 flex items-center gap-1 ${st.bg} ${st.text}`}>
           <span className={`w-1.5 h-1.5 rounded-full ${st.dot}`} />
           {(booking.status ?? "confirmed").replace("_", " ")}
         </span>
       </div>
 
       {/* Details */}
-      <div className="flex flex-col gap-1 px-3 py-2">
+      <div className="flex flex-col gap-1.5 px-3.5 py-2.5 text-xs">
         {booking.destination && (
           <div className="flex items-center gap-1.5">
-            <MapPin size={10} className="text-[#9ca3af] shrink-0" />
-            <span className="text-[11px] text-[#374151] truncate">{booking.destination}</span>
+            <MapPin size={11} className="text-[#9ca3af] shrink-0" />
+            <span className="text-[#4b5563] truncate">{booking.destination}</span>
           </div>
         )}
         {booking.dates && (
           <div className="flex items-center gap-1.5">
-            <Calendar size={10} className="text-[#9ca3af] shrink-0" />
-            <span className="text-[11px] text-[#374151] truncate">{booking.dates}</span>
+            <Calendar size={11} className="text-[#9ca3af] shrink-0" />
+            <span className="text-[#4b5563] truncate">{booking.dates}</span>
           </div>
         )}
         {booking.premium && (
           <div className="flex items-center gap-1.5">
-            <IndianRupee size={10} className="text-[#9ca3af] shrink-0" />
-            <span className="text-[11px] font-semibold text-[#1f2937]">{booking.premium}</span>
+            <IndianRupee size={11} className="text-[#00a86b] shrink-0" />
+            <span className="font-black text-[#111827]">{booking.premium}</span>
           </div>
         )}
       </div>
 
       {/* Action */}
-      <div className="border-t border-[#f1f5f9]">
+      <div className="p-2 border-t border-[#f1f5f9] bg-[#f9fafb]">
         <button
           onClick={() => onChoose(booking.prompt || `Show me full details for booking ${booking.ref}`)}
-          className="w-full flex items-center justify-center gap-1.5 text-xs font-semibold text-[#00a86b] py-2.5 hover:bg-[#f0fdf4] transition-colors"
+          className="w-full flex items-center justify-center gap-1.5 text-xs font-bold text-[#111827] hover:text-[#ff5722] py-2 rounded-xl border border-[#e5e7eb] hover:bg-white transition-colors"
         >
           <ExternalLink size={12} />
           View Details
@@ -401,46 +404,46 @@ export function BookingsTable({ rows }: BookingTableProps) {
   };
 
   return (
-    <div className="rounded-[10px] border border-[#e5e7eb] bg-white shadow-sm overflow-hidden w-full" style={{ minWidth: 520 }}>
+    <div className="rounded-2xl border border-[#e5e7eb] bg-white shadow-sm overflow-hidden w-full" style={{ minWidth: 520 }}>
       {/* Table header bar */}
-      <div className="flex items-center justify-between px-4 py-2.5 bg-[#f8fafc] border-b border-[#e5e7eb]">
+      <div className="flex items-center justify-between px-4 py-3 bg-[#f9fafb] border-b border-[#e5e7eb]">
         <div className="flex items-center gap-2">
-          <Clock size={13} className="text-[#6b7280]" />
-          <span className="text-xs font-bold text-[#1f2937]">Booking History</span>
-          <span className="text-[10px] text-[#6b7280] bg-[#e5e7eb] px-1.5 py-0.5 rounded-full">{rows.length}</span>
+          <Clock size={14} className="text-[#6b7280]" />
+          <span className="text-xs font-bold text-[#111827]">Booking History</span>
+          <span className="text-[10px] font-bold text-[#4b5563] bg-[#e5e7eb] px-2 py-0.5 rounded-full">{rows.length}</span>
         </div>
         <button
           onClick={handleExcel}
-          className="flex items-center gap-1.5 text-[11px] font-semibold text-white bg-[#00a86b] px-2.5 py-1.5 rounded-[6px] hover:bg-[#008f5a] transition-colors"
+          className="flex items-center gap-1.5 text-xs font-bold text-white bg-black hover:bg-neutral-800 px-3 py-1.5 rounded-xl transition-all shadow-2xs"
         >
-          <FileSpreadsheet size={12} />
+          <FileSpreadsheet size={13} />
           Export Excel
         </button>
       </div>
 
       {/* Table */}
       <div className="overflow-x-auto">
-        <table className="w-full text-[11px]">
+        <table className="w-full text-xs">
           <thead>
-            <tr className="border-b border-[#f1f5f9]">
+            <tr className="border-b border-[#e5e7eb] bg-white text-[#6b7280]">
               {["Ref", "Policy", "Destination", "Dates", "Premium", "Status"].map((h) => (
-                <th key={h} className="text-left px-3 py-2 text-[10px] font-bold text-[#6b7280] uppercase tracking-wide whitespace-nowrap">
+                <th key={h} className="text-left px-3.5 py-2.5 text-[10px] font-bold uppercase tracking-wider whitespace-nowrap">
                   {h}
                 </th>
               ))}
             </tr>
           </thead>
-          <tbody>
+          <tbody className="divide-y divide-[#f1f5f9]">
             {rows.map((r, i) => {
               const st = statusStyle(r.status);
               return (
-                <tr key={i} className={`border-b border-[#f8fafc] hover:bg-[#f8fafc] transition-colors ${i % 2 === 0 ? "" : "bg-[#fafafa]"}`}>
-                  <td className="px-3 py-2 font-mono font-semibold text-[#1f2937] whitespace-nowrap">{r.ref}</td>
-                  <td className="px-3 py-2 text-[#374151] max-w-[160px] truncate">{r.policy}</td>
-                  <td className="px-3 py-2 text-[#374151] whitespace-nowrap">{r.destination ?? "—"}</td>
-                  <td className="px-3 py-2 text-[#374151] whitespace-nowrap">{r.dates ?? "—"}</td>
-                  <td className="px-3 py-2 font-semibold text-[#1f2937] whitespace-nowrap">{r.premium ?? "—"}</td>
-                  <td className="px-3 py-2">
+                <tr key={i} className="hover:bg-[#f9fafb] transition-colors">
+                  <td className="px-3.5 py-2.5 font-mono font-bold text-[#ff5722] whitespace-nowrap">{r.ref}</td>
+                  <td className="px-3.5 py-2.5 font-semibold text-[#111827] max-w-[160px] truncate">{r.policy}</td>
+                  <td className="px-3.5 py-2.5 text-[#4b5563] whitespace-nowrap">{r.destination ?? "—"}</td>
+                  <td className="px-3.5 py-2.5 text-[#4b5563] whitespace-nowrap">{r.dates ?? "—"}</td>
+                  <td className="px-3.5 py-2.5 font-bold text-[#00a86b] whitespace-nowrap">{r.premium ?? "—"}</td>
+                  <td className="px-3.5 py-2.5">
                     <span className={`inline-flex items-center gap-1 text-[9px] font-bold px-2 py-0.5 rounded-full ${st.bg} ${st.text}`}>
                       <span className={`w-1.5 h-1.5 rounded-full ${st.dot}`} />
                       {(r.status ?? "confirmed").replace("_", " ")}

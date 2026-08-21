@@ -182,184 +182,74 @@ export default function ChatWindow() {
       {/* Main Content Area */}
       <div className="flex flex-col flex-1 min-w-0 h-full relative overflow-hidden bg-[#f4f5f8]">
         
-        {/* ── Top Dashboard Header (XLSync style) ── */}
-        <div className="px-5 md:px-8 pt-5 pb-3 bg-[#f4f5f8] shrink-0">
-          <div className="flex flex-wrap items-center justify-between gap-4">
-            {/* Title & Subtitle */}
-            <div className="flex items-center gap-3">
-              <button
-                className="md:hidden p-1.5 -ml-1 text-[#6b7280] hover:bg-white rounded-lg border border-gray-200"
-                onClick={() => setSidebarOpen(true)}
-                title="Open Navigation"
-              >
-                <Menu size={18} />
-              </button>
-              <div>
-                <h1 className="text-2xl md:text-3xl font-black text-[#111827] tracking-tight">
-                  Dashboard
-                </h1>
-                <p className="text-xs text-[#6b7280] mt-0.5 font-normal">
-                  Overview of studies, uploads, and activity across your network.
-                </p>
-              </div>
-            </div>
+        {/* ── Sleek Top Navigation Header ── */}
+        <header className="h-[52px] px-4 md:px-6 flex items-center justify-between border-b border-[#e5e7eb] bg-white shrink-0 z-20 shadow-2xs">
+          {/* Left: Mobile trigger & Breadcrumb */}
+          <div className="flex items-center gap-2.5 min-w-0">
+            <button
+              className="md:hidden p-1.5 -ml-1 text-[#6b7280] hover:bg-gray-100 rounded-lg border border-gray-200"
+              onClick={() => setSidebarOpen(true)}
+              title="Open Navigation"
+            >
+              <Menu size={18} />
+            </button>
 
-            {/* Top Filter Pills & Actions */}
-            <div className="flex items-center gap-2.5 flex-wrap">
-              {/* Partner Dropdown */}
-              <div className="flex items-center gap-1.5 bg-white border border-[#e5e7eb] rounded-xl px-3 py-1.5 text-xs font-medium text-[#374151] shadow-2xs">
-                <span>{selectedHospital}</span>
-                <ChevronDown size={14} className="text-[#9ca3af]" />
-              </div>
-
-              {/* Users Dropdown */}
-              <div className="flex items-center gap-1.5 bg-white border border-[#e5e7eb] rounded-xl px-3 py-1.5 text-xs font-medium text-[#374151] shadow-2xs">
-                <span>{selectedUser}</span>
-                <ChevronDown size={14} className="text-[#9ca3af]" />
-              </div>
-
-              {/* Date Range Pill */}
-              <div className="hidden sm:flex items-center gap-2 bg-white border border-[#e5e7eb] rounded-xl px-3 py-1.5 text-xs text-[#6b7280] shadow-2xs">
-                <Calendar size={13} className="text-[#9ca3af]" />
-                <span className="font-mono text-[11px] text-[#374151]">dd-mm-yyyy</span>
-                <span className="text-[#9ca3af]">to</span>
-                <span className="font-mono text-[11px] text-[#374151]">dd-mm-yyyy</span>
-              </div>
-
-              {/* Wallet Credits Pill */}
-              <button
-                onClick={() => setShowWalletModal(true)}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white border border-[#e5e7eb] hover:border-[#ff5722] transition-all text-[#111827] text-xs font-semibold shadow-2xs cursor-pointer"
-                title="Manage Wallet Credits"
-              >
-                <Coins size={14} className="text-[#00a86b]" />
-                <span>₹{walletBalance.toLocaleString()}</span>
-                <span className="text-[10px] bg-[#00a86b] text-white px-1.5 py-0.2 rounded-full font-bold ml-0.5">
-                  + Add
-                </span>
-              </button>
-
-              {/* Toggle Overview Button */}
-              <button
-                onClick={() => setShowOverview(!showOverview)}
-                className="p-1.5 rounded-xl bg-white border border-[#e5e7eb] text-[#6b7280] hover:text-[#111827] shadow-2xs transition-colors"
-                title={showOverview ? "Collapse metrics" : "Show metrics"}
-              >
-                {showOverview ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
-              </button>
+            {/* Breadcrumb Trail */}
+            <div className="flex items-center gap-1.5 text-xs text-[#6b7280] truncate">
+              <span className="font-bold text-[#111827]">Dolphin Buddy</span>
+              <span className="text-[#d1d5db]">/</span>
+              <span className="text-[#4b5563] hidden sm:inline">AI Travel Assistant</span>
+              <span className="text-[#d1d5db] hidden sm:inline">/</span>
+              <span className="flex items-center gap-1 text-[#ff5722] font-semibold">
+                <span className="w-2 h-2 rounded-full bg-[#00a86b] animate-pulse" />
+                Live Session
+              </span>
             </div>
           </div>
 
-          {/* ── 4 Metric Cards Row (Exact XLSync Styling) ── */}
-          {showOverview && (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5 mt-4">
-              
-              {/* Card 1: CT Ratio (Warm Cream Card #faebd7) */}
-              <div className="bg-[#faebd7] rounded-2xl p-4 flex flex-col justify-between h-[138px] relative border border-[#f3ddbe] shadow-2xs">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold text-[#111827]">CT Ratio</span>
-                  <div className="w-7 h-7 rounded-full bg-black text-white flex items-center justify-center">
-                    <FileText size={13} />
-                  </div>
-                </div>
-                <div className="flex flex-col items-center my-auto">
-                  <div className="flex items-center gap-2 text-2xl font-black text-[#111827]">
-                    <span>8</span>
-                    <span className="text-amber-500 font-normal">:</span>
-                    <span>9</span>
-                  </div>
-                  <span className="text-[10px] text-[#78542c] font-medium mt-0.5">images : reports</span>
-                </div>
-              </div>
+          {/* Right: Actions & Wallet Dock */}
+          <div className="flex items-center gap-2.5 shrink-0">
+            {/* Quick New Chat Button */}
+            <button
+              onClick={() => handleNewChat()}
+              className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-[#e5e7eb] text-[#374151] hover:bg-[#f9fafb] text-xs font-semibold shadow-2xs transition-colors"
+              title="Start fresh conversation"
+            >
+              <Plus size={13} />
+              <span>New Thread</span>
+            </button>
 
-              {/* Card 2: PATIENTS (White Card with Purple Progress Ring) */}
-              <div className="bg-white rounded-2xl p-4 flex flex-col justify-between h-[138px] border-2 border-[#6366f1]/20 shadow-2xs">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold text-[#6b7280] tracking-wider uppercase">Patients</span>
-                  <div className="w-7 h-7 rounded-full bg-[#f3f4f6] text-[#6366f1] flex items-center justify-center">
-                    <Users size={14} />
-                  </div>
-                </div>
-                <div className="flex items-center justify-between my-auto gap-2">
-                  {/* Progress donut indicator */}
-                  <div className="relative w-12 h-12 flex items-center justify-center shrink-0">
-                    <svg width="48" height="48" viewBox="0 0 36 36" className="-rotate-90">
-                      <circle cx="18" cy="18" r="14" fill="none" stroke="#f3f4f6" strokeWidth="3.5" />
-                      <circle cx="18" cy="18" r="14" fill="none" stroke="#6366f1" strokeWidth="3.5" strokeDasharray="73 27" strokeLinecap="round" />
-                    </svg>
-                    <span className="absolute text-[10px] font-black text-[#111827]">83%</span>
-                  </div>
+            {/* Wallet Credits Badge */}
+            <button
+              onClick={() => setShowWalletModal(true)}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#ecfdf5] border border-[#a7f3d0] hover:bg-[#d1fae5] transition-all text-[#065f46] text-xs font-bold shadow-2xs cursor-pointer"
+              title="Manage Wallet Credits"
+            >
+              <Coins size={14} className="text-[#00a86b]" />
+              <span>₹{walletBalance.toLocaleString()}</span>
+              <span className="text-[10px] bg-[#00a86b] text-white px-1.5 py-0.2 rounded-full font-bold ml-0.5">
+                + Top up
+              </span>
+            </button>
 
-                  {/* Stat pills */}
-                  <div className="flex items-center gap-1.5 flex-1 justify-end">
-                    <div className="bg-[#f9fafb] px-2 py-1 rounded-lg text-center">
-                      <span className="text-xs font-black text-[#111827] block">12</span>
-                      <span className="text-[8px] text-[#9ca3af]">total</span>
-                    </div>
-                    <div className="bg-[#f9fafb] px-2 py-1 rounded-lg text-center">
-                      <span className="text-xs font-black text-[#111827] block">10</span>
-                      <span className="text-[8px] text-[#9ca3af]">compl...</span>
-                    </div>
-                    <div className="bg-black text-white px-2 py-1 rounded-lg text-center">
-                      <span className="text-xs font-black text-white block">2</span>
-                      <span className="text-[8px] text-gray-300">pending</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Card 3: NETWORK (White Card with Orange Accent) */}
-              <div className="bg-white rounded-2xl p-4 flex flex-col justify-between h-[138px] border border-[#e5e7eb] shadow-2xs">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold text-[#6b7280] tracking-wider uppercase">Network</span>
-                  <div className="w-7 h-7 rounded-full bg-[#fdeee9] text-[#ff5722] flex items-center justify-center">
-                    <Building size={14} />
-                  </div>
-                </div>
-                <div className="flex items-center justify-between my-auto gap-2">
-                  <div className="flex flex-col">
-                    <span className="text-[10px] text-[#9ca3af]">Hospitals</span>
-                    <span className="text-lg font-black text-[#111827]">6</span>
-                  </div>
-                  <div className="bg-black text-white px-3 py-2 rounded-xl flex flex-col items-center">
-                    <span className="text-[9px] text-gray-300">Doctors</span>
-                    <span className="text-sm font-black text-white">1</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Card 4: Anonymization / Risk Shield (Soft Peach Card #fdeee9) */}
-              <div className="bg-[#fdeee9] rounded-2xl p-4 flex flex-col justify-between h-[138px] border border-[#fbd3c7] shadow-2xs">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold text-[#111827]">Anonymization</span>
-                  <div className="w-7 h-7 rounded-full bg-black text-white flex items-center justify-center">
-                    <Shield size={13} />
-                  </div>
-                </div>
-                <div className="flex items-center justify-between my-auto gap-2">
-                  <div className="flex flex-col">
-                    <span className="text-sm font-black text-[#111827]">1</span>
-                    <span className="text-[9px] text-[#855141]">of 12</span>
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <div className="bg-white px-2.5 py-1.5 rounded-xl text-center">
-                      <span className="text-xs font-black text-[#111827] block">11</span>
-                      <span className="text-[8px] text-[#ff5722] font-semibold">fully identified</span>
-                    </div>
-                    <div className="bg-black text-white px-2.5 py-1.5 rounded-xl text-center">
-                      <span className="text-xs font-black text-white block">2</span>
-                      <span className="text-[8px] text-gray-300">pending</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
+            {/* Notifications */}
+            <div className="relative p-1 text-[#6b7280] hover:text-[#111827] cursor-pointer">
+              <Bell size={16} />
+              <span className="absolute top-0 right-0 w-2 h-2 bg-[#ff5722] rounded-full" />
             </div>
-          )}
-        </div>
+
+            {/* User Avatar */}
+            <div className="flex items-center gap-2 pl-2 border-l border-[#e5e7eb]">
+              <div className="w-7 h-7 rounded-full bg-black text-white flex items-center justify-center text-[11px] font-bold shrink-0">
+                {(username || "DP").slice(0, 2).toUpperCase()}
+              </div>
+              <span className="text-xs font-bold text-[#111827] hidden md:inline">{username}</span>
+            </div>
+          </div>
+        </header>
 
         {/* ── Main Workspace: Threads (Col 2) + Chat (Col 3) + Details (Col 4) ── */}
-        <div className="flex flex-1 min-h-0 px-5 md:px-8 pb-5 gap-4 overflow-hidden">
+        <div className="flex flex-1 min-h-0 p-3 md:p-5 gap-4 overflow-hidden">
           
           {/* Main Glass Workspace Container */}
           <div className="flex flex-1 w-full h-full bg-white rounded-3xl border border-[#e5e7eb] shadow-sm overflow-hidden relative">

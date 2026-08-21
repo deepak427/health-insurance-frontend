@@ -35,12 +35,49 @@ export default function ChatInput({ onSend, disabled }: Props) {
   function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const f = e.target.files?.[0];
     if (!f) return;
-    const reader = new FileReader();
-    reader.onload = () => {
-      const base64 = (reader.result as string).split(",")[1];
-      setFile({ name: f.name, mimeType: f.type, data: base64 });
-    };
-    reader.readAsDataURL(f);
+
+    if (f.type.startsWith("image/")) {
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        const img = new Image();
+        img.onload = () => {
+          const maxDim = 1280;
+          let w = img.width;
+          let h = img.height;
+          if (w > maxDim || h > maxDim) {
+            if (w > h) {
+              h = Math.round((h * maxDim) / w);
+              w = maxDim;
+            } else {
+              w = Math.round((w * maxDim) / h);
+              h = maxDim;
+            }
+          }
+          const canvas = document.createElement("canvas");
+          canvas.width = w;
+          canvas.height = h;
+          const ctx = canvas.getContext("2d");
+          if (ctx) {
+            ctx.drawImage(img, 0, 0, w, h);
+            const compressedUrl = canvas.toDataURL("image/jpeg", 0.85);
+            const base64 = compressedUrl.split(",")[1];
+            setFile({ name: f.name.replace(/\.[^/.]+$/, ".jpg"), mimeType: "image/jpeg", data: base64 });
+            return;
+          }
+          const base64 = (ev.target?.result as string).split(",")[1];
+          setFile({ name: f.name, mimeType: f.type, data: base64 });
+        };
+        img.src = ev.target?.result as string;
+      };
+      reader.readAsDataURL(f);
+    } else {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const base64 = (reader.result as string).split(",")[1];
+        setFile({ name: f.name, mimeType: f.type, data: base64 });
+      };
+      reader.readAsDataURL(f);
+    }
     e.target.value = "";
   }
 

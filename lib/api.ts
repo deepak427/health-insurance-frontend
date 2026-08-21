@@ -406,3 +406,59 @@ export async function* streamMessage(
     }
   }
 }
+
+// ── Dashboard Analytics Data ──────────────────────────────────────────────────
+export interface DashboardStats {
+  summary: {
+    total_bookings: number;
+    active_policies: number;
+    pending_policies: number;
+    cancelled_policies: number;
+    total_premium_inr: number;
+    avg_premium_inr: number;
+    policy_ratio: string;
+    wallet_balance: number;
+    partner_count: number;
+    active_agents: number;
+  };
+  claims_verification: {
+    accuracy_percentage: number;
+    instant_approved: number;
+    under_review: number;
+    settlement_ratio: string;
+  };
+  insurer_distribution: {
+    name: string;
+    count: number;
+    percentage: number;
+    color: string;
+  }[];
+  destination_distribution: {
+    category: string;
+    count: number;
+    percentage: number;
+    color: string;
+  }[];
+  recent_activities: {
+    ref_number: string;
+    created_at: string;
+    policy_name: string;
+    insurer: string;
+    destination: string;
+    travel_dates: string;
+    num_adults: number;
+    num_children: number;
+    sum_insured: string;
+    premium: string;
+    status: string;
+  }[];
+}
+
+export async function fetchDashboardStats(userId?: string): Promise<DashboardStats> {
+  const url = userId ? `${BASE_URL}/dashboard/stats?user_id=${userId}` : `${BASE_URL}/dashboard/stats`;
+  const res = await fetch(url);
+  if (!res.ok) {
+    throw new Error("Failed to fetch dashboard statistics");
+  }
+  return res.json();
+}

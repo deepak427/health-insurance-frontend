@@ -559,17 +559,17 @@ export default function DataPage() {
     <main className="h-screen w-screen flex bg-[#f4f5f8] overflow-hidden font-sans">
       <div className="flex flex-1 w-full h-full bg-[#f4f5f8] overflow-hidden">
 
-        {/* XLSync Modern White Sidebar */}
+        {/* Modern White Sidebar */}
         <aside className="hidden md:flex flex-col w-[240px] bg-white text-[#111827] border-r border-[#e5e7eb] shrink-0 select-none">
           {/* Brand Header */}
           <div className="flex items-center justify-between px-5 pt-6 pb-4">
             <div className="flex items-center gap-2.5">
               <div className="relative w-8 h-8 flex items-center justify-center shrink-0">
                 <svg width="32" height="32" viewBox="0 0 36 36" fill="none">
-                  <circle cx="18" cy="18" r="15" stroke="url(#xlsync_grad_data)" strokeWidth="3" strokeLinecap="round" strokeDasharray="75 25" />
-                  <circle cx="18" cy="18" r="4" fill="#2563eb" />
+                  <circle cx="18" cy="18" r="15" stroke="url(#dolphin_grad_data)" strokeWidth="3" strokeLinecap="round" strokeDasharray="75 25" />
+                  <circle cx="18" cy="18" r="4" fill="#ff5722" />
                   <defs>
-                    <linearGradient id="xlsync_grad_data" x1="0" y1="0" x2="36" y2="36" gradientUnits="userSpaceOnUse">
+                    <linearGradient id="dolphin_grad_data" x1="0" y1="0" x2="36" y2="36" gradientUnits="userSpaceOnUse">
                       <stop stopColor="#ff5722" />
                       <stop offset="0.5" stopColor="#6366f1" />
                       <stop offset="1" stopColor="#00a86b" />
@@ -577,9 +577,9 @@ export default function DataPage() {
                   </defs>
                 </svg>
               </div>
-              <div className="flex items-center gap-0.5">
-                <span className="text-[20px] font-black tracking-tight text-[#111827]">XL</span>
-                <span className="text-[20px] font-medium tracking-tight text-[#6366f1]">Sync</span>
+              <div className="flex items-center gap-1">
+                <span className="text-[18px] font-black tracking-tight text-[#111827]">Dolphin</span>
+                <span className="text-[18px] font-medium tracking-tight text-[#ff5722]">Portal</span>
               </div>
             </div>
           </div>
@@ -590,7 +590,7 @@ export default function DataPage() {
               className="flex items-center justify-center gap-2 w-full bg-black text-white hover:bg-neutral-800 transition-all font-semibold rounded-full py-2.5 px-4 text-xs shadow-sm"
             >
               <ArrowLeft size={14} />
-              <span>Back to Dashboard</span>
+              <span>Back to Hub</span>
             </Link>
           </div>
 
