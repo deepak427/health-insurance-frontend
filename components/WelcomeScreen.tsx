@@ -1,5 +1,6 @@
 "use client";
-import { Shield, CheckCircle2, MessageCircle, Sparkles, ArrowRight } from "lucide-react";
+import Image from "next/image";
+import { CheckCircle2, MessageCircle, Sparkles, ArrowRight } from "lucide-react";
 
 const quickPrompts = [
   { label: "Deductible & Co-pay", prompt: "What is a deductible and how does it work?" },
@@ -16,10 +17,8 @@ export default function WelcomeScreen({ onPrompt }: Props) {
       {/* Profile Header */}
       <div className="flex flex-col items-center gap-4 max-w-sm">
         <div className="relative">
-          <div className="w-[100px] h-[100px] rounded-full bg-[#e2ded7] p-1.5 shadow-sm">
-            <div className="w-full h-full rounded-full bg-[#5b7c72] flex items-center justify-center text-white border-2 border-[#ffffff]">
-              <Shield size={44} />
-            </div>
+          <div className="w-[100px] h-[100px] rounded-full bg-[#e2ded7] p-1.5 shadow-sm flex items-center justify-center">
+            <Image src="/aesgo_logo.png" alt="Aesgo Logo" width={80} height={80} className="object-contain rounded-full" priority />
           </div>
           <span className="absolute bottom-2 right-2 w-6 h-6 rounded-full bg-[#e8a598] border-[3px] border-[#f9f8f6] flex items-center justify-center shadow-sm">
             <span className="w-2.5 h-2.5 rounded-full bg-white animate-soft-pulse"></span>

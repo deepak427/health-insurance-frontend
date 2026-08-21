@@ -6,6 +6,7 @@ import {
   PanelLeftClose, PanelLeft, Plus, IndianRupee, MessageSquare, Sparkles, Megaphone
 } from "lucide-react";
 import Link from "next/link";
+import Image from "next/image";
 import { useChatContext } from "@/context/ChatContext";
 
 import { usePathname } from "next/navigation";
@@ -59,19 +60,9 @@ export default function Sidebar({
           className="flex items-center gap-2.5 min-w-0 hover:opacity-85 transition-opacity cursor-pointer text-left"
           title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
         >
-          {/* Modern Dolphin Portal Ring Emblem */}
+          {/* Aesgo Logo */}
           <div className="relative w-8 h-8 flex items-center justify-center shrink-0">
-            <svg width="32" height="32" viewBox="0 0 36 36" fill="none">
-              <circle cx="18" cy="18" r="15" stroke="url(#dolphin_grad)" strokeWidth="3" strokeLinecap="round" strokeDasharray="75 25" />
-              <circle cx="18" cy="18" r="4" fill="#ff5722" />
-              <defs>
-                <linearGradient id="dolphin_grad" x1="0" y1="0" x2="36" y2="36" gradientUnits="userSpaceOnUse">
-                  <stop stopColor="#ff5722" />
-                  <stop offset="0.5" stopColor="#6366f1" />
-                  <stop offset="1" stopColor="#00a86b" />
-                </linearGradient>
-              </defs>
-            </svg>
+            <Image src="/aesgo_logo.png" alt="Aesgo Logo" width={32} height={32} className="object-contain" priority />
           </div>
           {!collapsed && (
             <div className="flex items-center gap-1.5 min-w-0">
