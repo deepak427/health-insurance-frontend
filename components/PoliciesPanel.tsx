@@ -62,39 +62,22 @@ export default function PoliciesPanel({ isOpen, onClose }: Props) {
     if (isOpen) loadBookings();
   }, [isOpen]);
 
-  const filtered = bookings.filter((b) => {
-    const q = search.toLowerCase();
-    return (
-      b.ref_number.toLowerCase().includes(q) ||
-      b.policy_name.toLowerCase().includes(q) ||
-      b.destination.toLowerCase().includes(q) ||
-      b.insurer.toLowerCase().includes(q)
-    );
-  });
-
-  const filterTabs = [
-    { id: "all", label: "All", count: filtered.length },
-    { id: "complete", label: "Complete", count: filtered.filter((b) => b.status === "complete").length },
-    { id: "pending_docs", label: "Pending Docs", count: filtered.filter((b) => b.status === "pending_docs" || b.status === "partial").length },
-    { id: "confirmed", label: "Confirmed", count: filtered.filter((b) => b.status === "confirmed").length },
-    { id: "docs_received", label: "Docs Received", count: filtered.filter((b) => b.status === "docs_received").length },
-    { id: "claim_filed", label: "Claim Filed", count: filtered.filter((b) => b.status === "claim_filed").length },
-    { id: "cancelled", label: "Cancelled", count: filtered.filter((b) => b.status === "cancelled").length },
-  ];
-
-  const displayedBookings = filtered
+  const displayedBookings = bookings
+    .filter((b) => b.status !== "pending_docs" && b.status !== "partial")
     .filter((b) => {
-      if (activeFilter === "all") return true;
-      if (activeFilter === "pending_docs") return b.status === "pending_docs" || b.status === "partial";
-      return b.status === activeFilter;
+      const q = search.toLowerCase();
+      return (
+        b.ref_number.toLowerCase().includes(q) ||
+        b.policy_name.toLowerCase().includes(q) ||
+        b.destination.toLowerCase().includes(q) ||
+        b.insurer.toLowerCase().includes(q)
+      );
     })
     .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 
   const statusConfig: Record<string, { label: string; color: string; bg: string; border: string }> = {
     complete:      { label: "Complete",      color: "text-[#00a86b]", bg: "bg-[#f0fdf4]", border: "border-[#86efac]" },
     confirmed:     { label: "Confirmed",     color: "text-[#0ea5e9]", bg: "bg-[#f0f9ff]", border: "border-[#bae6fd]" },
-    partial:       { label: "Pending Docs",  color: "text-[#f59e0b]", bg: "bg-[#fffbeb]", border: "border-[#fde68a]" },
-    pending_docs:  { label: "Pending Docs",  color: "text-[#f59e0b]", bg: "bg-[#fffbeb]", border: "border-[#fde68a]" },
     docs_received: { label: "Docs Received", color: "text-[#8b5cf6]", bg: "bg-[#f5f3ff]", border: "border-[#ddd6fe]" },
     claim_filed:   { label: "Claim Filed",   color: "text-[#f97316]", bg: "bg-[#fff7ed]", border: "border-[#fed7aa]" },
     cancelled:     { label: "Cancelled",     color: "text-[#ef4444]", bg: "bg-[#fef2f2]", border: "border-[#fecaca]" },
@@ -158,9 +141,9 @@ export default function PoliciesPanel({ isOpen, onClose }: Props) {
           </div>
           <div className="min-w-0">
             <div className="flex items-center gap-2">
-              <h2 className="text-sm sm:text-base font-black text-[#111827] tracking-tight truncate">Policies & Bookings</h2>
+              <h2 className="text-sm sm:text-base font-black text-[#111827] tracking-tight truncate">My Policies</h2>
               <span className="text-[10px] sm:text-[11px] font-bold bg-[#ecfdf5] text-[#065f46] px-2 py-0.5 rounded-full border border-[#a7f3d0] shrink-0">
-                {bookings.length}
+                {displayedBookings.length}
               </span>
             </div>
             <p className="text-[11px] sm:text-xs text-[#6b7280] font-normal mt-0.5 hidden xs:block truncate">
@@ -187,10 +170,9 @@ export default function PoliciesPanel({ isOpen, onClose }: Props) {
         </div>
       </div>
 
-      {/* Search & Filter Bar */}
-      <div className="px-3.5 sm:px-6 py-2.5 sm:py-3.5 bg-white border-b border-[#e5e7eb] shrink-0 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-2.5 sm:gap-3">
-        {/* Search Input */}
-        <div className="relative flex-1 max-w-full md:max-w-md">
+      {/* Search Bar */}
+      <div className="px-3.5 sm:px-6 py-2.5 sm:py-3.5 bg-white border-b border-[#e5e7eb] shrink-0 flex items-center justify-between gap-2.5 sm:gap-3">
+        <div className="relative flex-1 max-w-md">
           <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#9ca3af]" />
           <input
             value={search}
@@ -198,33 +180,6 @@ export default function PoliciesPanel({ isOpen, onClose }: Props) {
             placeholder="Search reference, policy, traveler..."
             className="w-full pl-10 pr-4 py-2 text-xs font-medium bg-[#f9fafb] border border-[#e5e7eb] rounded-xl outline-none focus:border-[#ff5722] transition-colors text-[#111827] placeholder:text-[#9ca3af]"
           />
-        </div>
-
-        {/* Filter Pills */}
-        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 md:pb-0 no-scrollbar">
-          {filterTabs.map((tab) => {
-            const isActive = activeFilter === tab.id;
-            return (
-              <button
-                key={tab.id}
-                onClick={() => setActiveFilter(tab.id)}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold transition-all shrink-0 ${
-                  isActive
-                    ? "bg-[#ff5722] text-white shadow-2xs"
-                    : "bg-[#f9fafb] text-[#4b5563] hover:bg-gray-200 border border-[#e5e7eb]"
-                }`}
-              >
-                <span>{tab.label}</span>
-                <span
-                  className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
-                    isActive ? "bg-white/30 text-white" : "bg-[#e5e7eb] text-[#6b7280]"
-                  }`}
-                >
-                  {tab.count}
-                </span>
-              </button>
-            );
-          })}
         </div>
       </div>
 
