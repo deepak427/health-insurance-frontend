@@ -127,20 +127,30 @@ function SessionRow({ s, isActive, onSwitch, onRename, onDelete }: {
         ) : (
           <div className="flex items-center justify-between gap-1 mt-0.5">
             <div className="flex items-center gap-1 min-w-0">
-              {/* WhatsApp double checkmark */}
-              <svg viewBox="0 0 18 11" width="15" height="10" className="text-[#53bdeb] shrink-0">
-                <path fill="currentColor" d="M17.394 .57 6.23 11.733l-5.624-5.625 1.414-1.414 4.21 4.21L15.98-.844z"/>
-                <path fill="currentColor" d="M11.394 .57.23 11.733l1.414 1.414L12.808 1.984z" opacity=".4"/>
-              </svg>
+              {/* WhatsApp double checkmark or Megaphone for campaign */}
+              {s.isCampaign ? (
+                <span className="text-[11px] font-bold text-[#2563eb] bg-blue-50 px-1 rounded-sm shrink-0">
+                  📢 Broadcast
+                </span>
+              ) : (
+                <svg viewBox="0 0 18 11" width="15" height="10" className="text-[#53bdeb] shrink-0">
+                  <path fill="currentColor" d="M17.394 .57 6.23 11.733l-5.624-5.625 1.414-1.414 4.21 4.21L15.98-.844z"/>
+                  <path fill="currentColor" d="M11.394 .57.23 11.733l1.414 1.414L12.808 1.984z" opacity=".4"/>
+                </svg>
+              )}
               <p className="text-[13px] text-[#667781] truncate">
-                {s.preview ? "Travel Insurance Query" : "Tap to start conversation..."}
+                {s.preview ? s.preview.replace(/^📢\s*/, "") : "Tap to start conversation..."}
               </p>
             </div>
 
-            {/* Unread / Active indicator pill */}
-            {isActive && (
+            {/* Unread WhatsApp Badge or Active indicator pill */}
+            {s.unreadCount && s.unreadCount > 0 && !isActive ? (
+              <span className="min-w-5 h-5 px-1.5 rounded-full bg-[#25d366] text-white text-[11px] font-black flex items-center justify-center shrink-0 shadow-xs animate-in zoom-in-50">
+                {s.unreadCount}
+              </span>
+            ) : isActive ? (
               <span className="w-2 h-2 rounded-full bg-[#008069] shrink-0" />
-            )}
+            ) : null}
           </div>
         )}
       </div>

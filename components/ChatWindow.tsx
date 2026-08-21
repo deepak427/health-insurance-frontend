@@ -28,6 +28,7 @@ export default function ChatWindow() {
     loading,
     error,
     walletBalance,
+    unreadCount,
     previewDoc,
     closeDocumentPreview,
     refreshWallet,
@@ -244,7 +245,11 @@ export default function ChatWindow() {
             {/* Notifications */}
             <div className="relative p-1 text-[#6b7280] hover:text-[#111827] cursor-pointer hidden sm:block">
               <Bell size={16} />
-              <span className="absolute top-0 right-0 w-2 h-2 bg-[#ff5722] rounded-full" />
+              {unreadCount > 0 && (
+                <span className="absolute -top-1 -right-1 min-w-4 h-4 px-1 rounded-full bg-[#25d366] text-white text-[10px] font-black flex items-center justify-center shadow-xs animate-in zoom-in-50">
+                  {unreadCount}
+                </span>
+              )}
             </div>
 
             {/* User Avatar */}

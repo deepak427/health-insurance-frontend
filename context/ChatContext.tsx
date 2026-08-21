@@ -12,6 +12,8 @@ export interface ChatSessionMeta {
   id: string;
   preview: string;
   lastUpdateTime: number;
+  unreadCount?: number;
+  isCampaign?: boolean;
 }
 
 interface ChatContextValue {
@@ -24,6 +26,7 @@ interface ChatContextValue {
   error: string | null;
   sessions: ChatSessionMeta[];
   walletBalance: number;
+  unreadCount: number;
   previewDoc: PreviewDocument | null;
   openDocumentPreview: (doc: PreviewDocument) => void;
   closeDocumentPreview: () => void;
@@ -84,6 +87,8 @@ export function ChatProvider({ children }: { children: ReactNode }) {
   const [walletBalance, setWalletBalance] = useState<number>(0);
   const [previewDoc, setPreviewDoc] = useState<PreviewDocument | null>(null);
 
+  const totalUnreadCount = sessions.reduce((acc, s) => acc + (s.unreadCount || 0), 0);
+
   const openDocumentPreview = useCallback((doc: PreviewDocument) => {
     setPreviewDoc(doc);
   }, []);
@@ -106,33 +111,65 @@ export function ChatProvider({ children }: { children: ReactNode }) {
   const refreshSessionList = useCallback(async (uid?: string) => {
     const id = uid || userId;
     if (!id) return;
-    const list = await listSessions(id);
-    const sorted = [...list].sort((a, b) => b.lastUpdateTime - a.lastUpdateTime);
+    try {
+      const [list, campaignMsgs] = await Promise.all([
+        listSessions(id).catch(() => []),
+        fetchUserCampaignMessages(id).catch(() => []),
+      ]);
 
-    // ADK list endpoint returns sessions WITHOUT events populated (metadata only).
-    // Strategy:
-    //  1. If we have a cached preview for a session → show it immediately (fast path)
-    //  2. If no cache → fetch full session to check events (backfill for older sessions)
-    //  3. Sessions with no cache AND no events → blank/unused, skip them
-    const results = await Promise.all(
-      sorted.map(async (s) => {
-        const cached = loadPreview(s.id);
-        if (cached) return { id: s.id, preview: cached, lastUpdateTime: s.lastUpdateTime };
+      const sorted = [...list].sort((a, b) => b.lastUpdateTime - a.lastUpdateTime);
 
-        try {
-          const full = await getSession(id, s.id);
-          if (!full || !full.events || full.events.length === 0) return null;
-          const preview = sessionPreview(full.events);
-          if (preview && preview !== "New conversation") savePreview(s.id, preview);
-          return { id: s.id, preview: preview || "Conversation", lastUpdateTime: s.lastUpdateTime };
-        } catch {
-          return null;
+      const adkResults = await Promise.all(
+        sorted.map(async (s) => {
+          const cached = loadPreview(s.id);
+          if (cached) return { id: s.id, preview: cached, lastUpdateTime: s.lastUpdateTime };
+
+          try {
+            const full = await getSession(id, s.id);
+            if (!full || !full.events || full.events.length === 0) return null;
+            const preview = sessionPreview(full.events);
+            if (preview && preview !== "New conversation") savePreview(s.id, preview);
+            return { id: s.id, preview: preview || "Conversation", lastUpdateTime: s.lastUpdateTime };
+          } catch {
+            return null;
+          }
+        })
+      );
+
+      const activeAdk = adkResults.filter((s): s is ChatSessionMeta => s !== null);
+      const existingIds = new Set(activeAdk.map((s) => s.id));
+      const campSessions: ChatSessionMeta[] = [];
+
+      for (const c of campaignMsgs) {
+        const sid = c.session_id || `session_camp_${c.id}`;
+        const title = `📢 ${c.title}`;
+        savePreview(sid, title);
+        const isUnread = c.is_seen === 0 && sid !== sessionId;
+
+        if (!existingIds.has(sid)) {
+          existingIds.add(sid);
+          campSessions.push({
+            id: sid,
+            preview: title,
+            lastUpdateTime: Math.floor(new Date(c.created_at).getTime() / 1000),
+            unreadCount: isUnread ? 1 : 0,
+            isCampaign: true,
+          });
+        } else {
+          const match = activeAdk.find((s) => s.id === sid);
+          if (match) {
+            match.unreadCount = isUnread ? 1 : 0;
+            match.isCampaign = true;
+          }
         }
-      })
-    );
+      }
 
-    setSessions(results.filter((s): s is ChatSessionMeta => s !== null));
-  }, [userId]);
+      const merged = [...campSessions, ...activeAdk].sort((a, b) => b.lastUpdateTime - a.lastUpdateTime);
+      setSessions(merged);
+    } catch {
+      // ignore
+    }
+  }, [userId, sessionId]);
 
   const ensureSession = useCallback(async (): Promise<boolean> => {
     if (sessionReady === true) return true;
@@ -155,30 +192,35 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     try {
       const unseen = await fetchUserCampaignMessages(id, true);
       if (unseen && unseen.length > 0) {
-        const newMsgs: Msg[] = [];
         const seenIds: string[] = [];
+
         for (const item of unseen) {
-          if (!processedCampaignIds.current.has(item.id)) {
-            processedCampaignIds.current.add(item.id);
+          const sid = item.session_id || `session_camp_${item.id}`;
+          // If the user currently has this exact campaign session open
+          if (sid === sessionId) {
+            if (!processedCampaignIds.current.has(item.id)) {
+              processedCampaignIds.current.add(item.id);
+              setMessages((prev) => [
+                ...prev,
+                { role: "agent", text: `📢 **${item.title}**\n\n${item.message}` },
+              ]);
+              setSessionReadyRaw(true);
+            }
             seenIds.push(item.id);
-            newMsgs.push({
-              role: "agent",
-              text: `📢 **${item.title}**\n\n${item.message}`,
-            });
           }
         }
-        if (newMsgs.length > 0) {
-          setMessages((prev) => [...prev, ...newMsgs]);
-          setSessionReadyRaw(true);
-        }
+
         if (seenIds.length > 0) {
           await markCampaignMessagesSeen(id, seenIds);
         }
+
+        // Always refresh session list so new unread badge (1) and campaign session appear on sidebar
+        await refreshSessionList(id);
       }
     } catch {
       // ignore network errors during poll
     }
-  }, [userId]);
+  }, [userId, sessionId, refreshSessionList]);
 
   useEffect(() => {
     const name = getUsername();
@@ -187,12 +229,22 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       const { userId: uid, sessionId: sid } = getOrCreateSession();
       setUserId(uid);
       setSessionId(sid);
-      getSession(uid, sid).then((existing) => {
+      getSession(uid, sid).then(async (existing) => {
         if (existing && existing.events.length > 0) {
           setMessages(eventsToMessages(existing.events));
           setSessionReadyRaw(true);
         } else if (existing) {
           setSessionReadyRaw(true);
+        } else if (sid.startsWith("session_camp_")) {
+          // Check campaign msg fallback
+          const campMsgs = await fetchUserCampaignMessages(uid).catch(() => []);
+          const match = campMsgs.find((c) => c.session_id === sid);
+          if (match) {
+            setMessages([{ role: "agent", text: `📢 **${match.title}**\n\n${match.message}` }]);
+            setSessionReadyRaw(true);
+          } else {
+            setSessionReadyRaw(null);
+          }
         } else {
           setSessionReadyRaw(null);
         }
@@ -253,13 +305,40 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     setMessages([]);
     setError(null);
     try {
+      // Ensure session exists in ADK
+      createSession(userId, sid).catch(() => {});
       const session: ADKSession | null = await getSession(userId, sid);
-      if (session) {
-        setMessages(eventsToMessages(session.events));
+      
+      let loadedMessages: Msg[] = [];
+      if (session && session.events && session.events.length > 0) {
+        loadedMessages = eventsToMessages(session.events);
         const preview = sessionPreview(session.events);
         if (preview && preview !== "New conversation") savePreview(sid, preview);
       }
+
+      // If it's a campaign session and ADK events are empty or need campaign message
+      if (loadedMessages.length === 0 && (sid.startsWith("session_camp_") || sid.startsWith("campaign_"))) {
+        const campMsgs = await fetchUserCampaignMessages(userId).catch(() => []);
+        const match = campMsgs.find((c) => c.session_id === sid || `session_camp_${c.id}` === sid || `session_camp_${c.campaign_id?.slice(0, 8)}` === sid);
+        if (match) {
+          loadedMessages = [{
+            role: "agent",
+            text: `📢 **${match.title}**\n\n${match.message}`,
+          }];
+          savePreview(sid, `📢 ${match.title}`);
+        }
+      }
+
+      setMessages(loadedMessages);
       setSessionReadyRaw(true);
+
+      // Mark this campaign message as read and clear unread badge
+      const campMsgs = await fetchUserCampaignMessages(userId, true).catch(() => []);
+      const unreadForThis = campMsgs.filter((c) => c.session_id === sid || `session_camp_${c.id}` === sid);
+      if (unreadForThis.length > 0) {
+        await markCampaignMessagesSeen(userId, unreadForThis.map((c) => c.id)).catch(() => {});
+      }
+      setSessions((prev) => prev.map((s) => s.id === sid ? { ...s, unreadCount: 0 } : s));
     } catch {
       setError("Could not load conversation.");
     }
@@ -296,6 +375,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       error,
       sessions,
       walletBalance,
+      unreadCount: totalUnreadCount,
       previewDoc,
       openDocumentPreview,
       closeDocumentPreview,

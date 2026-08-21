@@ -32,7 +32,7 @@ export default function Sidebar({
   onCloseCampaigns,
   campaignsOpen,
 }: Props) {
-  const { logout, username, handleNewChat } = useChatContext();
+  const { logout, username, handleNewChat, unreadCount } = useChatContext();
   const [collapsed, setCollapsed] = useState(false);
   const pathname = usePathname();
 
@@ -127,15 +127,22 @@ export default function Sidebar({
         <Link
           href="/"
           onClick={() => { onCloseMobile?.(); onClosePolicies?.(); }}
-          className={`flex items-center ${collapsed ? "justify-center px-1.5" : "gap-3.5 px-3.5"} py-3 rounded-2xl transition-all ${
+          className={`flex items-center ${collapsed ? "justify-center px-1.5" : "justify-between px-3.5"} py-3 rounded-2xl transition-all ${
             isChatActive
               ? "bg-[#f3f4f6] text-[#111827] font-black"
               : "text-[#4b5563] hover:bg-[#f9fafb] hover:text-[#111827] font-semibold"
           }`}
           title="AI Assistant Chat"
         >
-          <MessageSquare size={19} className={isChatActive ? "text-[#ff5722]" : "text-[#6b7280]"} />
-          {!collapsed && <span className="truncate">Buddy Assistant</span>}
+          <div className="flex items-center gap-3.5 min-w-0">
+            <MessageSquare size={19} className={isChatActive ? "text-[#ff5722]" : "text-[#6b7280]"} />
+            {!collapsed && <span className="truncate">Buddy Assistant</span>}
+          </div>
+          {!collapsed && unreadCount > 0 && (
+            <span className="min-w-5 h-5 px-1.5 rounded-full bg-[#25d366] text-white text-[10px] font-black flex items-center justify-center shadow-xs animate-in zoom-in-50">
+              {unreadCount}
+            </span>
+          )}
         </Link>
 
         {/* Policies & Plans */}
