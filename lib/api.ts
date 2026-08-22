@@ -21,12 +21,12 @@ export function buildDownloadUrl(userId: string, sessionId: string, filename: st
 
 /** Absolute backend download URL — resolves correctly regardless of frontend origin */
 export function buildAbsoluteDownloadUrl(userId: string, sessionId: string, filename: string) {
-  const backendBase = process.env.NEXT_PUBLIC_API_URL || "http://43.204.143.233:8000";
+  const backendBase = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
   return `${backendBase}/download/${APP_NAME}/${userId}/${sessionId}/${filename}`;
 }
 
 // Direct EC2 URL for cases where proxy streaming might buffer (fallback)
-export const DIRECT_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://43.204.143.233:8000";
+export const DIRECT_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
 export interface ChatMessage {
   role: "user" | "agent";
