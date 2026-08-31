@@ -1,9 +1,10 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { Plus, MoreVertical, Pencil, Trash2, Check, Search, BellOff, MessageSquarePlus, Filter, X } from "lucide-react";
+import { Plus, MoreVertical, Pencil, Trash2, Check, Search, BellOff, MessageSquarePlus, Filter, X, Users } from "lucide-react";
 import { useChatContext } from "@/context/ChatContext";
 import type { ChatSessionMeta } from "@/context/ChatContext";
+import CreateGroupModal from "./CreateGroupModal";
 
 interface Props {
   onNewChat?: () => void;
@@ -82,7 +83,7 @@ function SessionRow({ s, isActive, onSwitch, onRename, onDelete }: {
     .map(w => w[0])
     .join("")
     .toUpperCase() || "DB";
-  const avatarBg = getAvatarColor(s.id);
+  const avatarBg = s.isGroup ? "bg-[#008069] text-white" : getAvatarColor(s.id);
 
   return (
     <div
@@ -92,14 +93,14 @@ function SessionRow({ s, isActive, onSwitch, onRename, onDelete }: {
       }`}
     >
       {/* Circular Avatar */}
-      <div className={`w-12 h-12 rounded-full flex items-center justify-center font-bold text-sm shrink-0 select-none ${avatarBg}`}>
-        {initials}
+      <div className={`w-12 h-12 rounded-full flex items-center justify-center font-bold text-sm shrink-0 select-none shadow-2xs ${avatarBg}`}>
+        {s.isGroup ? <Users size={22} /> : initials}
       </div>
 
       {/* Main Details */}
       <div className="flex-1 min-w-0 flex flex-col justify-center">
         <div className="flex items-center justify-between gap-1">
-          <p className="text-[15px] font-semibold text-[#111b21] truncate leading-tight">
+          <p className="text-[15px] font-semibold text-[#111b21] truncate leading-tight flex items-center gap-1.5">
             {title}
           </p>
           <span className={`text-[12px] shrink-0 ${isActive ? "text-[#008069] font-medium" : "text-[#667781]"}`}>
@@ -127,8 +128,13 @@ function SessionRow({ s, isActive, onSwitch, onRename, onDelete }: {
         ) : (
           <div className="flex items-center justify-between gap-1 mt-0.5">
             <div className="flex items-center gap-1 min-w-0">
-              {/* WhatsApp double checkmark or Megaphone for campaign */}
-              {s.isCampaign ? (
+              {s.isGroup ? (
+                <span className="text-xs text-[#667781] truncate">
+                  {s.groupMeta?.last_message_preview
+                    ? `${s.groupMeta.last_message_sender || "Member"}: ${s.groupMeta.last_message_preview}`
+                    : `${s.groupMeta?.members?.length || 0} members`}
+                </span>
+              ) : s.isCampaign ? (
                 <span className="text-[11px] font-bold text-[#2563eb] bg-blue-50 px-1 rounded-sm shrink-0">
                   📢 Broadcast
                 </span>
@@ -138,13 +144,15 @@ function SessionRow({ s, isActive, onSwitch, onRename, onDelete }: {
                   <path fill="currentColor" d="M11.394 .57.23 11.733l1.414 1.414L12.808 1.984z" opacity=".4"/>
                 </svg>
               )}
-              <p className="text-[13px] text-[#667781] truncate">
-                {s.preview ? s.preview.replace(/^📢\s*/, "") : "Tap to start conversation..."}
-              </p>
+              {!s.isGroup && (
+                <p className="text-xs text-[#667781] truncate">
+                  {s.preview}
+                </p>
+              )}
             </div>
 
-            {/* Unread WhatsApp Badge or Active indicator pill */}
-            {s.unreadCount && s.unreadCount > 0 && !isActive ? (
+            {/* Unread badge */}
+            {(s.unreadCount || 0) > 0 && !isActive ? (
               <span className="min-w-5 h-5 px-1.5 rounded-full bg-[#25d366] text-white text-[11px] font-black flex items-center justify-center shrink-0 shadow-xs animate-in zoom-in-50">
                 {s.unreadCount}
               </span>
@@ -199,14 +207,22 @@ function SessionRow({ s, isActive, onSwitch, onRename, onDelete }: {
 }
 
 export default function ConversationList({ onNewChat, isOpenMobile, onCloseMobile }: Props) {
-  const { sessionId, sessions, switchSession, removeSession, renameSession } = useChatContext();
+  const { userId, sessionId, activeGroupId, sessions, switchSession, removeSession, renameSession, refreshSessionList } = useChatContext();
   const [search, setSearch] = useState("");
   const [activeFilter, setActiveFilter] = useState<"all" | "unread" | "groups">("all");
   const [showNotificationBanner, setShowNotificationBanner] = useState(true);
+  const [createGroupModalOpen, setCreateGroupModalOpen] = useState(false);
 
-  const filtered = sessions.filter((s) =>
-    s.preview.toLowerCase().includes(search.toLowerCase())
-  );
+  const totalUnreadSessions = sessions.filter((s) => (s.unreadCount || 0) > 0).length;
+  const totalGroupSessions = sessions.filter((s) => s.isGroup).length;
+
+  const filtered = sessions
+    .filter((s) => {
+      if (activeFilter === "unread") return (s.unreadCount || 0) > 0;
+      if (activeFilter === "groups") return !!s.isGroup;
+      return true;
+    })
+    .filter((s) => s.preview.toLowerCase().includes(search.toLowerCase()));
 
   const content = (
     <div className="flex flex-col h-full w-full lg:w-[360px] xl:w-[400px] bg-white border-r border-[#e9edef]">
@@ -216,20 +232,20 @@ export default function ConversationList({ onNewChat, isOpenMobile, onCloseMobil
           <span className="text-xl font-black text-[#111b21] tracking-tight">Dolphin</span>
           <span className="text-xl font-bold text-[#ff5722] tracking-tight">Buddy</span>
         </div>
-        <div className="flex items-center gap-2 text-[#54656f]">
+        <div className="flex items-center gap-1.5 text-[#54656f]">
           <button
-            onClick={onNewChat}
-            className="w-9 h-9 flex items-center justify-center rounded-full hover:bg-[#f0f2f5] text-[#54656f] hover:text-[#111b21] transition-colors"
-            title="New Chat"
+            onClick={() => setCreateGroupModalOpen(true)}
+            className="w-9 h-9 flex items-center justify-center rounded-full hover:bg-[#f0f2f5] text-[#008069] hover:text-[#006e5a] transition-colors cursor-pointer"
+            title="New Group"
           >
-            <MessageSquarePlus size={20} />
+            <Users size={19} />
           </button>
           <button
             onClick={onNewChat}
-            className="w-9 h-9 flex items-center justify-center rounded-full hover:bg-[#f0f2f5] text-[#54656f] hover:text-[#111827] transition-colors"
-            title="Options"
+            className="w-9 h-9 flex items-center justify-center rounded-full hover:bg-[#f0f2f5] text-[#54656f] hover:text-[#111b21] transition-colors cursor-pointer"
+            title="New 1:1 Chat"
           >
-            <MoreVertical size={20} />
+            <MessageSquarePlus size={20} />
           </button>
         </div>
       </div>
@@ -240,13 +256,19 @@ export default function ConversationList({ onNewChat, isOpenMobile, onCloseMobil
           <Search size={16} className="absolute left-3 text-[#54656f]" />
           <input
             type="text"
-            placeholder="Search or start a new chat"
+            placeholder="Search chats or groups"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="w-full pl-9 pr-3 py-1.5 text-xs text-[#111b21] placeholder-[#54656f] bg-transparent outline-none"
           />
         </div>
-        <button className="p-1.5 text-[#54656f] hover:bg-[#f0f2f5] rounded-lg transition-colors" title="Filter unread">
+        <button
+          onClick={() => setActiveFilter(activeFilter === "unread" ? "all" : "unread")}
+          className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
+            activeFilter === "unread" ? "bg-[#d9fdd3] text-[#008069]" : "text-[#54656f] hover:bg-[#f0f2f5]"
+          }`}
+          title="Filter unread"
+        >
           <Filter size={16} />
         </button>
       </div>
@@ -255,7 +277,7 @@ export default function ConversationList({ onNewChat, isOpenMobile, onCloseMobil
       <div className="flex items-center gap-1.5 px-3 py-2 bg-white shrink-0">
         <button
           onClick={() => setActiveFilter("all")}
-          className={`px-3 py-1 rounded-full text-xs font-semibold transition-all ${
+          className={`px-3 py-1 rounded-full text-xs font-semibold transition-all cursor-pointer ${
             activeFilter === "all"
               ? "bg-[#d9fdd3] text-[#008069]"
               : "bg-[#f0f2f5] text-[#54656f] hover:bg-[#e9edef]"
@@ -265,36 +287,40 @@ export default function ConversationList({ onNewChat, isOpenMobile, onCloseMobil
         </button>
         <button
           onClick={() => setActiveFilter("unread")}
-          className={`px-3 py-1 rounded-full text-xs font-semibold transition-all flex items-center gap-1 ${
+          className={`px-3 py-1 rounded-full text-xs font-semibold transition-all flex items-center gap-1 cursor-pointer ${
             activeFilter === "unread"
               ? "bg-[#d9fdd3] text-[#008069]"
               : "bg-[#f0f2f5] text-[#54656f] hover:bg-[#e9edef]"
           }`}
         >
           Unread
-          <span className="w-4 h-4 rounded-full bg-[#25d366] text-white text-[10px] flex items-center justify-center font-bold">
-            3
-          </span>
+          {totalUnreadSessions > 0 && (
+            <span className="w-4 h-4 rounded-full bg-[#25d366] text-white text-[10px] flex items-center justify-center font-bold">
+              {totalUnreadSessions}
+            </span>
+          )}
         </button>
         <button
           onClick={() => setActiveFilter("groups")}
-          className={`px-3 py-1 rounded-full text-xs font-semibold transition-all flex items-center gap-1 ${
+          className={`px-3 py-1 rounded-full text-xs font-semibold transition-all flex items-center gap-1 cursor-pointer ${
             activeFilter === "groups"
               ? "bg-[#d9fdd3] text-[#008069]"
               : "bg-[#f0f2f5] text-[#54656f] hover:bg-[#e9edef]"
           }`}
         >
           Groups
-          <span className="w-4 h-4 rounded-full bg-black/10 text-[#54656f] text-[10px] flex items-center justify-center font-bold">
-            1
-          </span>
+          {totalGroupSessions > 0 && (
+            <span className="w-4 h-4 rounded-full bg-black/10 text-[#54656f] text-[10px] flex items-center justify-center font-bold">
+              {totalGroupSessions}
+            </span>
+          )}
         </button>
         <button
-          onClick={onNewChat}
-          className="w-6 h-6 flex items-center justify-center rounded-full bg-[#f0f2f5] text-[#54656f] hover:bg-[#e9edef] text-xs font-bold ml-auto"
-          title="New thread"
+          onClick={() => setCreateGroupModalOpen(true)}
+          className="px-2 py-1 flex items-center gap-1 rounded-full bg-[#f0f2f5] text-[#008069] hover:bg-[#d9fdd3] text-xs font-bold ml-auto cursor-pointer"
+          title="Create Group"
         >
-          +
+          <Plus size={13} /> Group
         </button>
       </div>
 
@@ -312,7 +338,7 @@ export default function ConversationList({ onNewChat, isOpenMobile, onCloseMobil
               </button>
             </div>
           </div>
-          <button onClick={() => setShowNotificationBanner(false)} className="text-[#54656f] hover:text-[#111b21]">
+          <button onClick={() => setShowNotificationBanner(false)} className="text-[#54656f] hover:text-[#111b21] cursor-pointer">
             <X size={16} />
           </button>
         </div>
@@ -323,14 +349,14 @@ export default function ConversationList({ onNewChat, isOpenMobile, onCloseMobil
         {filtered.length === 0 ? (
           <div className="flex flex-col items-center justify-center p-8 text-center text-[#667781]">
             <p className="text-sm font-medium">{search ? "No chats found" : "No conversations yet"}</p>
-            <p className="text-xs mt-1">Click + above to start an insurance query.</p>
+            <p className="text-xs mt-1">Click + or New Group to begin.</p>
           </div>
         ) : (
           filtered.map((s) => (
             <SessionRow
               key={s.id}
               s={s}
-              isActive={s.id === sessionId}
+              isActive={s.isGroup ? s.id === activeGroupId : s.id === sessionId && !activeGroupId}
               onSwitch={() => { switchSession(s.id); onCloseMobile?.(); }}
               onRename={(name) => renameSession(s.id, name)}
               onDelete={() => removeSession(s.id)}
@@ -338,6 +364,17 @@ export default function ConversationList({ onNewChat, isOpenMobile, onCloseMobil
           ))
         )}
       </div>
+
+      {/* Create Group Modal */}
+      <CreateGroupModal
+        isOpen={createGroupModalOpen}
+        onClose={() => setCreateGroupModalOpen(false)}
+        currentUserId={userId}
+        onGroupCreated={(newGroupId) => {
+          refreshSessionList();
+          switchSession(newGroupId);
+        }}
+      />
     </div>
   );
 

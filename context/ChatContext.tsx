@@ -2,6 +2,7 @@
 
 import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from "react";
 import { createSession, listSessions, getSession, deleteSession, eventsToMessages, sessionPreview, ADKSession, fetchWallet, fetchUserCampaignMessages, markCampaignMessagesSeen } from "@/lib/api";
+import { listGroups, GroupItem } from "@/lib/groupApi";
 import { getUsername, getOrCreateSession, newSession, setActiveSession } from "@/lib/session";
 import type { Msg } from "@/components/Message";
 import { useRef } from "react";
@@ -14,6 +15,8 @@ export interface ChatSessionMeta {
   lastUpdateTime: number;
   unreadCount?: number;
   isCampaign?: boolean;
+  isGroup?: boolean;
+  groupMeta?: GroupItem;
 }
 
 interface ChatContextValue {
@@ -25,6 +28,10 @@ interface ChatContextValue {
   loading: boolean;
   error: string | null;
   sessions: ChatSessionMeta[];
+  groups: GroupItem[];
+  activeGroupId: string | null;
+  setActiveGroupId: (id: string | null) => void;
+  refreshGroups: () => Promise<void>;
   walletBalance: number;
   unreadCount: number;
   previewDoc: PreviewDocument | null;
@@ -84,10 +91,14 @@ export function ChatProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [sessions, setSessions] = useState<ChatSessionMeta[]>([]);
+  const [groups, setGroups] = useState<GroupItem[]>([]);
+  const [activeGroupId, setActiveGroupId] = useState<string | null>(null);
   const [walletBalance, setWalletBalance] = useState<number>(0);
   const [previewDoc, setPreviewDoc] = useState<PreviewDocument | null>(null);
 
-  const totalUnreadCount = sessions.reduce((acc, s) => acc + (s.unreadCount || 0), 0);
+  const totalUnreadCount =
+    sessions.reduce((acc, s) => acc + (s.unreadCount || 0), 0) +
+    groups.reduce((acc, g) => acc + (g.unread_count || 0), 0);
 
   const openDocumentPreview = useCallback((doc: PreviewDocument) => {
     setPreviewDoc(doc);
@@ -108,14 +119,28 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     }
   }, [userId]);
 
+  const refreshGroups = useCallback(async (uid?: string) => {
+    const id = uid || userId;
+    if (!id) return;
+    try {
+      const grps = await listGroups(id);
+      setGroups(grps);
+    } catch (err) {
+      console.warn("Failed to refresh groups:", err);
+    }
+  }, [userId]);
+
   const refreshSessionList = useCallback(async (uid?: string) => {
     const id = uid || userId;
     if (!id) return;
     try {
-      const [list, campaignMsgs] = await Promise.all([
+      const [list, campaignMsgs, groupList] = await Promise.all([
         listSessions(id).catch(() => []),
         fetchUserCampaignMessages(id).catch(() => []),
+        listGroups(id).catch(() => []),
       ]);
+
+      setGroups(groupList);
 
       const sorted = [...list].sort((a, b) => b.lastUpdateTime - a.lastUpdateTime);
 
@@ -164,12 +189,24 @@ export function ChatProvider({ children }: { children: ReactNode }) {
         }
       }
 
-      const merged = [...campSessions, ...activeAdk].sort((a, b) => b.lastUpdateTime - a.lastUpdateTime);
+      // Merge groups into session list
+      const groupSessions: ChatSessionMeta[] = groupList.map((g) => ({
+        id: g.id,
+        preview: g.name,
+        lastUpdateTime: Math.floor(new Date(g.updated_at).getTime() / 1000),
+        unreadCount: g.id === activeGroupId ? 0 : (g.unread_count || 0),
+        isGroup: true,
+        groupMeta: g,
+      }));
+
+      const merged = [...groupSessions, ...campSessions, ...activeAdk].sort(
+        (a, b) => b.lastUpdateTime - a.lastUpdateTime
+      );
       setSessions(merged);
     } catch {
       // ignore
     }
-  }, [userId, sessionId]);
+  }, [userId, sessionId, activeGroupId]);
 
   const ensureSession = useCallback(async (): Promise<boolean> => {
     if (sessionReady === true) return true;
@@ -291,6 +328,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
 
   const handleNewChat = useCallback(() => {
     if (!userId) return;
+    setActiveGroupId(null);
     const { sessionId: sid } = newSession(userId);
     setSessionId(sid);
     setMessages([]);
@@ -300,6 +338,14 @@ export function ChatProvider({ children }: { children: ReactNode }) {
 
   const switchSession = useCallback(async (sid: string) => {
     if (!userId) return;
+
+    if (sid.startsWith("grp_")) {
+      setActiveGroupId(sid);
+      setSessions((prev) => prev.map((s) => s.id === sid ? { ...s, unreadCount: 0 } : s));
+      return;
+    }
+
+    setActiveGroupId(null);
     setActiveSession(sid);
     setSessionId(sid);
     setMessages([]);
@@ -345,6 +391,13 @@ export function ChatProvider({ children }: { children: ReactNode }) {
   }, [userId]);
 
   const removeSession = useCallback(async (sid: string) => {
+    if (sid.startsWith("grp_")) {
+      if (sid === activeGroupId) {
+        setActiveGroupId(null);
+      }
+      setSessions((prev) => prev.filter((s) => s.id !== sid));
+      return;
+    }
     await deleteSession(userId, sid);
     removePreview(sid);
     // If deleting the active session, start a fresh new chat
@@ -355,7 +408,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       setSessionReadyRaw(null);
     }
     setSessions((prev) => prev.filter((s) => s.id !== sid));
-  }, [userId, sessionId]);
+  }, [userId, sessionId, activeGroupId]);
 
   const renameSession = useCallback((sid: string, newName: string) => {
     const trimmed = newName.trim();
@@ -374,6 +427,10 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       loading,
       error,
       sessions,
+      groups,
+      activeGroupId,
+      setActiveGroupId,
+      refreshGroups,
       walletBalance,
       unreadCount: totalUnreadCount,
       previewDoc,

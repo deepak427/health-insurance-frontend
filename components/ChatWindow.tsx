@@ -8,6 +8,7 @@ import ConversationList from "./ConversationList";
 import ConversationDetails from "./ConversationDetails";
 import Message from "./Message";
 import ChatInput from "./ChatInput";
+import GroupChatWindow from "./GroupChatWindow";
 import UsernameModal from "./UsernameModal";
 import PoliciesPanel from "./PoliciesPanel";
 import CampaignsPanel from "./CampaignsPanel";
@@ -23,6 +24,7 @@ export default function ChatWindow() {
     username,
     userId,
     sessionId,
+    activeGroupId,
     sessions,
     messages,
     loading,
@@ -128,7 +130,13 @@ export default function ChatWindow() {
         }
       }
 
-      const inlineData = file ? { mimeType: file.mimeType, data: file.data } : undefined;
+      // Artifact is saved to the artifact store above.
+      // Do NOT send the raw binary blob inline in the chat message — that would
+      // embed the full image/PDF bytes into the session history and re-send them
+      // to the model on every subsequent turn (costs 100k–600k tokens per image).
+      // The agent calls extract_traveler_details_from_document(filename) which
+      // loads the artifact from storage via its own genai.Client call.
+      const inlineData = undefined;
 
       for await (const chunk of streamMessage(userId, sessionId, userMessageText, inlineData)) {
         setMessages((prev) => {
@@ -276,121 +284,125 @@ export default function ChatWindow() {
               onCloseMobile={() => setListOpen(false)}
             />
 
-            {/* Column 3: WhatsApp Chat Stream */}
-            <div className="flex flex-col flex-1 min-w-0 h-full bg-[#efeae2] relative">
-              {/* WhatsApp Web Chat Header Bar */}
-              <div className="px-2.5 sm:px-4 py-2 sm:py-2.5 border-b border-[#e9edef] flex items-center justify-between bg-[#f0f2f5] shrink-0">
-                <div className="flex items-center gap-2 sm:gap-3 min-w-0">
-                  {/* Mobile Thread List Drawer Trigger */}
-                  <button
-                    onClick={() => setListOpen(true)}
-                    className="lg:hidden p-1.5 -ml-1 text-[#54656f] hover:text-[#111b21] hover:bg-black/5 rounded-full transition-colors cursor-pointer"
-                    title="Open Conversations"
-                  >
-                    <MessageSquare size={18} />
-                  </button>
+            {/* Column 3: Chat Stream (Group or 1:1) */}
+            {activeGroupId ? (
+              <GroupChatWindow groupId={activeGroupId} />
+            ) : (
+              <div className="flex flex-col flex-1 min-w-0 h-full bg-[#efeae2] relative">
+                {/* WhatsApp Web Chat Header Bar */}
+                <div className="px-2.5 sm:px-4 py-2 sm:py-2.5 border-b border-[#e9edef] flex items-center justify-between bg-[#f0f2f5] shrink-0">
+                  <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+                    {/* Mobile Thread List Drawer Trigger */}
+                    <button
+                      onClick={() => setListOpen(true)}
+                      className="lg:hidden p-1.5 -ml-1 text-[#54656f] hover:text-[#111b21] hover:bg-black/5 rounded-full transition-colors cursor-pointer"
+                      title="Open Conversations"
+                    >
+                      <MessageSquare size={18} />
+                    </button>
 
-                  {/* Contact Avatar */}
-                  <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-[#008069] text-white flex items-center justify-center font-bold text-xs sm:text-sm shrink-0 select-none shadow-2xs">
-                    <Shield size={17} />
-                  </div>
-                  <div className="flex flex-col min-w-0">
-                    <div className="flex items-center gap-2">
-                      <span className="text-[14px] sm:text-[16px] font-bold text-[#111b21] truncate leading-tight">
-                        Dolphin Operations
+                    {/* Contact Avatar */}
+                    <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-[#008069] text-white flex items-center justify-center font-bold text-xs sm:text-sm shrink-0 select-none shadow-2xs">
+                      <Shield size={17} />
+                    </div>
+                    <div className="flex flex-col min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="text-[14px] sm:text-[16px] font-bold text-[#111b21] truncate leading-tight">
+                          Dolphin Buddy
+                        </span>
+                      </div>
+                      <span className="text-[11px] sm:text-[12px] text-[#008069] font-medium truncate leading-tight mt-0.5 flex items-center gap-1">
+                        <span className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-[#00a86b] animate-pulse" />
+                        <span className="truncate">Online · Insurance Assistant</span>
                       </span>
                     </div>
-                    <span className="text-[11px] sm:text-[12px] text-[#008069] font-medium truncate leading-tight mt-0.5 flex items-center gap-1">
-                      <span className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-[#00a86b] animate-pulse" />
-                      <span className="truncate">Online · Insurance Agent</span>
-                    </span>
+                  </div>
+
+                  {/* Right WhatsApp Action Icons */}
+                  <div className="flex items-center gap-1 sm:gap-2 text-[#54656f]">
+                    <button
+                      onClick={() => setPoliciesOpen(true)}
+                      className="w-9 h-9 flex items-center justify-center rounded-full hover:bg-black/5 text-[#54656f] hover:text-[#111b21] transition-colors"
+                      title="Policies & Plans"
+                    >
+                      <Shield size={18} />
+                    </button>
+                    <button
+                      className="w-9 h-9 flex items-center justify-center rounded-full hover:bg-black/5 text-[#54656f] hover:text-[#111b21] transition-colors hidden sm:flex"
+                      title="Video Call"
+                    >
+                      <Phone size={18} />
+                    </button>
+                    <button
+                      onClick={() => setDetailsOpen((v) => !v)}
+                      className="w-9 h-9 flex items-center justify-center rounded-full hover:bg-black/5 text-[#54656f] hover:text-[#111b21] transition-colors"
+                      title="Search chat"
+                    >
+                      <Search size={18} />
+                    </button>
+                    {/* Three dots button after search to toggle right sidebar */}
+                    <button
+                      onClick={() => setDetailsOpen((v) => !v)}
+                      className={`w-9 h-9 flex items-center justify-center rounded-full hover:bg-black/5 text-[#54656f] hover:text-[#111b21] transition-colors cursor-pointer ${
+                        detailsOpen ? "bg-black/10 text-[#111b21]" : ""
+                      }`}
+                      title="Session & Contact info"
+                    >
+                      <MoreVertical size={18} />
+                    </button>
                   </div>
                 </div>
 
-                {/* Right WhatsApp Action Icons */}
-                <div className="flex items-center gap-1 sm:gap-2 text-[#54656f]">
-                  <button
-                    onClick={() => setPoliciesOpen(true)}
-                    className="w-9 h-9 flex items-center justify-center rounded-full hover:bg-black/5 text-[#54656f] hover:text-[#111b21] transition-colors"
-                    title="Policies & Plans"
-                  >
-                    <Shield size={18} />
-                  </button>
-                  <button
-                    className="w-9 h-9 flex items-center justify-center rounded-full hover:bg-black/5 text-[#54656f] hover:text-[#111b21] transition-colors hidden sm:flex"
-                    title="Video Call"
-                  >
-                    <Phone size={18} />
-                  </button>
-                  <button
-                    onClick={() => setDetailsOpen((v) => !v)}
-                    className="w-9 h-9 flex items-center justify-center rounded-full hover:bg-black/5 text-[#54656f] hover:text-[#111b21] transition-colors"
-                    title="Search chat"
-                  >
-                    <Search size={18} />
-                  </button>
-                  {/* Three dots button after search to toggle right sidebar */}
-                  <button
-                    onClick={() => setDetailsOpen((v) => !v)}
-                    className={`w-9 h-9 flex items-center justify-center rounded-full hover:bg-black/5 text-[#54656f] hover:text-[#111b21] transition-colors cursor-pointer ${
-                      detailsOpen ? "bg-black/10 text-[#111b21]" : ""
-                    }`}
-                    title="Session & Contact info"
-                  >
-                    <MoreVertical size={18} />
-                  </button>
-                </div>
-              </div>
-
-              {/* Messages Feed on WhatsApp Doodle Background */}
-              <div className="flex-1 overflow-y-auto px-3 md:px-6 py-3 whatsapp-chat-bg">
-                {error && (
-                  <div className="flex items-center gap-2 mb-4 text-xs p-3 rounded-lg bg-red-50 text-red-700 border border-red-200 shadow-2xs">
-                    <AlertCircle size={15} />
-                    <span>{error}</span>
-                  </div>
-                )}
-
-                <div className="flex flex-col w-full">
-                  {/* WhatsApp Date separator pill */}
-                  <div className="text-center my-2">
-                    <span className="text-[12px] font-medium text-[#54656f] bg-white px-3 py-1 rounded-lg shadow-[0_1px_0.5px_rgba(11,20,26,0.13)] uppercase">
-                      Today
-                    </span>
-                  </div>
-
-                  {messages.length === 0 && !loading && (
-                    <div className="flex items-start gap-3 my-4 p-4 rounded-lg bg-white border border-[#e9edef] shadow-[0_1px_0.5px_rgba(11,20,26,0.13)] max-w-md mx-auto">
-                      <div className="w-9 h-9 rounded-full bg-[#d9fdd3] text-[#008069] flex items-center justify-center shrink-0">
-                        <Sparkles size={18} />
-                      </div>
-                      <div className="flex flex-col">
-                        <span className="text-sm font-bold text-[#111b21]">Dolphin Insurance Support</span>
-                        <p className="text-xs text-[#667781] mt-1 leading-relaxed">
-                          Hello <span className="font-semibold text-[#008069]">@{username}</span>! Ask any question, compare travel policies, or upload travel documents directly.
-                        </p>
-                      </div>
+                {/* Messages Feed on WhatsApp Doodle Background */}
+                <div className="flex-1 overflow-y-auto px-3 md:px-6 py-3 whatsapp-chat-bg">
+                  {error && (
+                    <div className="flex items-center gap-2 mb-4 text-xs p-3 rounded-lg bg-red-50 text-red-700 border border-red-200 shadow-2xs">
+                      <AlertCircle size={15} />
+                      <span>{error}</span>
                     </div>
                   )}
 
-                  {messages.map((msg, i) => (
-                    <Message
-                      key={i}
-                      msg={msg}
-                      userId={userId}
-                      sessionId={sessionId}
-                      onSend={(text) => handleSend(text)}
-                    />
-                  ))}
-                </div>
-                <div ref={bottomRef} />
-              </div>
+                  <div className="flex flex-col w-full">
+                    {/* WhatsApp Date separator pill */}
+                    <div className="text-center my-2">
+                      <span className="text-[12px] font-medium text-[#54656f] bg-white px-3 py-1 rounded-lg shadow-[0_1px_0.5px_rgba(11,20,26,0.13)] uppercase">
+                        Today
+                      </span>
+                    </div>
 
-              {/* WhatsApp Chat Input Dock */}
-              <div className="shrink-0">
-                <ChatInput onSend={handleSend} disabled={loading} />
+                    {messages.length === 0 && !loading && (
+                      <div className="flex items-start gap-3 my-4 p-4 rounded-lg bg-white border border-[#e9edef] shadow-[0_1px_0.5px_rgba(11,20,26,0.13)] max-w-md mx-auto">
+                        <div className="w-9 h-9 rounded-full bg-[#d9fdd3] text-[#008069] flex items-center justify-center shrink-0">
+                          <Sparkles size={18} />
+                        </div>
+                        <div className="flex flex-col">
+                          <span className="text-sm font-bold text-[#111b21]">Dolphin Insurance Support</span>
+                          <p className="text-xs text-[#667781] mt-1 leading-relaxed">
+                            Hello <span className="font-semibold text-[#008069]">@{username}</span>! Ask any question, compare travel policies, or upload travel documents directly.
+                          </p>
+                        </div>
+                      </div>
+                    )}
+
+                    {messages.map((msg, i) => (
+                      <Message
+                        key={i}
+                        msg={msg}
+                        userId={userId}
+                        sessionId={sessionId}
+                        onSend={(text) => handleSend(text)}
+                      />
+                    ))}
+                  </div>
+                  <div ref={bottomRef} />
+                </div>
+
+                {/* WhatsApp Chat Input Dock */}
+                <div className="shrink-0">
+                  <ChatInput onSend={handleSend} disabled={loading} />
+                </div>
               </div>
-            </div>
+            )}
 
             {/* Column 4: Context Details Panel (Off by default, toggled via 3 dots) */}
             <ConversationDetails

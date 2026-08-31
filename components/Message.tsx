@@ -18,6 +18,8 @@ interface Props {
   userId: string;
   sessionId: string;
   onSend?: (text: string) => void;
+  senderLabel?: string;
+  senderColor?: string;
 }
 
 interface ParsedContent {
@@ -84,7 +86,7 @@ function parseContent(raw: string): ParsedContent {
   return { displayText, cards, bookingCards, bookingTable };
 }
 
-export default function Message({ msg, userId, sessionId, onSend }: Props) {
+export default function Message({ msg, userId, sessionId, onSend, senderLabel, senderColor }: Props) {
   const { openDocumentPreview } = useChatContext();
   const isUser = msg.role === "user";
   const isTyping = !isUser && !msg.text && (!msg.artifacts || msg.artifacts.length === 0);
@@ -145,13 +147,16 @@ export default function Message({ msg, userId, sessionId, onSend }: Props) {
           }`}
           style={{ wordBreak: "break-word" }}
         >
-          {/* Author Name for Incoming Agent/Bot message in WhatsApp Blue */}
-          {!isUser && (
+          {/* Author Name / Sender Label */}
+          {!isUser ? (
             <div className="flex items-center gap-1.5 mb-1 select-none">
-              <span className="text-[13px] font-bold text-[#027eb5]">Dolphin Operations</span>
-              <span className="text-[9px] font-bold text-[#667781] bg-[#f0f2f5] px-1.5 py-0.2 rounded">BOT</span>
+              <span className="text-[13px] font-bold text-[#027eb5]">{senderLabel || "Dolphin Buddy"}</span>
             </div>
-          )}
+          ) : senderLabel ? (
+            <div className="flex items-center gap-1.5 mb-1 select-none">
+              <span className={`text-[13px] font-bold ${senderColor || "text-[#008069]"}`}>{senderLabel}</span>
+            </div>
+          ) : null}
 
           {isTyping ? (
             <div className="flex items-center gap-1.5 py-1.5 px-1">
