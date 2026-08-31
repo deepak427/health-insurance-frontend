@@ -292,14 +292,15 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     }
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Live polling for scheduled campaign broadcasts every 5 seconds
+  // Live polling for groups, sessions, and campaign broadcasts every 3 seconds
   useEffect(() => {
     if (!userId) return;
     const interval = setInterval(() => {
       checkCampaignMessages(userId);
-    }, 5000);
+      refreshSessionList(userId);
+    }, 3000);
     return () => clearInterval(interval);
-  }, [userId, checkCampaignMessages]);
+  }, [userId, checkCampaignMessages, refreshSessionList]);
 
   const setUsername = useCallback((name: string) => {
     import("@/lib/session").then(({ setUsername: save }) => save(name));

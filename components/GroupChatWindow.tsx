@@ -175,9 +175,26 @@ export default function GroupChatWindow({ groupId, onToggleDetails, detailsOpen 
 
   useEffect(() => {
     fetchGroupData();
-    // Poll every 3 seconds for group messages & pending handovers
+    // Poll every 3 seconds for group metadata, mute state, messages & pending handovers
     const interval = setInterval(() => {
       if (!isStreamingRef.current) {
+        getGroup(groupId).then((g) => {
+          if (g) {
+            setGroup((prev) => {
+              if (
+                !prev ||
+                Number(prev.is_muted) !== Number(g.is_muted) ||
+                prev.handover_mode !== g.handover_mode ||
+                prev.members?.length !== g.members?.length ||
+                prev.name !== g.name
+              ) {
+                return g;
+              }
+              return prev;
+            });
+          }
+        }).catch(() => {});
+
         getGroupMessages(groupId, 50).then((msgs) => {
           setMessages((prev) => {
             if (msgs.length !== prev.length || (msgs[msgs.length - 1]?.id !== prev[prev.length - 1]?.id)) {
@@ -229,6 +246,7 @@ export default function GroupChatWindow({ groupId, onToggleDetails, detailsOpen 
       await setGroupMute(groupId, nextMute);
       setGroup((prev) => (prev ? { ...prev, is_muted: nextMute ? 1 : 0 } : prev));
       refreshGroups();
+      refreshSessionList();
     } catch (err) {
       console.error("Failed to toggle mute:", err);
     }
@@ -364,13 +382,23 @@ export default function GroupChatWindow({ groupId, onToggleDetails, detailsOpen 
       console.error("Failed to post group message:", err);
     }
 
-    // If Dolphin Buddy is muted in this group, NEVER reply or trigger handover
-    if (isMuted) {
-      return;
+    // Always fetch latest group state before deciding to trigger AI to enforce universal mute across all users
+    let currentGroup = group;
+    try {
+      const freshGroup = await getGroup(groupId);
+      if (freshGroup) {
+        currentGroup = freshGroup;
+        setGroup(freshGroup);
+      }
+    } catch {}
+
+    const isGroupMuted = Boolean(currentGroup?.is_muted && Number(currentGroup.is_muted) === 1);
+    if (isGroupMuted) {
+      return; // Dolphin Buddy is muted universally in this group — do NOT respond to any normal message, @tag, or handover!
     }
 
     // 2. Check if this is a custom policy / human handover request
-    if (group?.has_buddy && isCustomPolicyRequest(text)) {
+    if (currentGroup?.has_buddy && isCustomPolicyRequest(text)) {
       // Find the first other human user in this group (excluding the requester and bot)
       const otherHumans = members.filter(
         (m) =>
@@ -382,12 +410,12 @@ export default function GroupChatWindow({ groupId, onToggleDetails, detailsOpen 
       const assigneeId = assigneeObj ? assigneeObj.user_id : "Agent_Support";
       const assigneeName = assigneeObj ? (assigneeObj.display_name || assigneeObj.user_id) : "Agent_Support";
 
-      const currentMode = (group?.handover_mode || "internal") as "internal" | "external";
+      const currentMode = (currentGroup?.handover_mode || "internal") as "internal" | "external";
 
       try {
         await createHandover({
           group_id: groupId,
-          group_name: group?.name || "Group",
+          group_name: currentGroup?.name || "Group",
           requester_id: userId,
           requester_name: senderName,
           assigned_to: assigneeId,
@@ -440,7 +468,7 @@ export default function GroupChatWindow({ groupId, onToggleDetails, detailsOpen 
 
     // 3. Normal smart trigger for Dolphin Buddy
     const shouldBuddyRespond =
-      group?.has_buddy && (hasBuddyMention || !hasHumanMention);
+      currentGroup?.has_buddy && (hasBuddyMention || !hasHumanMention);
 
     if (shouldBuddyRespond) {
       triggerBuddyResponse(text, senderName);
@@ -938,6 +966,16 @@ export default function GroupChatWindow({ groupId, onToggleDetails, detailsOpen 
           </div>
         </div>
 
+        {/* Universal Muted Notice Banner */}
+        {isMuted && (
+          <div className="flex justify-center my-2 animate-in fade-in duration-200">
+            <div className="bg-rose-50 border border-rose-200 text-rose-800 text-xs px-3.5 py-2 rounded-xl shadow-2xs text-center max-w-md flex items-center justify-center gap-2 font-medium">
+              <VolumeX size={15} className="text-rose-600 shrink-0" />
+              <span>Dolphin Buddy AI is muted in this group. AI will not respond to any messages, tags, or mentions.</span>
+            </div>
+          </div>
+        )}
+
         {/* Existing Persisted Messages */}
         {messages.map((m) => {
           const isMe = m.sender_id.trim().toLowerCase() === userId.trim().toLowerCase();
@@ -1029,7 +1067,7 @@ export default function GroupChatWindow({ groupId, onToggleDetails, detailsOpen 
         <textarea
           ref={textareaRef}
           rows={1}
-          placeholder={`Message group or tag @${BUDDY_DISPLAY_NAME}...`}
+          placeholder={isMuted ? "Message group (Dolphin Buddy is muted)..." : `Message group or tag @${BUDDY_DISPLAY_NAME}...`}
           value={inputText}
           onChange={handleInputChange}
           onKeyDown={(e) => {
