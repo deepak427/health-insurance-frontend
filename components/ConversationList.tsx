@@ -179,25 +179,27 @@ function SessionRow({ s, isActive, onSwitch, onRename, onDelete }: {
 
           {menuOpen && (
             <div className="absolute right-0 top-8 z-50 w-44 bg-white rounded-xl border border-[#e9edef] shadow-xl overflow-hidden py-1.5 animate-in fade-in zoom-in-95 duration-100">
-              <button
-                onClick={(e) => { e.stopPropagation(); setMenuOpen(false); startRename(); }}
-                className="flex items-center gap-2.5 w-full px-4 py-2 text-xs font-semibold text-[#111b21] hover:bg-[#f5f6f6]"
-              >
-                <Pencil size={14} className="text-[#008069]" /> Rename chat
-              </button>
+              {!s.isGroup && (
+                <button
+                  onClick={(e) => { e.stopPropagation(); setMenuOpen(false); startRename(); }}
+                  className="flex items-center gap-2.5 w-full px-4 py-2 text-xs font-semibold text-[#111b21] hover:bg-[#f5f6f6]"
+                >
+                  <Pencil size={14} className="text-[#008069]" /> Rename chat
+                </button>
+              )}
               {!confirmDelete ? (
                 <button
                   onClick={(e) => { e.stopPropagation(); setConfirmDelete(true); }}
                   className="flex items-center gap-2.5 w-full px-4 py-2 text-xs font-semibold text-[#667781] hover:bg-red-50 hover:text-red-600"
                 >
-                  <Trash2 size={14} /> Delete chat
+                  <Trash2 size={14} /> {s.isGroup ? "Delete group" : "Delete chat"}
                 </button>
               ) : (
                 <button
                   onClick={(e) => { e.stopPropagation(); setMenuOpen(false); onDelete(); }}
                   className="flex items-center gap-2.5 w-full px-4 py-2 text-xs font-bold text-red-600 bg-red-50 hover:bg-red-100"
                 >
-                  <Trash2 size={14} /> Confirm Delete
+                  <Trash2 size={14} /> {s.isGroup ? "Confirm Delete Group" : "Confirm Delete"}
                 </button>
               )}
             </div>

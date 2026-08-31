@@ -2,7 +2,7 @@
 
 import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from "react";
 import { createSession, listSessions, getSession, deleteSession, eventsToMessages, sessionPreview, ADKSession, fetchWallet, fetchUserCampaignMessages, markCampaignMessagesSeen } from "@/lib/api";
-import { listGroups, GroupItem } from "@/lib/groupApi";
+import { listGroups, deleteGroup, GroupItem } from "@/lib/groupApi";
 import { getUsername, getOrCreateSession, newSession, setActiveSession } from "@/lib/session";
 import type { Msg } from "@/components/Message";
 import { useRef } from "react";
@@ -392,9 +392,15 @@ export function ChatProvider({ children }: { children: ReactNode }) {
 
   const removeSession = useCallback(async (sid: string) => {
     if (sid.startsWith("grp_")) {
+      try {
+        await deleteGroup(sid, userId);
+      } catch (e) {
+        console.error("Failed to delete group:", e);
+      }
       if (sid === activeGroupId) {
         setActiveGroupId(null);
       }
+      refreshGroups();
       setSessions((prev) => prev.filter((s) => s.id !== sid));
       return;
     }
@@ -408,7 +414,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       setSessionReadyRaw(null);
     }
     setSessions((prev) => prev.filter((s) => s.id !== sid));
-  }, [userId, sessionId, activeGroupId]);
+  }, [userId, sessionId, activeGroupId, refreshGroups]);
 
   const renameSession = useCallback((sid: string, newName: string) => {
     const trimmed = newName.trim();
