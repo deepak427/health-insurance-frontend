@@ -239,7 +239,7 @@ export default function ConversationDetails({ isOpen, onClose, isOpenMobile, onC
               ) : (
                 <>
                   {agentDocs.map((filename, i) => {
-                    const docUrl = buildDownloadUrl(userId, sessionId, filename);
+                    const docUrl = buildDownloadUrl(effectiveUserId, effectiveSessionId, filename);
                     return (
                       <div
                         key={`agent-${i}`}
@@ -280,7 +280,7 @@ export default function ConversationDetails({ isOpen, onClose, isOpenMobile, onC
 
                   {userDocs.map((doc, i) => {
                     const isImage = doc.mimeType.startsWith("image/");
-                    const downloadUrl = buildDownloadUrl(userId, sessionId, doc.name);
+                    const downloadUrl = buildDownloadUrl(effectiveUserId, effectiveSessionId, doc.name);
                     const previewUrl = isImage && doc.data ? `data:${doc.mimeType};base64,${doc.data}` : downloadUrl;
 
                     if (isImage) {
