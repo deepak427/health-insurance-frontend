@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { X, Users, Check, Search, ShieldCheck, Loader2 } from "lucide-react";
+import { X, Users, Check, Search, ShieldCheck, Loader2, UserPlus } from "lucide-react";
 import { listUsers, createGroup, BUDDY_DISPLAY_NAME } from "@/lib/groupApi";
 
 interface Props {
@@ -27,16 +27,19 @@ export default function CreateGroupModal({ isOpen, onClose, currentUserId, onGro
     setSelectedUsers([]);
     setIncludeBuddy(true);
     setError(null);
+    setSearchQuery("");
     setLoading(true);
 
     listUsers()
       .then((users) => {
-        // Exclude current user from picker since they are automatically creator & member
-        const others = users.filter((u) => u && u !== currentUserId && u !== "dolphin_buddy");
+        // Exclude current user and bot from picker
+        const others = users.filter(
+          (u) => u && u.toLowerCase() !== currentUserId.toLowerCase() && u !== "dolphin_buddy"
+        );
         setAvailableUsers(others);
       })
       .catch((err) => {
-        console.error(err);
+        console.error("Failed to load users:", err);
       })
       .finally(() => setLoading(false));
   }, [isOpen, currentUserId]);
@@ -47,6 +50,22 @@ export default function CreateGroupModal({ isOpen, onClose, currentUserId, onGro
     setSelectedUsers((prev) =>
       prev.includes(u) ? prev.filter((id) => id !== u) : [...prev, u]
     );
+  }
+
+  function handleAddCustomUser(customName: string) {
+    const trimmed = customName.trim();
+    if (!trimmed) return;
+    if (trimmed.toLowerCase() === currentUserId.toLowerCase()) {
+      setError("You are already automatically included as group admin");
+      return;
+    }
+    if (!selectedUsers.includes(trimmed)) {
+      setSelectedUsers((prev) => [...prev, trimmed]);
+      if (!availableUsers.includes(trimmed)) {
+        setAvailableUsers((prev) => [trimmed, ...prev]);
+      }
+    }
+    setSearchQuery("");
   }
 
   async function handleCreate() {
@@ -70,8 +89,13 @@ export default function CreateGroupModal({ isOpen, onClose, currentUserId, onGro
     }
   }
 
+  const cleanQuery = searchQuery.trim().toLowerCase();
   const filteredUsers = availableUsers.filter((u) =>
-    u.toLowerCase().includes(searchQuery.toLowerCase())
+    u.toLowerCase().includes(cleanQuery)
+  );
+
+  const isQueryExactMatch = availableUsers.some(
+    (u) => u.toLowerCase() === cleanQuery
   );
 
   return (
@@ -97,7 +121,7 @@ export default function CreateGroupModal({ isOpen, onClose, currentUserId, onGro
         </div>
 
         {/* Form Body */}
-        <div className="p-6 space-y-5 overflow-y-auto flex-1">
+        <div className="p-6 space-y-4 overflow-y-auto flex-1">
           {error && (
             <div className="p-3 text-xs bg-red-50 text-red-600 rounded-lg border border-red-200 font-medium">
               {error}
@@ -111,10 +135,10 @@ export default function CreateGroupModal({ isOpen, onClose, currentUserId, onGro
             </label>
             <input
               type="text"
-              placeholder="e.g. Dubai Schengen Agents Team"
+              placeholder="e.g. Dubai Travel Agents Squad"
               value={groupName}
               onChange={(e) => setGroupName(e.target.value)}
-              className="w-full px-3.5 py-2.5 bg-[#f0f2f5] rounded-xl text-sm border-none focus:outline-hidden focus:ring-2 focus:ring-[#008069]/40 text-[#111b21] placeholder-gray-400"
+              className="w-full px-3.5 py-2.5 bg-[#f0f2f5] rounded-xl text-sm border-none focus:outline-hidden focus:ring-2 focus:ring-[#008069]/40 text-[#111b21] placeholder-gray-400 font-medium"
               maxLength={60}
               autoFocus
             />
@@ -123,7 +147,7 @@ export default function CreateGroupModal({ isOpen, onClose, currentUserId, onGro
           {/* Dolphin Buddy Toggle */}
           <div className="bg-[#f0fdf4] border border-[#bbf7d0] rounded-xl p-3.5 flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-full bg-[#008069] text-white flex items-center justify-center font-bold text-xs shrink-0">
+              <div className="w-9 h-9 rounded-full bg-[#008069] text-white flex items-center justify-center font-bold text-xs shrink-0 shadow-2xs">
                 <ShieldCheck size={18} />
               </div>
               <div>
@@ -142,35 +166,94 @@ export default function CreateGroupModal({ isOpen, onClose, currentUserId, onGro
             </label>
           </div>
 
-          {/* Add Members Picker */}
+          {/* Selected Members Chips */}
+          {selectedUsers.length > 0 && (
+            <div>
+              <p className="text-[11px] font-bold text-[#667781] uppercase tracking-wider mb-1.5">
+                Added Members ({selectedUsers.length})
+              </p>
+              <div className="flex flex-wrap gap-1.5 max-h-24 overflow-y-auto p-1 bg-gray-50 rounded-xl border border-gray-100">
+                {selectedUsers.map((u) => (
+                  <span
+                    key={u}
+                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-[#dcfce7] text-[#166534] text-xs font-semibold shadow-2xs animate-in zoom-in-90 duration-150"
+                  >
+                    <span>{u}</span>
+                    <button
+                      type="button"
+                      onClick={() => toggleUser(u)}
+                      className="text-[#166534] hover:text-red-600 rounded-full p-0.5 transition-colors cursor-pointer"
+                    >
+                      <X size={12} />
+                    </button>
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Add Members Picker & Search */}
           <div>
-            <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center justify-between mb-1.5">
               <label className="text-xs font-bold text-[#111b21] uppercase tracking-wider">
-                Select Members ({selectedUsers.length} selected)
+                Select or Search Users
               </label>
             </div>
 
-            {/* Member search bar */}
+            {/* Member Search Bar */}
             <div className="relative mb-2">
-              <Search size={14} className="absolute left-3 top-3 text-gray-400" />
+              <Search size={15} className="absolute left-3 top-2.5 text-gray-400" />
               <input
                 type="text"
-                placeholder="Search user..."
+                placeholder="Search user name or type new user..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-8 pr-3 py-1.5 bg-[#f0f2f5] rounded-lg text-xs border-none focus:outline-hidden text-[#111b21]"
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && searchQuery.trim()) {
+                    e.preventDefault();
+                    handleAddCustomUser(searchQuery);
+                  }
+                }}
+                className="w-full pl-9 pr-8 py-2 bg-[#f0f2f5] rounded-xl text-xs border-none focus:outline-hidden focus:ring-1 focus:ring-[#008069]/50 text-[#111b21]"
               />
+              {searchQuery && (
+                <button
+                  type="button"
+                  onClick={() => setSearchQuery("")}
+                  className="absolute right-2.5 top-2.5 text-gray-400 hover:text-gray-600 cursor-pointer"
+                >
+                  <X size={14} />
+                </button>
+              )}
             </div>
 
+            {/* Custom User Add Button (if typing unlisted name) */}
+            {searchQuery.trim() && !isQueryExactMatch && (
+              <div
+                onClick={() => handleAddCustomUser(searchQuery)}
+                className="mb-2 p-2 bg-[#f0fdf4] hover:bg-[#dcfce7] border border-[#bbf7d0] rounded-xl flex items-center justify-between cursor-pointer transition-colors"
+              >
+                <div className="flex items-center gap-2 text-xs font-bold text-[#166534]">
+                  <UserPlus size={15} />
+                  <span>Add &quot;{searchQuery.trim()}&quot; as member</span>
+                </div>
+                <span className="text-[10px] bg-[#008069] text-white px-2 py-0.5 rounded-md font-semibold">
+                  Press Enter
+                </span>
+              </div>
+            )}
+
             {/* User List */}
-            <div className="border border-gray-200 rounded-xl max-h-48 overflow-y-auto divide-y divide-gray-100">
+            <div className="border border-gray-200 rounded-xl max-h-44 overflow-y-auto divide-y divide-gray-100">
               {loading ? (
                 <div className="py-6 text-center text-xs text-gray-400 flex items-center justify-center gap-2">
-                  <Loader2 size={16} className="animate-spin" /> Loading users...
+                  <Loader2 size={16} className="animate-spin text-[#008069]" /> Loading users...
                 </div>
               ) : filteredUsers.length === 0 ? (
-                <div className="py-6 text-center text-xs text-gray-400">
-                  {availableUsers.length === 0 ? "No other users found in system" : "No matching users"}
+                <div className="py-6 text-center text-xs text-gray-400 px-4">
+                  {searchQuery.trim()
+                    ? `No user matching "${searchQuery}". Press enter to add.`
+                    : "No other users found."}
                 </div>
               ) : (
                 filteredUsers.map((u) => {
@@ -179,15 +262,19 @@ export default function CreateGroupModal({ isOpen, onClose, currentUserId, onGro
                     <div
                       key={u}
                       onClick={() => toggleUser(u)}
-                      className={`flex items-center justify-between px-3.5 py-2.5 cursor-pointer transition-colors ${
+                      className={`flex items-center justify-between px-3.5 py-2 cursor-pointer transition-colors ${
                         isSelected ? "bg-[#f0fdf4]" : "hover:bg-gray-50"
                       }`}
                     >
                       <div className="flex items-center gap-2.5">
-                        <div className="w-7 h-7 rounded-full bg-gray-200 text-gray-700 flex items-center justify-center font-bold text-xs uppercase">
+                        <div
+                          className={`w-7 h-7 rounded-full flex items-center justify-center font-bold text-xs uppercase select-none ${
+                            isSelected ? "bg-[#008069] text-white" : "bg-gray-200 text-gray-700"
+                          }`}
+                        >
                           {u.slice(0, 2)}
                         </div>
-                        <span className="text-xs font-medium text-[#111b21]">{u}</span>
+                        <span className="text-xs font-semibold text-[#111b21]">{u}</span>
                       </div>
                       <div
                         className={`w-4 h-4 rounded border flex items-center justify-center transition-colors ${
@@ -204,7 +291,7 @@ export default function CreateGroupModal({ isOpen, onClose, currentUserId, onGro
           </div>
         </div>
 
-        {/* Footer actions */}
+        {/* Footer Actions */}
         <div className="p-4 bg-gray-50 border-t border-gray-100 flex items-center justify-end gap-2.5">
           <button
             type="button"
