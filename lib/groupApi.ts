@@ -261,6 +261,7 @@ export async function* streamBuddyGroupMessage(
   const reader = res.body.getReader();
   const decoder = new TextDecoder();
   let buffer = "";
+  let accumulatedText = "";
 
   while (true) {
     const { done, value } = await reader.read();
@@ -289,8 +290,16 @@ export async function* streamBuddyGroupMessage(
           ? content.parts?.find((p: { text?: string }) => p.text)?.text
           : undefined;
 
-        if (textPart || artifacts) {
+        if (textPart) {
+          const trimmed = textPart.trim();
+          // Deduplicate if ADK emits the same full text chunk in multiple turns
+          if (trimmed.length > 20 && accumulatedText.includes(trimmed)) {
+            continue;
+          }
+          accumulatedText += textPart;
           yield { text: textPart, artifacts };
+        } else if (artifacts) {
+          yield { artifacts };
         }
       } catch {}
     }

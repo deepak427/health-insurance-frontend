@@ -61,6 +61,35 @@ function getMemberColor(name: string) {
   return AVATAR_COLORS[Math.abs(hash) % AVATAR_COLORS.length];
 }
 
+function deduplicateRepeatedText(text: string): string {
+  if (!text) return "";
+  const trimmed = text.trim();
+  // Check if string consists of duplicate identical halves
+  const halfLen = Math.floor(trimmed.length / 2);
+  if (halfLen > 12) {
+    const firstHalf = trimmed.slice(0, halfLen).trim();
+    const secondHalf = trimmed.slice(halfLen).trim();
+    if (firstHalf === secondHalf) {
+      return firstHalf;
+    }
+  }
+  // Check if two identical paragraphs are concatenated
+  const parts = trimmed.split(/\n\n+/);
+  if (parts.length >= 2) {
+    const uniqueParts: string[] = [];
+    for (const p of parts) {
+      const pt = p.trim();
+      if (!uniqueParts.some((u) => u === pt || (u.length > 20 && u.includes(pt)))) {
+        uniqueParts.push(pt);
+      }
+    }
+    if (uniqueParts.length < parts.length) {
+      return uniqueParts.join("\n\n");
+    }
+  }
+  return text;
+}
+
 export default function GroupChatWindow({ groupId, onToggleDetails, detailsOpen }: Props) {
   const { userId, username, setActiveGroupId, refreshGroups, refreshSessionList, openDocumentPreview } =
     useChatContext();
@@ -300,17 +329,18 @@ export default function GroupChatWindow({ groupId, onToggleDetails, detailsOpen 
         }
         setLiveBuddyResponse({
           role: "agent",
-          text: accumulatedText,
+          text: deduplicateRepeatedText(accumulatedText),
           artifacts: [...accumulatedArtifacts],
         });
       }
 
       // Finalize: save Dolphin Buddy response into group messages table
-      if (accumulatedText || accumulatedArtifacts.length > 0) {
+      const cleanedFinal = deduplicateRepeatedText(accumulatedText);
+      if (cleanedFinal || accumulatedArtifacts.length > 0) {
         const botMsg = await postGroupMessage(
           groupId,
           BUDDY_USER_ID,
-          accumulatedText,
+          cleanedFinal,
           BUDDY_DISPLAY_NAME,
           "bot_response",
           accumulatedArtifacts
@@ -678,7 +708,7 @@ export default function GroupChatWindow({ groupId, onToggleDetails, detailsOpen 
 
           const msgObj: Msg = {
             role: isBuddy ? "agent" : "user",
-            text: m.content,
+            text: isBuddy ? deduplicateRepeatedText(m.content) : m.content,
             artifacts: m.artifacts,
           };
 
