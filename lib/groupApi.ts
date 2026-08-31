@@ -31,6 +31,8 @@ export interface GroupItem {
   updated_at: string;
   members: GroupMember[];
   has_buddy: boolean;
+  is_muted?: number | boolean;
+  handover_mode?: "internal" | "external" | string;
   last_message_preview?: string;
   last_message_sender?: string;
   last_message_time?: string;
@@ -304,4 +306,91 @@ export async function* streamBuddyGroupMessage(
       } catch {}
     }
   }
+}
+
+// ── Handover API ─────────────────────────────────────────────────────────────
+export interface HandoverRecord {
+  id: string;
+  group_id: string;
+  group_name: string;
+  requester_id: string;
+  requester_name: string;
+  assigned_to: string;
+  mode: "internal" | "external";
+  requirement: string;
+  status: "pending" | "assigned" | "approved" | "rejected";
+  dm_session_id?: string;
+  resolution_data?: Record<string, any>;
+  created_at: string;
+  updated_at: string;
+}
+
+export async function setGroupMute(
+  groupId: string,
+  isMuted: boolean
+): Promise<boolean> {
+  const res = await fetch(`${BASE_URL}/groups/${groupId}/mute`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ is_muted: isMuted }),
+  });
+  return res.ok;
+}
+
+export async function setGroupHandoverMode(
+  groupId: string,
+  mode: "internal" | "external"
+): Promise<boolean> {
+  const res = await fetch(`${BASE_URL}/groups/${groupId}/handover-mode`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ handover_mode: mode }),
+  });
+  return res.ok;
+}
+
+export async function createHandover(params: {
+  group_id: string;
+  group_name: string;
+  requester_id: string;
+  requester_name: string;
+  assigned_to: string;
+  mode: "internal" | "external";
+  requirement: string;
+}): Promise<HandoverRecord> {
+  const res = await fetch(`${BASE_URL}/handovers`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(params),
+  });
+  if (!res.ok) throw new Error("Failed to create handover");
+  return res.json();
+}
+
+export async function listPendingHandovers(userId: string): Promise<HandoverRecord[]> {
+  try {
+    const res = await fetch(`${BASE_URL}/handovers/pending/${encodeURIComponent(userId)}`);
+    if (!res.ok) return [];
+    const data = await res.json();
+    return data.handovers || [];
+  } catch {
+    return [];
+  }
+}
+
+export async function approveHandover(
+  handoverId: string,
+  approvedBy: string,
+  resolutionData: Record<string, any>
+): Promise<HandoverRecord> {
+  const res = await fetch(`${BASE_URL}/handovers/${handoverId}/approve`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      approved_by: approvedBy,
+      resolution_data: resolutionData,
+    }),
+  });
+  if (!res.ok) throw new Error("Failed to approve handover");
+  return res.json();
 }

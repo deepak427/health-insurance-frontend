@@ -19,6 +19,8 @@ import {
   Check,
   Search,
   Zap,
+  Volume2,
+  VolumeX,
 } from "lucide-react";
 import { useChatContext } from "@/context/ChatContext";
 import {
@@ -32,12 +34,18 @@ import {
   listUsers,
   streamBuddyGroupMessage,
   getGroupSessionIdentity,
+  createHandover,
+  setGroupHandoverMode,
+  setGroupMute,
+  listPendingHandovers,
   GroupDetail,
   GroupMessage,
+  HandoverRecord,
   BUDDY_USER_ID,
   BUDDY_DISPLAY_NAME,
 } from "@/lib/groupApi";
 import Message, { Msg } from "./Message";
+import HandoverApprovalModal from "./HandoverApprovalModal";
 
 interface Props {
   groupId: string;
@@ -90,6 +98,36 @@ function deduplicateRepeatedText(text: string): string {
   return text;
 }
 
+function isCustomPolicyRequest(query: string): boolean {
+  const lower = query.toLowerCase();
+  const keywords = [
+    "custom policy",
+    "custom quote",
+    "customized quote",
+    "custom plan",
+    "custom pricing",
+    "special discount",
+    "manager approval",
+    "manual quote",
+    "custom riders",
+    "extreme sports",
+    "adventure sports",
+    "talk to human",
+    "human agent",
+    "agent assistance",
+    "need customization",
+    "customize quote",
+    "special rate",
+    "group discount approval",
+    "pre-existing condition approval",
+    "tailored policy",
+    "handover to human",
+    "handover",
+    "need human",
+  ];
+  return keywords.some((k) => lower.includes(k));
+}
+
 export default function GroupChatWindow({ groupId, onToggleDetails, detailsOpen }: Props) {
   const { userId, username, setActiveGroupId, refreshGroups, refreshSessionList, openDocumentPreview } =
     useChatContext();
@@ -107,6 +145,8 @@ export default function GroupChatWindow({ groupId, onToggleDetails, detailsOpen 
   const [addingMember, setAddingMember] = useState(false);
   const [mentionQuery, setMentionQuery] = useState<string | null>(null);
   const [mentionIndex, setMentionIndex] = useState<number>(-1);
+  const [pendingHandovers, setPendingHandovers] = useState<HandoverRecord[]>([]);
+  const [selectedHandoverToApprove, setSelectedHandoverToApprove] = useState<HandoverRecord | null>(null);
 
   const bottomRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -124,7 +164,10 @@ export default function GroupChatWindow({ groupId, onToggleDetails, detailsOpen 
       if (g) setGroup(g);
       const msgs = await getGroupMessages(groupId, 50);
       setMessages(msgs);
-      if (userId) markGroupRead(groupId, userId);
+      if (userId) {
+        markGroupRead(groupId, userId);
+        listPendingHandovers(userId).then((hnds) => setPendingHandovers(hnds));
+      }
     } catch (err) {
       console.error("Error loading group:", err);
     }
@@ -132,7 +175,7 @@ export default function GroupChatWindow({ groupId, onToggleDetails, detailsOpen 
 
   useEffect(() => {
     fetchGroupData();
-    // Poll every 3 seconds for group messages
+    // Poll every 3 seconds for group messages & pending handovers
     const interval = setInterval(() => {
       if (!isStreamingRef.current) {
         getGroupMessages(groupId, 50).then((msgs) => {
@@ -143,11 +186,14 @@ export default function GroupChatWindow({ groupId, onToggleDetails, detailsOpen 
             return prev;
           });
         });
+        if (userId) {
+          listPendingHandovers(userId).then((hnds) => setPendingHandovers(hnds));
+        }
       }
     }, 3000);
 
     return () => clearInterval(interval);
-  }, [groupId, fetchGroupData]);
+  }, [groupId, userId, fetchGroupData]);
 
   // Load all users list when opening Add Member picker
   useEffect(() => {
@@ -173,6 +219,33 @@ export default function GroupChatWindow({ groupId, onToggleDetails, detailsOpen 
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
   }, []);
+
+  const isMuted = Boolean(group?.is_muted && Number(group.is_muted) === 1);
+
+  // ── Mute AI Toggle ──────────────────────────────────────────────────────────
+  async function handleToggleMute() {
+    const nextMute = !isMuted;
+    try {
+      await setGroupMute(groupId, nextMute);
+      setGroup((prev) => (prev ? { ...prev, is_muted: nextMute ? 1 : 0 } : prev));
+      refreshGroups();
+    } catch (err) {
+      console.error("Failed to toggle mute:", err);
+    }
+  }
+
+  // ── Handover Mode Switcher ───────────────────────────────────────────────────
+  async function handleToggleHandoverMode() {
+    const currentMode = group?.handover_mode || "internal";
+    const nextMode: "internal" | "external" = currentMode === "internal" ? "external" : "internal";
+    try {
+      await setGroupHandoverMode(groupId, nextMode);
+      setGroup((prev) => (prev ? { ...prev, handover_mode: nextMode } : prev));
+      refreshGroups();
+    } catch (err) {
+      console.error("Failed to toggle handover mode:", err);
+    }
+  }
 
   // ── Member Management Handlers ──────────────────────────────────────────────
   async function handleAddMember(targetUserId: string, isBot: number = 0) {
@@ -241,7 +314,7 @@ export default function GroupChatWindow({ groupId, onToggleDetails, detailsOpen 
     textareaRef.current?.focus();
   }
 
-  // ── Smart Trigger & Send Message ─────────────────────────────────────────────
+  // ── Smart Trigger & Handover Routing ─────────────────────────────────────────
   async function handleSend(textToSend?: string) {
     const text = (textToSend || inputText).trim();
     if (!text || isStreamingRef.current) return;
@@ -291,7 +364,81 @@ export default function GroupChatWindow({ groupId, onToggleDetails, detailsOpen 
       console.error("Failed to post group message:", err);
     }
 
-    // 2. Determine if Dolphin Buddy should respond:
+    // If Dolphin Buddy is muted in this group, NEVER reply or trigger handover
+    if (isMuted) {
+      return;
+    }
+
+    // 2. Check if this is a custom policy / human handover request
+    if (group?.has_buddy && isCustomPolicyRequest(text)) {
+      // Find the first other human user in this group (excluding the requester and bot)
+      const otherHumans = members.filter(
+        (m) =>
+          m.is_bot === 0 &&
+          m.user_id.toLowerCase() !== userId.toLowerCase() &&
+          m.user_id !== BUDDY_USER_ID
+      );
+      const assigneeObj = otherHumans[0];
+      const assigneeId = assigneeObj ? assigneeObj.user_id : "Agent_Support";
+      const assigneeName = assigneeObj ? (assigneeObj.display_name || assigneeObj.user_id) : "Agent_Support";
+
+      const currentMode = (group?.handover_mode || "internal") as "internal" | "external";
+
+      try {
+        await createHandover({
+          group_id: groupId,
+          group_name: group?.name || "Group",
+          requester_id: userId,
+          requester_name: senderName,
+          assigned_to: assigneeId,
+          mode: currentMode,
+          requirement: text,
+        });
+
+        if (currentMode === "external") {
+          const announcement =
+            `⏳ **External Handover Initiated**\n\n` +
+            `I have initiated a private consultation DM with **@${assigneeName}** to structure custom terms and approved discounts for **@${senderName}**.\n\n` +
+            `Once @${assigneeName} approves the quote in their consultation thread, I will automatically publish the finalized custom policy card right here in this group!`;
+
+          const botMsg = await postGroupMessage(
+            groupId,
+            BUDDY_USER_ID,
+            announcement,
+            BUDDY_DISPLAY_NAME,
+            "bot_response",
+            undefined,
+            [assigneeId, userId]
+          );
+          setMessages((prev) => [...prev, botMsg]);
+          return;
+        } else {
+          // Internal Handover (Assign directly inside the group chat)
+          const announcement =
+            `🤝 **Human Handover Assigned**\n\n` +
+            `Custom insurance policy structuring requested by **@${senderName}**.\n\n` +
+            `Handing over this thread to **@${assigneeName}** to review requirements and advise on custom structuring!\n\n` +
+            `📋 **Requirement Summary:** "${text}"\n\n` +
+            `@${assigneeName} Please take over and advise @${senderName} on custom terms.`;
+
+          const botMsg = await postGroupMessage(
+            groupId,
+            BUDDY_USER_ID,
+            announcement,
+            BUDDY_DISPLAY_NAME,
+            "bot_response",
+            undefined,
+            [assigneeId, userId]
+          );
+          setMessages((prev) => [...prev, botMsg]);
+          return;
+        }
+      } catch (err) {
+        console.error("Handover creation error:", err);
+      }
+    }
+
+    // 3. Normal smart trigger for Dolphin Buddy
     const shouldBuddyRespond =
       group?.has_buddy && (hasBuddyMention || !hasHumanMention);
 
@@ -423,7 +570,48 @@ export default function GroupChatWindow({ groupId, onToggleDetails, detailsOpen 
         </div>
 
         {/* Action icons */}
-        <div className="flex items-center gap-1 relative" ref={menuRef}>
+        <div className="flex items-center gap-1.5 relative" ref={menuRef}>
+          {/* Mute Dolphin Buddy Button */}
+          <button
+            onClick={handleToggleMute}
+            className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold border transition-all cursor-pointer shadow-2xs ${
+              isMuted
+                ? "bg-rose-50 border-rose-200 text-rose-700 hover:bg-rose-100"
+                : "bg-white/80 border-gray-200 text-[#54656f] hover:bg-gray-100 hover:text-[#111b21]"
+            }`}
+            title={isMuted ? "AI is Muted: Click to Unmute" : "Mute Dolphin Buddy: AI will never reply"}
+          >
+            {isMuted ? (
+              <>
+                <VolumeX size={13} className="text-rose-600" />
+                <span>AI Muted</span>
+              </>
+            ) : (
+              <>
+                <Volume2 size={13} className="text-gray-500" />
+                <span>Mute AI</span>
+              </>
+            )}
+          </button>
+
+          {/* Handover Mode Switcher Pill */}
+          <button
+            onClick={handleToggleHandoverMode}
+            className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold border transition-all cursor-pointer shadow-2xs ${
+              group?.handover_mode === "external"
+                ? "bg-[#eef2ff] border-[#c7d2fe] text-[#4338ca] hover:bg-[#e0e7ff]"
+                : "bg-[#ecfdf5] border-[#a7f3d0] text-[#065f46] hover:bg-[#d1fae5]"
+            }`}
+            title="Click to toggle between Internal and External Handover mode"
+          >
+            <span
+              className={`w-2 h-2 rounded-full ${
+                group?.handover_mode === "external" ? "bg-[#6366f1] animate-pulse" : "bg-[#00a86b] animate-pulse"
+              }`}
+            />
+            <span>{group?.handover_mode === "external" ? "External Handover" : "Internal Handover"}</span>
+          </button>
+
           <button
             onClick={() => setShowAddMember(true)}
             className="p-2 text-[#008069] hover:bg-[#008069]/10 rounded-full transition-colors cursor-pointer"
@@ -457,7 +645,38 @@ export default function GroupChatWindow({ groupId, onToggleDetails, detailsOpen 
 
           {/* Dropdown Menu */}
           {menuOpen && (
-            <div className="absolute right-0 top-11 w-52 bg-white rounded-xl shadow-lg border border-gray-100 py-1.5 z-50 animate-in fade-in zoom-in-95 duration-100">
+            <div className="absolute right-0 top-11 w-56 bg-white rounded-xl shadow-lg border border-gray-100 py-1.5 z-50 animate-in fade-in zoom-in-95 duration-100">
+              <button
+                onClick={() => {
+                  setMenuOpen(false);
+                  handleToggleMute();
+                }}
+                className={`w-full text-left px-4 py-2 text-xs flex items-center justify-between cursor-pointer font-medium ${
+                  isMuted ? "text-rose-600 hover:bg-rose-50" : "text-[#111b21] hover:bg-[#f5f6f6]"
+                }`}
+              >
+                <span className="flex items-center gap-2">
+                  {isMuted ? <VolumeX size={14} className="text-rose-600" /> : <Volume2 size={14} className="text-gray-500" />}
+                  {isMuted ? "Unmute Dolphin Buddy" : "Mute Dolphin Buddy"}
+                </span>
+                <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-gray-100 uppercase">
+                  {isMuted ? "Muted" : "Active"}
+                </span>
+              </button>
+              <button
+                onClick={() => {
+                  setMenuOpen(false);
+                  handleToggleHandoverMode();
+                }}
+                className="w-full text-left px-4 py-2 text-xs text-[#111b21] hover:bg-[#f5f6f6] flex items-center justify-between cursor-pointer font-medium"
+              >
+                <span className="flex items-center gap-2">
+                  <Sparkles size={14} className="text-[#ff5722]" /> Handover Mode
+                </span>
+                <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-gray-100 uppercase">
+                  {group?.handover_mode || "internal"}
+                </span>
+              </button>
               <button
                 onClick={() => {
                   setMenuOpen(false);
@@ -511,6 +730,24 @@ export default function GroupChatWindow({ groupId, onToggleDetails, detailsOpen 
           )}
         </div>
       </div>
+
+      {/* ── Pending Handover Consultation Banner (For Assigned Agents) ──────── */}
+      {pendingHandovers.length > 0 && (
+        <div className="bg-[#fffbeb] border-b border-[#fef3c7] px-4 py-2 flex items-center justify-between z-10 text-xs shadow-2xs">
+          <div className="flex items-center gap-2 text-[#92400e] font-medium min-w-0">
+            <span className="w-2 h-2 rounded-full bg-[#f59e0b] animate-ping shrink-0" />
+            <span className="truncate">
+              <strong>{pendingHandovers.length} Pending Handover Request{pendingHandovers.length > 1 ? "s" : ""}</strong>: @{pendingHandovers[0].requester_name} requested custom policy in &quot;{pendingHandovers[0].group_name}&quot;
+            </span>
+          </div>
+          <button
+            onClick={() => setSelectedHandoverToApprove(pendingHandovers[0])}
+            className="px-3 py-1 bg-[#d97706] hover:bg-[#b45309] text-white font-bold text-[11px] rounded-lg shadow-xs transition-colors cursor-pointer shrink-0 ml-2"
+          >
+            Review & Structure Quote
+          </button>
+        </div>
+      )}
 
       {/* ── Group Info & Member Management Drawer ─────────────────────────── */}
       {infoOpen && (
@@ -813,6 +1050,18 @@ export default function GroupChatWindow({ groupId, onToggleDetails, detailsOpen 
           {isTypingBuddy ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />}
         </button>
       </div>
+
+      {/* ── Handover Approval & Structuring Modal ──────────────────────────── */}
+      <HandoverApprovalModal
+        handover={selectedHandoverToApprove}
+        isOpen={!!selectedHandoverToApprove}
+        onClose={() => setSelectedHandoverToApprove(null)}
+        onApproved={(_updated) => {
+          setSelectedHandoverToApprove(null);
+          fetchGroupData();
+        }}
+        currentUserId={userId}
+      />
     </div>
   );
 }
