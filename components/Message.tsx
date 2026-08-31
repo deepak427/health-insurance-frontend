@@ -20,6 +20,7 @@ interface Props {
   onSend?: (text: string) => void;
   senderLabel?: string;
   senderColor?: string;
+  isSelf?: boolean;
 }
 
 interface ParsedContent {
@@ -66,6 +67,24 @@ function parseContent(raw: string): ParsedContent {
       } catch {}
       return "";
     })
+    .replace(/<!--CONFIRM_CARD:([\s\S]*?)-->/g, (_, json) => {
+      try {
+        const parsed = JSON.parse(json.trim());
+        const arr: PolicyCardData[] = (Array.isArray(parsed) ? parsed : [parsed]).map((item) => ({
+          ...item,
+          type: "confirm" as const,
+        }));
+        cards.push(...arr);
+      } catch {}
+      return "";
+    })
+    .replace(/<!--BOOKINGS_TABLE:([\s\S]*?)-->/g, (_, json) => {
+      try {
+        const parsed = JSON.parse(json.trim());
+        bookingTable = Array.isArray(parsed) ? parsed : [parsed];
+      } catch {}
+      return "";
+    })
     .replace(/<!--BOOKING_CARDS:([\s\S]*?)-->/g, (_, json) => {
       try {
         const parsed = JSON.parse(json.trim());
@@ -86,29 +105,26 @@ function parseContent(raw: string): ParsedContent {
   return { displayText, cards, bookingCards, bookingTable };
 }
 
-export default function Message({ msg, userId, sessionId, onSend, senderLabel, senderColor }: Props) {
+export default function Message({ msg, userId, sessionId, onSend, senderLabel, senderColor, isSelf }: Props) {
   const { openDocumentPreview } = useChatContext();
-  const isUser = msg.role === "user";
-  const isTyping = !isUser && !msg.text && (!msg.artifacts || msg.artifacts.length === 0);
+  const isCurrentUser = typeof isSelf === "boolean" ? isSelf : msg.role === "user";
+  const isTyping = msg.role === "agent" && !msg.text && (!msg.artifacts || msg.artifacts.length === 0);
 
   // For user messages: strip the 📎 attachment line and extract the filename
-  const userAttachmentName = isUser
+  const userAttachmentName = isCurrentUser
     ? (msg.text.match(/\n?📎 (.+)$/) ?? [])[1] ?? msg.userAttachment?.name ?? null
     : null;
-  const userDisplayText = isUser && userAttachmentName
+  const userDisplayText = isCurrentUser && userAttachmentName
     ? msg.text.replace(/\n?📎 .+$/, "").trim()
     : msg.text;
 
-  const { displayText, cards, bookingCards, bookingTable } = isUser
+  const { displayText, cards, bookingCards, bookingTable } = isCurrentUser
     ? { displayText: userDisplayText, cards: [], bookingCards: [], bookingTable: null }
     : parseContent(msg.text);
 
   const hasExtraContent = cards.length > 0 || bookingCards.length > 0 || bookingTable !== null;
 
   // Build openable URL for user-uploaded attachment
-  // Images: use blob URL from inline data (avoids about:blank#blocked with data: URLs)
-  // PDFs: use backend artifact endpoint (agent saves them)
-  // History reconstructed messages: no data available, skip the chip
   const attachmentData = msg.userAttachment?.data;
   let attachmentMime = msg.userAttachment?.mimeType ?? "";
   if (!attachmentMime || attachmentMime === "application/octet-stream") {
@@ -120,43 +136,55 @@ export default function Message({ msg, userId, sessionId, onSend, senderLabel, s
     }
   }
   const attachmentIsImage = attachmentMime.startsWith("image/");
-
-  // Always show attachment chip when userAttachmentName exists
   const showAttachmentChip = !!userAttachmentName;
 
+  const isAgent = msg.role === "agent" || senderLabel === "Dolphin Buddy";
+  const initials = (senderLabel || "U")
+    .split(" ")
+    .slice(0, 2)
+    .map((w) => w[0])
+    .join("")
+    .toUpperCase();
+
   return (
-    <div className={`flex items-end gap-2 my-1 w-full ${isUser ? "justify-end" : "justify-start"}`}>
-      {/* Left Avatar for Incoming message (like WhatsApp RH circle) */}
-      {!isUser && (
-        <div className="w-8 h-8 rounded-full bg-[#8ecae6] text-[#023e8a] flex items-center justify-center font-bold text-xs shrink-0 select-none shadow-2xs mb-0.5">
-          DO
+    <div className={`flex items-end gap-2 my-1 w-full ${isCurrentUser ? "justify-end" : "justify-start"}`}>
+      {/* Left Avatar for other members / Dolphin Buddy */}
+      {!isCurrentUser && (
+        <div
+          className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs shrink-0 select-none shadow-2xs mb-0.5 ${
+            isAgent ? "bg-[#008069] text-white" : "bg-[#e9edef] text-[#111b21]"
+          }`}
+        >
+          {isAgent ? "DB" : initials}
         </div>
       )}
 
       <div
-        className={`flex flex-col ${isUser ? "items-end" : "items-start"} max-w-[92%] sm:max-w-[80%] md:max-w-[70%] lg:max-w-[65%] ${
+        className={`flex flex-col ${isCurrentUser ? "items-end" : "items-start"} max-w-[92%] sm:max-w-[80%] md:max-w-[70%] lg:max-w-[65%] ${
           hasExtraContent ? "!max-w-[98%] sm:!max-w-[92%] lg:!max-w-[85%]" : ""
         }`}
       >
         {/* WhatsApp Message Bubble */}
         <div
           className={`relative px-3.5 pt-2 pb-1.5 text-[14.5px] leading-relaxed shadow-[0_1px_0.5px_rgba(11,20,26,0.13)] ${
-            isUser
+            isCurrentUser
               ? "bg-[#d9fdd3] text-[#111b21] rounded-lg rounded-tr-none ml-4"
               : "bg-white text-[#111b21] rounded-lg rounded-tl-none border border-[#e9edef]/40"
           }`}
           style={{ wordBreak: "break-word" }}
         >
-          {/* Author Name / Sender Label */}
-          {!isUser ? (
+          {/* Author Name / Sender Label for incoming messages */}
+          {!isCurrentUser && senderLabel && (
             <div className="flex items-center gap-1.5 mb-1 select-none">
-              <span className="text-[13px] font-bold text-[#027eb5]">{senderLabel || "Dolphin Buddy"}</span>
+              <span
+                className={`text-[13px] font-bold ${
+                  isAgent ? "text-[#027eb5]" : senderColor || "text-[#008069]"
+                }`}
+              >
+                {senderLabel}
+              </span>
             </div>
-          ) : senderLabel ? (
-            <div className="flex items-center gap-1.5 mb-1 select-none">
-              <span className={`text-[13px] font-bold ${senderColor || "text-[#008069]"}`}>{senderLabel}</span>
-            </div>
-          ) : null}
+          )}
 
           {isTyping ? (
             <div className="flex items-center gap-1.5 py-1.5 px-1">
@@ -215,7 +243,7 @@ export default function Message({ msg, userId, sessionId, onSend, senderLabel, s
           )}
 
           {/* Artifacts (Agent-Generated PDF Guides/Certificates) */}
-          {!isUser && msg.artifacts && msg.artifacts.filter(isAgentGeneratedArtifact).length > 0 && (
+          {!isCurrentUser && msg.artifacts && msg.artifacts.filter(isAgentGeneratedArtifact).length > 0 && (
             <div className="mt-2.5 pt-2 border-t border-black/5 flex flex-col gap-2">
               {msg.artifacts.filter(isAgentGeneratedArtifact).map((filename) => {
                 const docUrl = buildDownloadUrl(userId, sessionId, filename);
@@ -264,7 +292,7 @@ export default function Message({ msg, userId, sessionId, onSend, senderLabel, s
           )}
 
           {/* User-uploaded attachment chip */}
-          {isUser && showAttachmentChip && (
+          {isCurrentUser && showAttachmentChip && (
             <div className="mt-2 pt-1.5 border-t border-black/5">
               {attachmentIsImage ? (
                 // Render image preview
@@ -380,7 +408,7 @@ export default function Message({ msg, userId, sessionId, onSend, senderLabel, s
             <span className="text-[11px] text-[#667781]">
               {new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
             </span>
-            {isUser && (
+            {isCurrentUser && (
               <svg viewBox="0 0 18 11" width="16" height="11" className="text-[#53bdeb]">
                 <path fill="currentColor" d="M17.394 .57 6.23 11.733l-5.624-5.625 1.414-1.414 4.21 4.21L15.98-.844z"/>
                 <path fill="currentColor" d="M11.394 .57.23 11.733l1.414 1.414L12.808 1.984z" opacity=".4"/>

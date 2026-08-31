@@ -18,6 +18,7 @@ import {
   Plus,
   Check,
   Search,
+  Zap,
 } from "lucide-react";
 import { useChatContext } from "@/context/ChatContext";
 import {
@@ -40,6 +41,8 @@ import Message, { Msg } from "./Message";
 
 interface Props {
   groupId: string;
+  onToggleDetails?: () => void;
+  detailsOpen?: boolean;
 }
 
 const AVATAR_COLORS = [
@@ -58,7 +61,7 @@ function getMemberColor(name: string) {
   return AVATAR_COLORS[Math.abs(hash) % AVATAR_COLORS.length];
 }
 
-export default function GroupChatWindow({ groupId }: Props) {
+export default function GroupChatWindow({ groupId, onToggleDetails, detailsOpen }: Props) {
   const { userId, username, setActiveGroupId, refreshGroups, refreshSessionList, openDocumentPreview } =
     useChatContext();
 
@@ -399,9 +402,18 @@ export default function GroupChatWindow({ groupId }: Props) {
             <UserPlus size={18} />
           </button>
           <button
+            onClick={() => onToggleDetails?.()}
+            className={`p-2 rounded-full transition-colors cursor-pointer ${
+              detailsOpen ? "bg-[#6366f1]/15 text-[#4f46e5]" : "text-[#6366f1] hover:bg-[#6366f1]/10"
+            }`}
+            title="Token Usage & Cost"
+          >
+            <Zap size={18} />
+          </button>
+          <button
             onClick={() => setInfoOpen(!infoOpen)}
             className="p-2 text-[#54656f] hover:bg-black/5 rounded-full transition-colors cursor-pointer"
-            title="Group Info"
+            title="Group Participants"
           >
             <Info size={18} />
           </button>
@@ -415,7 +427,16 @@ export default function GroupChatWindow({ groupId }: Props) {
 
           {/* Dropdown Menu */}
           {menuOpen && (
-            <div className="absolute right-0 top-11 w-48 bg-white rounded-xl shadow-lg border border-gray-100 py-1.5 z-50 animate-in fade-in zoom-in-95 duration-100">
+            <div className="absolute right-0 top-11 w-52 bg-white rounded-xl shadow-lg border border-gray-100 py-1.5 z-50 animate-in fade-in zoom-in-95 duration-100">
+              <button
+                onClick={() => {
+                  setMenuOpen(false);
+                  onToggleDetails?.();
+                }}
+                className="w-full text-left px-4 py-2 text-xs text-[#4f46e5] hover:bg-[#f0f4ff] flex items-center gap-2.5 cursor-pointer font-semibold"
+              >
+                <Zap size={14} className="text-[#6366f1]" /> Token Usage & Cost
+              </button>
               <button
                 onClick={() => {
                   setMenuOpen(false);
@@ -432,7 +453,7 @@ export default function GroupChatWindow({ groupId }: Props) {
                 }}
                 className="w-full text-left px-4 py-2 text-xs text-[#111b21] hover:bg-[#f5f6f6] flex items-center gap-2.5 cursor-pointer"
               >
-                <Info size={14} className="text-gray-500" /> Group Details
+                <Info size={14} className="text-gray-500" /> Group Participants
               </button>
               <hr className="my-1 border-gray-100" />
               {isCreator ? (
@@ -652,7 +673,7 @@ export default function GroupChatWindow({ groupId }: Props) {
 
         {/* Existing Persisted Messages */}
         {messages.map((m) => {
-          const isMe = m.sender_id === userId;
+          const isMe = m.sender_id.trim().toLowerCase() === userId.trim().toLowerCase();
           const isBuddy = m.sender_id === BUDDY_USER_ID;
 
           const msgObj: Msg = {
@@ -671,6 +692,7 @@ export default function GroupChatWindow({ groupId }: Props) {
               msg={msgObj}
               userId={groupUserId}
               sessionId={groupSessionId}
+              isSelf={isMe}
               senderLabel={!isMe ? senderName : undefined}
               senderColor={!isMe && !isBuddy ? getMemberColor(senderName) : undefined}
               onSend={handleSend}
@@ -684,6 +706,7 @@ export default function GroupChatWindow({ groupId }: Props) {
             msg={liveBuddyResponse}
             userId={groupUserId}
             sessionId={groupSessionId}
+            isSelf={false}
             senderLabel={BUDDY_DISPLAY_NAME}
             onSend={handleSend}
           />

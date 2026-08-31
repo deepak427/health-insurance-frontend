@@ -13,22 +13,27 @@ interface Props {
 }
 
 export default function ConversationDetails({ isOpen, onClose, isOpenMobile, onCloseMobile }: Props) {
-  const { messages, userId, sessionId, handleNewChat, openDocumentPreview } = useChatContext();
+  const { messages, userId, sessionId, activeGroupId, groups, openDocumentPreview, handleNewChat } = useChatContext();
   const [docsOpen, setDocsOpen] = useState(true);
   const [metadataOpen, setMetadataOpen] = useState(true);
   const [tokenOpen, setTokenOpen] = useState(true);
   const [tokenUsage, setTokenUsage] = useState<TokenUsage | null>(null);
   const [tokenLoading, setTokenLoading] = useState(false);
 
-  // Fetch token usage whenever the panel opens or session changes
+  const isGroup = !!activeGroupId;
+  const activeGroup = groups.find((g) => g.id === activeGroupId);
+  const effectiveUserId = isGroup ? `group_${activeGroupId}` : userId;
+  const effectiveSessionId = isGroup ? `gsession_${activeGroupId}` : sessionId;
+
+  // Fetch token usage whenever the panel opens, session changes, or group changes
   useEffect(() => {
-    if ((!isOpen && !isOpenMobile) || !userId || !sessionId) return;
+    if ((!isOpen && !isOpenMobile) || !effectiveUserId || !effectiveSessionId) return;
     setTokenLoading(true);
-    fetchTokenUsage(userId, sessionId).then((data) => {
+    fetchTokenUsage(effectiveUserId, effectiveSessionId).then((data) => {
       setTokenUsage(data);
       setTokenLoading(false);
     });
-  }, [isOpen, isOpenMobile, userId, sessionId]);
+  }, [isOpen, isOpenMobile, effectiveUserId, effectiveSessionId]);
 
   // Agent-generated PDFs only
   const agentDocs = Array.from(
@@ -58,7 +63,9 @@ export default function ConversationDetails({ isOpen, onClose, isOpenMobile, onC
       <div className="flex items-center justify-between px-4 py-3.5 border-b border-[#e9edef] bg-[#f0f2f5]">
         <div className="flex items-center gap-2">
           <Shield size={16} className="text-[#008069]" />
-          <h2 className="font-bold text-[#111b21] text-xs uppercase tracking-wider">Contact & Session Info</h2>
+          <h2 className="font-bold text-[#111b21] text-xs uppercase tracking-wider">
+            {isGroup ? "Group Details & Tokens" : "Contact & Session Info"}
+          </h2>
         </div>
         <button
           onClick={() => { onClose?.(); onCloseMobile?.(); }}
@@ -76,32 +83,68 @@ export default function ConversationDetails({ isOpen, onClose, isOpenMobile, onC
             onClick={() => setMetadataOpen(!metadataOpen)}
             className="flex items-center justify-between px-4 py-3 w-full text-left font-bold text-xs text-[#374151] hover:bg-[#f8fafc] transition-colors"
           >
-            <span>Overview & Context</span>
+            <span>{isGroup ? "Group Overview" : "Overview & Context"}</span>
             {metadataOpen ? <ChevronDown size={14} className="text-[#9ca3af]" /> : <ChevronRight size={14} className="text-[#9ca3af]" />}
           </button>
 
           {metadataOpen && (
             <div className="px-4 pb-3 flex flex-col gap-2.5 text-xs">
-              <div className="flex items-start gap-2.5">
-                <User size={14} className="text-[#6b7280] shrink-0 mt-0.5" />
-                <div>
-                  <p className="font-semibold text-[#1f2937]">Agent Operator</p>
-                  <p className="text-[#6b7280] text-[11px]">Dolphin AI Operations</p>
-                </div>
-              </div>
+              {isGroup ? (
+                <>
+                  <div className="flex items-start gap-2.5">
+                    <User size={14} className="text-[#6b7280] shrink-0 mt-0.5" />
+                    <div>
+                      <p className="font-semibold text-[#1f2937]">Group Name</p>
+                      <p className="text-[#008069] font-bold text-xs">{activeGroup?.name || activeGroupId}</p>
+                    </div>
+                  </div>
 
-              <div className="flex items-start gap-2.5">
-                <Calendar size={14} className="text-[#6b7280] shrink-0 mt-0.5" />
-                <div>
-                  <p className="font-semibold text-[#1f2937]">Active Thread ID</p>
-                  <p className="text-[#6b7280] font-mono text-[10px] truncate max-w-[190px]" title={sessionId}>
-                    {sessionId.slice(0, 18)}...
-                  </p>
-                </div>
-              </div>
+                  <div className="flex items-start gap-2.5">
+                    <Calendar size={14} className="text-[#6b7280] shrink-0 mt-0.5" />
+                    <div>
+                      <p className="font-semibold text-[#1f2937]">Group Members</p>
+                      <p className="text-[#6b7280] text-[11px]">
+                        {activeGroup?.members?.length || 0} members · Admin: {activeGroup?.created_by}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-start gap-2.5">
+                    <Shield size={14} className="text-[#6b7280] shrink-0 mt-0.5" />
+                    <div>
+                      <p className="font-semibold text-[#1f2937]">Dolphin Buddy</p>
+                      <p className="text-[#15803d] font-semibold text-[11px]">
+                        {activeGroup?.has_buddy ? "Active in this group" : "Not added"}
+                      </p>
+                    </div>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="flex items-start gap-2.5">
+                    <User size={14} className="text-[#6b7280] shrink-0 mt-0.5" />
+                    <div>
+                      <p className="font-semibold text-[#1f2937]">Agent Operator</p>
+                      <p className="text-[#6b7280] text-[11px]">Dolphin Buddy</p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-start gap-2.5">
+                    <Calendar size={14} className="text-[#6b7280] shrink-0 mt-0.5" />
+                    <div>
+                      <p className="font-semibold text-[#1f2937]">Active Thread ID</p>
+                      <p className="text-[#6b7280] font-mono text-[10px] truncate max-w-[190px]" title={sessionId}>
+                        {sessionId.slice(0, 18)}...
+                      </p>
+                    </div>
+                  </div>
+                </>
+              )}
 
               <div className="mt-1 p-2.5 rounded-md bg-[#f8fafc] border border-[#e5e7eb] text-[11px] text-[#4b5563] leading-relaxed">
-                All communications and PDF policy guides in this workspace are secure and encrypted.
+                {isGroup
+                  ? "Peer-to-peer human messages consume 0 tokens. Only queries routed to Dolphin Buddy use LLM inference."
+                  : "All communications and PDF policy guides in this workspace are secure and encrypted."}
               </div>
             </div>
           )}

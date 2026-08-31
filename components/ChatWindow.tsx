@@ -286,7 +286,11 @@ export default function ChatWindow() {
 
             {/* Column 3: Chat Stream (Group or 1:1) */}
             {activeGroupId ? (
-              <GroupChatWindow groupId={activeGroupId} />
+              <GroupChatWindow
+                groupId={activeGroupId}
+                onToggleDetails={() => setDetailsOpen((v) => !v)}
+                detailsOpen={detailsOpen}
+              />
             ) : (
               <div className="flex flex-col flex-1 min-w-0 h-full bg-[#efeae2] relative">
                 {/* WhatsApp Web Chat Header Bar */}
