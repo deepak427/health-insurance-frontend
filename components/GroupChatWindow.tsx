@@ -39,6 +39,7 @@ import {
   setGroupMute,
   listPendingHandovers,
   GroupDetail,
+  GroupMember,
   GroupMessage,
   HandoverRecord,
   BUDDY_USER_ID,
@@ -98,8 +99,38 @@ function deduplicateRepeatedText(text: string): string {
   return text;
 }
 
-function isCustomPolicyRequest(query: string): boolean {
+function isCustomPolicyRequest(query: string, otherMembers?: GroupMember[]): boolean {
   const lower = query.toLowerCase();
+
+  // Root stems and regex patterns (covering typos like cutomiz/customis/etc.)
+  const regexPatterns = [
+    /\b(custom|cutom|custm)i[zs]/i, // customization, customisation, cutomization, customize, etc.
+    /\b(custom|cutom|tailor|bespoke)\s+(policy|plan|quote|rate|pricing|terms|riders?)\b/i,
+    /\b(special|extra|manager|agent)\s+(discount|rate|approval|pricing|terms)\b/i,
+    /\b(hand\s*over|escalat|assign|transfer)\b/i,
+    /\b(human\s+agent|talk\s+to\s+human|need\s+human|agent\s+help|real\s+person)\b/i,
+    /\b(pre-?existing|extreme\s+sports?|adventure\s+sports?)\s+(cover|approval|riders?)\b/i,
+  ];
+
+  if (regexPatterns.some((pattern) => pattern.test(lower))) {
+    return true;
+  }
+
+  // Check if user specifically asks a fellow human member to handle/help/customize
+  if (otherMembers && otherMembers.length > 0) {
+    for (const m of otherMembers) {
+      if (m.is_bot) continue;
+      const name = (m.display_name || m.user_id).toLowerCase();
+      const memberActionRegex = new RegExp(
+        `\\b${name}\\b.*\\b(can|will|do|help|handle|check|structure|look)\\b|\\b(ask|let|tag|handover|assign)\\b.*\\b${name}\\b`,
+        "i"
+      );
+      if (memberActionRegex.test(lower)) {
+        return true;
+      }
+    }
+  }
+
   const keywords = [
     "custom policy",
     "custom quote",
@@ -116,6 +147,7 @@ function isCustomPolicyRequest(query: string): boolean {
     "human agent",
     "agent assistance",
     "need customization",
+    "need customizations",
     "customize quote",
     "special rate",
     "group discount approval",
@@ -124,6 +156,12 @@ function isCustomPolicyRequest(query: string): boolean {
     "handover to human",
     "handover",
     "need human",
+    "customization",
+    "customizations",
+    "cutomization",
+    "cutomizations",
+    "customise",
+    "customises",
   ];
   return keywords.some((k) => lower.includes(k));
 }
@@ -398,15 +436,21 @@ export default function GroupChatWindow({ groupId, onToggleDetails, detailsOpen 
     }
 
     // 2. Check if this is a custom policy / human handover request
-    if (currentGroup?.has_buddy && isCustomPolicyRequest(text)) {
-      // Find the first other human user in this group (excluding the requester and bot)
-      const otherHumans = members.filter(
-        (m) =>
-          m.is_bot === 0 &&
-          m.user_id.toLowerCase() !== userId.toLowerCase() &&
-          m.user_id !== BUDDY_USER_ID
+    const otherHumans = members.filter(
+      (m) =>
+        m.is_bot === 0 &&
+        m.user_id.toLowerCase() !== userId.toLowerCase() &&
+        m.user_id !== BUDDY_USER_ID
+    );
+
+    if (currentGroup?.has_buddy && isCustomPolicyRequest(text, otherHumans)) {
+      // Find if user specifically named or tagged any member (e.g. "prakhar can do", "@prakhar")
+      let assigneeObj = otherHumans.find((m) =>
+        new RegExp(`@?${m.user_id}\\b|@?${m.display_name}\\b`, "i").test(text)
       );
-      const assigneeObj = otherHumans[0];
+      if (!assigneeObj) {
+        assigneeObj = otherHumans[0];
+      }
       const assigneeId = assigneeObj ? assigneeObj.user_id : "Agent_Support";
       const assigneeName = assigneeObj ? (assigneeObj.display_name || assigneeObj.user_id) : "Agent_Support";
 
