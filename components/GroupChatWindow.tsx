@@ -13,6 +13,11 @@ import {
   Loader2,
   X,
   Sparkles,
+  UserPlus,
+  UserMinus,
+  Plus,
+  Check,
+  Search,
 } from "lucide-react";
 import { useChatContext } from "@/context/ChatContext";
 import {
@@ -21,7 +26,9 @@ import {
   postGroupMessage,
   markGroupRead,
   deleteGroup,
+  addMember,
   removeMember,
+  listUsers,
   streamBuddyGroupMessage,
   getGroupSessionIdentity,
   GroupDetail,
@@ -62,6 +69,10 @@ export default function GroupChatWindow({ groupId }: Props) {
   const [liveBuddyResponse, setLiveBuddyResponse] = useState<Msg | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
   const [infoOpen, setInfoOpen] = useState(false);
+  const [showAddMember, setShowAddMember] = useState(false);
+  const [addMemberQuery, setAddMemberQuery] = useState("");
+  const [allUsersList, setAllUsersList] = useState<string[]>([]);
+  const [addingMember, setAddingMember] = useState(false);
   const [mentionQuery, setMentionQuery] = useState<string | null>(null);
   const [mentionIndex, setMentionIndex] = useState<number>(-1);
 
@@ -94,7 +105,6 @@ export default function GroupChatWindow({ groupId }: Props) {
       if (!isStreamingRef.current) {
         getGroupMessages(groupId, 50).then((msgs) => {
           setMessages((prev) => {
-            // Only update if message count or last ID differs
             if (msgs.length !== prev.length || (msgs[msgs.length - 1]?.id !== prev[prev.length - 1]?.id)) {
               return msgs;
             }
@@ -106,6 +116,15 @@ export default function GroupChatWindow({ groupId }: Props) {
 
     return () => clearInterval(interval);
   }, [groupId, fetchGroupData]);
+
+  // Load all users list when opening Add Member picker
+  useEffect(() => {
+    if (showAddMember || infoOpen) {
+      listUsers().then((users) => {
+        setAllUsersList(users);
+      });
+    }
+  }, [showAddMember, infoOpen]);
 
   // Auto scroll to bottom
   useEffect(() => {
@@ -122,6 +141,41 @@ export default function GroupChatWindow({ groupId }: Props) {
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
   }, []);
+
+  // ── Member Management Handlers ──────────────────────────────────────────────
+  async function handleAddMember(targetUserId: string, isBot: number = 0) {
+    const trimmed = targetUserId.trim();
+    if (!trimmed || addingMember) return;
+    setAddingMember(true);
+    try {
+      await addMember(groupId, trimmed, userId, isBot);
+      setAddMemberQuery("");
+      setShowAddMember(false);
+      await fetchGroupData();
+      refreshGroups();
+      refreshSessionList();
+    } catch (err) {
+      console.error("Failed to add member:", err);
+    } finally {
+      setAddingMember(false);
+    }
+  }
+
+  async function handleRemoveMember(targetUserId: string) {
+    if (!confirm(`Remove ${targetUserId} from group "${group?.name}"?`)) return;
+    try {
+      await removeMember(groupId, targetUserId);
+      if (targetUserId === userId) {
+        setActiveGroupId(null);
+      } else {
+        await fetchGroupData();
+      }
+      refreshGroups();
+      refreshSessionList();
+    } catch (err) {
+      console.error("Failed to remove member:", err);
+    }
+  }
 
   // ── Mention Detection ────────────────────────────────────────────────────────
   function handleInputChange(e: React.ChangeEvent<HTMLTextAreaElement>) {
@@ -206,8 +260,6 @@ export default function GroupChatWindow({ groupId }: Props) {
     }
 
     // 2. Determine if Dolphin Buddy should respond:
-    // Rule: Dolphin Buddy responds IF group has Dolphin Buddy AND
-    // (a) Dolphin Buddy is explicitly mentioned OR (b) NO human member is mentioned.
     const shouldBuddyRespond =
       group?.has_buddy && (hasBuddyMention || !hasHumanMention);
 
@@ -288,12 +340,28 @@ export default function GroupChatWindow({ groupId }: Props) {
     refreshSessionList();
   }
 
+  // Existing member IDs set
+  const existingMemberIds = new Set(
+    (group?.members || []).map((m) => m.user_id.toLowerCase())
+  );
+
+  // Available users to add (exclude existing members)
+  const candidateUsersToAdd = allUsersList.filter(
+    (u) => !existingMemberIds.has(u.toLowerCase()) && u.toLowerCase() !== "dolphin_buddy"
+  );
+
+  const filteredUsersToAdd = candidateUsersToAdd.filter((u) =>
+    u.toLowerCase().includes(addMemberQuery.trim().toLowerCase())
+  );
+
   // Mention candidates
   const mentionCandidates = (group?.members || []).filter((m) => {
     if (mentionQuery === null) return false;
     const name = m.is_bot ? BUDDY_DISPLAY_NAME : m.display_name || m.user_id;
     return name.toLowerCase().includes(mentionQuery.toLowerCase());
   });
+
+  const isCreator = group?.created_by.toLowerCase() === userId.toLowerCase();
 
   return (
     <div className="flex-1 flex flex-col h-full bg-[#efeae2] relative overflow-hidden">
@@ -324,6 +392,13 @@ export default function GroupChatWindow({ groupId }: Props) {
         {/* Action icons */}
         <div className="flex items-center gap-1 relative" ref={menuRef}>
           <button
+            onClick={() => setShowAddMember(true)}
+            className="p-2 text-[#008069] hover:bg-[#008069]/10 rounded-full transition-colors cursor-pointer"
+            title="Add Member"
+          >
+            <UserPlus size={18} />
+          </button>
+          <button
             onClick={() => setInfoOpen(!infoOpen)}
             className="p-2 text-[#54656f] hover:bg-black/5 rounded-full transition-colors cursor-pointer"
             title="Group Info"
@@ -340,7 +415,16 @@ export default function GroupChatWindow({ groupId }: Props) {
 
           {/* Dropdown Menu */}
           {menuOpen && (
-            <div className="absolute right-0 top-11 w-44 bg-white rounded-xl shadow-lg border border-gray-100 py-1.5 z-50 animate-in fade-in zoom-in-95 duration-100">
+            <div className="absolute right-0 top-11 w-48 bg-white rounded-xl shadow-lg border border-gray-100 py-1.5 z-50 animate-in fade-in zoom-in-95 duration-100">
+              <button
+                onClick={() => {
+                  setMenuOpen(false);
+                  setShowAddMember(true);
+                }}
+                className="w-full text-left px-4 py-2 text-xs text-[#111b21] hover:bg-[#f5f6f6] flex items-center gap-2.5 cursor-pointer font-medium"
+              >
+                <UserPlus size={14} className="text-[#008069]" /> Add Members
+              </button>
               <button
                 onClick={() => {
                   setMenuOpen(false);
@@ -350,13 +434,14 @@ export default function GroupChatWindow({ groupId }: Props) {
               >
                 <Info size={14} className="text-gray-500" /> Group Details
               </button>
-              {group?.created_by === userId ? (
+              <hr className="my-1 border-gray-100" />
+              {isCreator ? (
                 <button
                   onClick={() => {
                     setMenuOpen(false);
                     handleDeleteGroup();
                   }}
-                  className="w-full text-left px-4 py-2 text-xs text-red-600 hover:bg-red-50 flex items-center gap-2.5 cursor-pointer"
+                  className="w-full text-left px-4 py-2 text-xs text-red-600 hover:bg-red-50 flex items-center gap-2.5 cursor-pointer font-medium"
                 >
                   <Trash2 size={14} /> Delete Group
                 </button>
@@ -366,7 +451,7 @@ export default function GroupChatWindow({ groupId }: Props) {
                     setMenuOpen(false);
                     handleLeaveGroup();
                   }}
-                  className="w-full text-left px-4 py-2 text-xs text-red-600 hover:bg-red-50 flex items-center gap-2.5 cursor-pointer"
+                  className="w-full text-left px-4 py-2 text-xs text-red-600 hover:bg-red-50 flex items-center gap-2.5 cursor-pointer font-medium"
                 >
                   <LogOut size={14} /> Leave Group
                 </button>
@@ -376,34 +461,177 @@ export default function GroupChatWindow({ groupId }: Props) {
         </div>
       </div>
 
-      {/* ── Group Info Drawer (Optional Slide-out) ─────────────────────────── */}
+      {/* ── Group Info & Member Management Drawer ─────────────────────────── */}
       {infoOpen && (
-        <div className="bg-white border-b border-[#e9edef] p-4 flex flex-col gap-3 shadow-sm animate-in slide-in-from-top duration-200">
+        <div className="bg-white border-b border-[#e9edef] p-4 flex flex-col gap-3 shadow-md animate-in slide-in-from-top duration-200 max-h-72 overflow-y-auto">
           <div className="flex items-center justify-between">
-            <h2 className="text-xs font-bold text-[#111b21] uppercase tracking-wider">Group Participants</h2>
-            <button onClick={() => setInfoOpen(false)} className="text-gray-400 hover:text-gray-600 cursor-pointer">
-              <X size={16} />
-            </button>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            {group?.members?.map((m) => (
-              <span
-                key={m.user_id}
-                className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium ${
-                  m.is_bot
-                    ? "bg-[#008069] text-white"
-                    : m.user_id === userId
-                    ? "bg-[#dcfce7] text-[#166534]"
-                    : "bg-gray-100 text-gray-700"
-                }`}
+            <div>
+              <h2 className="text-xs font-bold text-[#111b21] uppercase tracking-wider">
+                Group Members ({group?.members?.length || 0})
+              </h2>
+              <p className="text-[11px] text-[#667781]">Created by {group?.created_by}</p>
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setShowAddMember(true)}
+                className="inline-flex items-center gap-1 px-3 py-1 rounded-lg bg-[#008069] hover:bg-[#006e5a] text-white text-xs font-semibold shadow-2xs transition-colors cursor-pointer"
               >
-                {m.is_bot ? <ShieldCheck size={13} /> : <Users size={12} />}
-                {m.is_bot ? BUDDY_DISPLAY_NAME : m.display_name || m.user_id}
-                {m.user_id === group.created_by && (
-                  <span className="text-[9px] opacity-75 font-semibold">(Admin)</span>
+                <UserPlus size={13} /> Add
+              </button>
+              <button onClick={() => setInfoOpen(false)} className="text-gray-400 hover:text-gray-600 cursor-pointer p-1">
+                <X size={16} />
+              </button>
+            </div>
+          </div>
+
+          {/* Members List */}
+          <div className="divide-y divide-gray-100 border border-gray-100 rounded-xl overflow-hidden">
+            {group?.members?.map((m) => {
+              const isSelf = m.user_id.toLowerCase() === userId.toLowerCase();
+              const isGroupAdmin = m.user_id.toLowerCase() === group.created_by.toLowerCase();
+              const canRemove = isCreator || isSelf;
+
+              return (
+                <div
+                  key={m.user_id}
+                  className="flex items-center justify-between px-3 py-2 hover:bg-gray-50 transition-colors"
+                >
+                  <div className="flex items-center gap-2.5">
+                    {m.is_bot ? (
+                      <div className="w-7 h-7 rounded-full bg-[#008069] text-white flex items-center justify-center text-xs shrink-0">
+                        <ShieldCheck size={14} />
+                      </div>
+                    ) : (
+                      <div className="w-7 h-7 rounded-full bg-gray-200 text-gray-700 flex items-center justify-center text-xs font-bold shrink-0 uppercase">
+                        {m.user_id.slice(0, 2)}
+                      </div>
+                    )}
+                    <div>
+                      <p className="text-xs font-semibold text-[#111b21] flex items-center gap-1.5">
+                        {m.is_bot ? BUDDY_DISPLAY_NAME : m.display_name || m.user_id}
+                        {isSelf && <span className="text-[10px] text-[#008069] font-bold">(You)</span>}
+                      </p>
+                      <p className="text-[10px] text-gray-500">
+                        {m.is_bot ? "AI Specialist" : isGroupAdmin ? "Group Admin" : "Member"}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Remove Button */}
+                  {!m.is_bot && canRemove && (
+                    <button
+                      onClick={() => handleRemoveMember(m.user_id)}
+                      className="text-gray-400 hover:text-red-600 p-1.5 rounded-lg hover:bg-red-50 transition-colors cursor-pointer"
+                      title={isSelf ? "Leave group" : `Remove ${m.user_id}`}
+                    >
+                      <Trash2 size={13} />
+                    </button>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Add Dolphin Buddy if not present */}
+          {!group?.has_buddy && (
+            <button
+              onClick={() => handleAddMember(BUDDY_USER_ID, 1)}
+              className="flex items-center justify-center gap-2 p-2 rounded-xl bg-[#f0fdf4] hover:bg-[#dcfce7] text-[#166534] border border-[#bbf7d0] text-xs font-bold transition-colors cursor-pointer"
+            >
+              <ShieldCheck size={15} /> Add Dolphin Buddy to Group
+            </button>
+          )}
+        </div>
+      )}
+
+      {/* ── Add Member Popup Modal ─────────────────────────────────────────── */}
+      {showAddMember && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 backdrop-blur-xs animate-in fade-in duration-150">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden border border-gray-200 flex flex-col">
+            <div className="bg-[#008069] px-5 py-3.5 text-white flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <UserPlus size={18} />
+                <h3 className="font-bold text-sm">Add Members to Group</h3>
+              </div>
+              <button onClick={() => setShowAddMember(false)} className="text-white/80 hover:text-white cursor-pointer">
+                <X size={18} />
+              </button>
+            </div>
+
+            <div className="p-4 space-y-3">
+              {/* Search input */}
+              <div className="relative">
+                <Search size={14} className="absolute left-3 top-2.5 text-gray-400" />
+                <input
+                  type="text"
+                  placeholder="Search user name or type new user..."
+                  value={addMemberQuery}
+                  onChange={(e) => setAddMemberQuery(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && addMemberQuery.trim()) {
+                      e.preventDefault();
+                      handleAddMember(addMemberQuery.trim());
+                    }
+                  }}
+                  className="w-full pl-8 pr-3 py-2 bg-[#f0f2f5] rounded-xl text-xs border-none focus:outline-hidden focus:ring-1 focus:ring-[#008069]/40 text-[#111b21]"
+                  autoFocus
+                />
+              </div>
+
+              {/* Add custom member option */}
+              {addMemberQuery.trim() && !candidateUsersToAdd.some((u) => u.toLowerCase() === addMemberQuery.trim().toLowerCase()) && (
+                <div
+                  onClick={() => handleAddMember(addMemberQuery.trim())}
+                  className="p-2.5 bg-[#f0fdf4] hover:bg-[#dcfce7] border border-[#bbf7d0] rounded-xl flex items-center justify-between cursor-pointer transition-colors"
+                >
+                  <div className="flex items-center gap-2 text-xs font-bold text-[#166534]">
+                    <Plus size={15} />
+                    <span>Add &quot;{addMemberQuery.trim()}&quot;</span>
+                  </div>
+                  <span className="text-[10px] bg-[#008069] text-white px-2 py-0.5 rounded font-semibold">
+                    Press Enter
+                  </span>
+                </div>
+              )}
+
+              {/* Candidates List */}
+              <div className="border border-gray-200 rounded-xl max-h-48 overflow-y-auto divide-y divide-gray-100">
+                {filteredUsersToAdd.length === 0 ? (
+                  <div className="py-6 text-center text-xs text-gray-400">
+                    {addMemberQuery.trim()
+                      ? `Press Enter to add "${addMemberQuery.trim()}".`
+                      : "No new users available to add."}
+                  </div>
+                ) : (
+                  filteredUsersToAdd.map((u) => (
+                    <div
+                      key={u}
+                      onClick={() => handleAddMember(u)}
+                      className="flex items-center justify-between px-3.5 py-2.5 hover:bg-[#f0fdf4] cursor-pointer transition-colors group"
+                    >
+                      <div className="flex items-center gap-2.5">
+                        <div className="w-7 h-7 rounded-full bg-gray-200 text-gray-700 flex items-center justify-center font-bold text-xs uppercase">
+                          {u.slice(0, 2)}
+                        </div>
+                        <span className="text-xs font-semibold text-[#111b21]">{u}</span>
+                      </div>
+                      <span className="text-xs font-bold text-[#008069] opacity-0 group-hover:opacity-100 transition-opacity">
+                        + Add
+                      </span>
+                    </div>
+                  ))
                 )}
-              </span>
-            ))}
+              </div>
+            </div>
+
+            <div className="p-3 bg-gray-50 border-t border-gray-100 flex justify-end">
+              <button
+                onClick={() => setShowAddMember(false)}
+                className="px-4 py-1.5 text-xs font-semibold text-gray-600 hover:bg-gray-200 rounded-lg transition-colors cursor-pointer"
+              >
+                Close
+              </button>
+            </div>
           </div>
         </div>
       )}

@@ -21,9 +21,10 @@ export default function UsernameModal({ onSubmit }: Props) {
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    const err = validate(value.trim());
+    const trimmed = value.trim();
+    const err = validate(trimmed);
     if (err) { setError(err); return; }
-    onSubmit(value.trim().toLowerCase());
+    onSubmit(trimmed);
   }
 
   return (
