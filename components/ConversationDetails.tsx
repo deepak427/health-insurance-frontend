@@ -1,9 +1,9 @@
 "use client";
 
-import { useState } from "react";
-import { X, User, Calendar, FileText, Download, ChevronRight, ChevronDown, Shield, FileCheck } from "lucide-react";
+import { useState, useEffect } from "react";
+import { X, User, Calendar, FileText, Download, ChevronRight, ChevronDown, Shield, FileCheck, Zap, DollarSign } from "lucide-react";
 import { useChatContext } from "@/context/ChatContext";
-import { buildDownloadUrl, isAgentGeneratedArtifact } from "@/lib/api";
+import { buildDownloadUrl, isAgentGeneratedArtifact, fetchTokenUsage, type TokenUsage } from "@/lib/api";
 
 interface Props {
   isOpen?: boolean;
@@ -16,6 +16,19 @@ export default function ConversationDetails({ isOpen, onClose, isOpenMobile, onC
   const { messages, userId, sessionId, handleNewChat, openDocumentPreview } = useChatContext();
   const [docsOpen, setDocsOpen] = useState(true);
   const [metadataOpen, setMetadataOpen] = useState(true);
+  const [tokenOpen, setTokenOpen] = useState(true);
+  const [tokenUsage, setTokenUsage] = useState<TokenUsage | null>(null);
+  const [tokenLoading, setTokenLoading] = useState(false);
+
+  // Fetch token usage whenever the panel opens or session changes
+  useEffect(() => {
+    if ((!isOpen && !isOpenMobile) || !userId || !sessionId) return;
+    setTokenLoading(true);
+    fetchTokenUsage(userId, sessionId).then((data) => {
+      setTokenUsage(data);
+      setTokenLoading(false);
+    });
+  }, [isOpen, isOpenMobile, userId, sessionId]);
 
   // Agent-generated PDFs only
   const agentDocs = Array.from(
@@ -94,8 +107,72 @@ export default function ConversationDetails({ isOpen, onClose, isOpenMobile, onC
           )}
         </div>
 
-        {/* Policy Documents Accordion */}
-        <div className="flex flex-col border-b border-[#e5e7eb]">
+        {/* Token Usage Accordion */}
+        <div className="border-b border-[#e5e7eb]">
+          <button
+            onClick={() => setTokenOpen(!tokenOpen)}
+            className="flex items-center justify-between px-4 py-3 w-full text-left font-bold text-xs text-[#374151] hover:bg-[#f8fafc] transition-colors"
+          >
+            <div className="flex items-center gap-2">
+              <Zap size={14} className="text-[#6366f1]" />
+              <span>Token Usage & Cost</span>
+            </div>
+            {tokenOpen ? <ChevronDown size={14} className="text-[#9ca3af]" /> : <ChevronRight size={14} className="text-[#9ca3af]" />}
+          </button>
+
+          {tokenOpen && (
+            <div className="px-4 pb-4 flex flex-col gap-2.5 text-xs">
+              {tokenLoading ? (
+                <p className="text-[11px] text-[#9ca3af] text-center py-3">Loading...</p>
+              ) : !tokenUsage || tokenUsage.total_tokens === 0 ? (
+                <p className="text-[11px] text-[#9ca3af] text-center py-3">No token data yet. Send a message first.</p>
+              ) : (
+                <>
+                  {/* Token counts */}
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="bg-[#f0f4ff] border border-[#c7d2fe] rounded-xl p-2.5">
+                      <p className="text-[10px] text-[#6366f1] font-semibold uppercase tracking-wide">Input</p>
+                      <p className="text-sm font-black text-[#3730a3]">{tokenUsage.prompt_tokens.toLocaleString()}</p>
+                      <p className="text-[10px] text-[#818cf8]">tokens</p>
+                    </div>
+                    <div className="bg-[#fdf4ff] border border-[#e9d5ff] rounded-xl p-2.5">
+                      <p className="text-[10px] text-[#9333ea] font-semibold uppercase tracking-wide">Output</p>
+                      <p className="text-sm font-black text-[#7e22ce]">{tokenUsage.output_tokens.toLocaleString()}</p>
+                      <p className="text-[10px] text-[#c084fc]">tokens</p>
+                    </div>
+                  </div>
+
+                  {/* Total & cost */}
+                  <div className="bg-[#f8fafc] border border-[#e5e7eb] rounded-xl p-2.5 flex items-center justify-between">
+                    <div>
+                      <p className="text-[10px] text-[#6b7280] font-semibold uppercase tracking-wide">Total tokens</p>
+                      <p className="text-sm font-black text-[#111827]">{tokenUsage.total_tokens.toLocaleString()}</p>
+                      <p className="text-[10px] text-[#9ca3af]">{tokenUsage.llm_call_count} LLM call{tokenUsage.llm_call_count !== 1 ? "s" : ""}</p>
+                    </div>
+                    <div className="text-right">
+                      <div className="flex items-center gap-1 justify-end">
+                        <DollarSign size={12} className="text-[#00a86b]" />
+                        <p className="text-sm font-black text-[#00a86b]">
+                          {tokenUsage.estimated_cost_usd < 0.001
+                            ? `<$0.001`
+                            : `$${tokenUsage.estimated_cost_usd.toFixed(4)}`}
+                        </p>
+                      </div>
+                      <p className="text-[10px] text-[#9ca3af]">est. cost</p>
+                    </div>
+                  </div>
+
+                  {/* Model & pricing note */}
+                  <p className="text-[10px] text-[#9ca3af] text-center leading-relaxed">
+                    {tokenUsage.model} · {tokenUsage.pricing_note}
+                  </p>
+                </>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Policy Documents Accordion */}        <div className="flex flex-col border-b border-[#e5e7eb]">
           <button 
             onClick={() => setDocsOpen(!docsOpen)}
             className="flex items-center justify-between px-4 py-3 hover:bg-[#f9fafb] transition-colors w-full text-left font-bold text-xs text-[#374151]"

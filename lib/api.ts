@@ -7,7 +7,12 @@ export { BASE_URL, APP_NAME };
 export async function createSession(userId: string, sessionId: string) {
   const res = await fetch(
     `${BASE_URL}/apps/${APP_NAME}/users/${userId}/sessions/${sessionId}`,
-    { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({}) }
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      // Store user_id + session_id in session state so the agent's callbacks can read them
+      body: JSON.stringify({ state: { user_id: userId, session_id: sessionId } }),
+    }
   );
   // 409 = session already exists, which is fine — just reuse it
   if (!res.ok && res.status !== 409) throw new Error("Failed to create session");
@@ -62,7 +67,27 @@ export async function fetchWallet(userId: string): Promise<WalletInfo> {
   return res.json();
 }
 
-export async function updateWallet(userId: string, balance: number): Promise<WalletInfo> {
+export interface TokenUsage {
+  user_id: string;
+  session_id: string;
+  prompt_tokens: number;
+  output_tokens: number;
+  total_tokens: number;
+  llm_call_count: number;
+  estimated_cost_usd: number;
+  model: string;
+  pricing_note: string;
+}
+
+export async function fetchTokenUsage(userId: string, sessionId: string): Promise<TokenUsage | null> {
+  try {
+    const res = await fetch(`${BASE_URL}/token-usage/${userId}/${sessionId}`);
+    if (!res.ok) return null;
+    return res.json();
+  } catch {
+    return null;
+  }
+}export async function updateWallet(userId: string, balance: number): Promise<WalletInfo> {
   const res = await fetch(`${BASE_URL}/wallet/${userId}`, {
     method: "PUT",
     headers: { "Content-Type": "application/json" },
