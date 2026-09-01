@@ -85,7 +85,11 @@ function SessionRow({ s, isActive, onSwitch, onRename, onDelete }: {
     .map(w => w[0])
     .join("")
     .toUpperCase() || "DB";
-  const avatarBg = s.isGroup ? "bg-[#008069] text-white" : getAvatarColor(s.id);
+  const avatarBg = s.isHandover
+    ? "bg-[#f59e0b] text-white"
+    : s.isGroup
+    ? "bg-[#008069] text-white"
+    : getAvatarColor(s.id);
 
   return (
     <div
@@ -96,7 +100,7 @@ function SessionRow({ s, isActive, onSwitch, onRename, onDelete }: {
     >
       {/* Circular Avatar */}
       <div className={`w-12 h-12 rounded-full flex items-center justify-center font-bold text-sm shrink-0 select-none shadow-2xs ${avatarBg}`}>
-        {s.isGroup ? <Users size={22} /> : initials}
+        {s.isHandover ? <Sparkles size={20} /> : s.isGroup ? <Users size={22} /> : initials}
       </div>
 
       {/* Main Details */}
@@ -136,6 +140,10 @@ function SessionRow({ s, isActive, onSwitch, onRename, onDelete }: {
                     ? `${s.groupMeta.last_message_sender || "Member"}: ${s.groupMeta.last_message_preview}`
                     : `${s.groupMeta?.members?.length || 0} members`}
                 </span>
+              ) : s.isHandover ? (
+                <span className="text-[11px] font-bold text-[#b45309] bg-amber-50 px-1.5 py-0.5 rounded-sm shrink-0">
+                  🤝 Handover: @{s.handoverMeta?.requester_name}
+                </span>
               ) : s.isCampaign ? (
                 <span className="text-[11px] font-bold text-[#2563eb] bg-blue-50 px-1 rounded-sm shrink-0">
                   📢 Broadcast
@@ -146,7 +154,7 @@ function SessionRow({ s, isActive, onSwitch, onRename, onDelete }: {
                   <path fill="currentColor" d="M11.394 .57.23 11.733l1.414 1.414L12.808 1.984z" opacity=".4"/>
                 </svg>
               )}
-              {!s.isGroup && (
+              {!s.isGroup && !s.isHandover && (
                 <p className="text-xs text-[#667781] truncate">
                   {s.preview}
                 </p>

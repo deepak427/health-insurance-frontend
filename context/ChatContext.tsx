@@ -2,7 +2,7 @@
 
 import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from "react";
 import { createSession, listSessions, getSession, deleteSession, eventsToMessages, sessionPreview, ADKSession, fetchWallet, fetchUserCampaignMessages, markCampaignMessagesSeen } from "@/lib/api";
-import { listGroups, deleteGroup, GroupItem } from "@/lib/groupApi";
+import { listGroups, deleteGroup, GroupItem, listPendingHandovers, HandoverRecord } from "@/lib/groupApi";
 import { getUsername, getOrCreateSession, newSession, setActiveSession } from "@/lib/session";
 import type { Msg } from "@/components/Message";
 import { useRef } from "react";
@@ -17,6 +17,8 @@ export interface ChatSessionMeta {
   isCampaign?: boolean;
   isGroup?: boolean;
   groupMeta?: GroupItem;
+  isHandover?: boolean;
+  handoverMeta?: HandoverRecord;
 }
 
 interface ChatContextValue {
@@ -134,10 +136,11 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     const id = uid || userId;
     if (!id) return;
     try {
-      const [list, campaignMsgs, groupList] = await Promise.all([
+      const [list, campaignMsgs, groupList, pendingHandovers] = await Promise.all([
         listSessions(id).catch(() => []),
         fetchUserCampaignMessages(id).catch(() => []),
         listGroups(id).catch(() => []),
+        listPendingHandovers(id).catch(() => []),
       ]);
 
       setGroups(groupList);
@@ -189,6 +192,21 @@ export function ChatProvider({ children }: { children: ReactNode }) {
         }
       }
 
+      // Merge handover DM consultation sessions
+      const handoverSessions: ChatSessionMeta[] = pendingHandovers.map((h) => {
+        const sid = h.dm_session_id || `dm_handover_${h.id}`;
+        const title = `🤝 Handover: @${h.requester_name} (${h.group_name})`;
+        savePreview(sid, title);
+        return {
+          id: sid,
+          preview: title,
+          lastUpdateTime: Math.floor(new Date(h.created_at).getTime() / 1000),
+          unreadCount: sid === sessionId ? 0 : 1,
+          isHandover: true,
+          handoverMeta: h,
+        };
+      });
+
       // Merge groups into session list
       const groupSessions: ChatSessionMeta[] = groupList.map((g) => ({
         id: g.id,
@@ -199,7 +217,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
         groupMeta: g,
       }));
 
-      const merged = [...groupSessions, ...campSessions, ...activeAdk].sort(
+      const merged = [...handoverSessions, ...groupSessions, ...campSessions, ...activeAdk].sort(
         (a, b) => b.lastUpdateTime - a.lastUpdateTime
       );
       setSessions(merged);
@@ -373,6 +391,26 @@ export function ChatProvider({ children }: { children: ReactNode }) {
             text: `📢 **${match.title}**\n\n${match.message}`,
           }];
           savePreview(sid, `📢 ${match.title}`);
+        }
+      }
+
+      // If it's a handover DM consultation session and events are empty
+      if (loadedMessages.length === 0 && sid.startsWith("dm_handover_")) {
+        const hMatch = sessions.find((s) => s.id === sid)?.handoverMeta;
+        if (hMatch) {
+          const intro =
+            `📋 **Custom Policy Handover Request**\n\n` +
+            `**Client:** @${hMatch.requester_name} in *"${hMatch.group_name}"*\n\n` +
+            `**Requirement & Context:**\n${hMatch.requirement}\n\n` +
+            `Hey @${username || userId}! How would you like to customize this policy for @${hMatch.requester_name}?\n` +
+            `You can tell me in natural language (e.g. *"Add extreme sports cover, give 10% discount, make premium ₹1,500"*), ` +
+            `and when you're satisfied with the terms, click **Approve & Publish to Group** above!`;
+
+          loadedMessages = [{
+            role: "agent",
+            text: intro,
+          }];
+          savePreview(sid, `🤝 Handover: @${hMatch.requester_name} (${hMatch.group_name})`);
         }
       }
 

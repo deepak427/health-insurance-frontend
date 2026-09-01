@@ -457,6 +457,10 @@ export default function GroupChatWindow({ groupId, onToggleDetails, detailsOpen 
       const currentMode = (currentGroup?.handover_mode || "internal") as "internal" | "external";
 
       try {
+        // Collect recent conversation context so the assigned agent has full visibility in their DM
+        const recentMsgs = messages.slice(-6).map((m) => `${m.sender_name || m.sender_id}: ${m.content}`).join("\n");
+        const fullRequirement = recentMsgs ? `${text}\n\n[Recent Group Conversation Context:\n${recentMsgs}]` : text;
+
         await createHandover({
           group_id: groupId,
           group_name: currentGroup?.name || "Group",
@@ -464,14 +468,12 @@ export default function GroupChatWindow({ groupId, onToggleDetails, detailsOpen 
           requester_name: senderName,
           assigned_to: assigneeId,
           mode: currentMode,
-          requirement: text,
+          requirement: fullRequirement,
         });
 
         if (currentMode === "external") {
-          const announcement =
-            `⏳ **External Handover Initiated**\n\n` +
-            `I have initiated a private consultation DM with **@${assigneeName}** to structure custom terms and approved discounts for **@${senderName}**.\n\n` +
-            `Once @${assigneeName} approves the quote in their consultation thread, I will automatically publish the finalized custom policy card right here in this group!`;
+          // Subtle, professional client-facing message (does not expose internal backend escalation)
+          const announcement = `⏳ Got it, **@${senderName}**! Let me review the custom requirements and structure tailored options for you. I'll share the finalized plan here shortly!`;
 
           const botMsg = await postGroupMessage(
             groupId,
@@ -480,18 +482,13 @@ export default function GroupChatWindow({ groupId, onToggleDetails, detailsOpen 
             BUDDY_DISPLAY_NAME,
             "bot_response",
             undefined,
-            [assigneeId, userId]
+            [userId]
           );
           setMessages((prev) => [...prev, botMsg]);
           return;
         } else {
-          // Internal Handover (Assign directly inside the group chat)
-          const announcement =
-            `🤝 **Human Handover Assigned**\n\n` +
-            `Custom insurance policy structuring requested by **@${senderName}**.\n\n` +
-            `Handing over this thread to **@${assigneeName}** to review requirements and advise on custom structuring!\n\n` +
-            `📋 **Requirement Summary:** "${text}"\n\n` +
-            `@${assigneeName} Please take over and advise @${senderName} on custom terms.`;
+          // Internal Handover (Smoothly brings the assigned human agent into the group thread)
+          const announcement = `🤝 Got it **@${senderName}**! **@${assigneeName}**, could you review the custom requirements above and advise on the tailored terms?`;
 
           const botMsg = await postGroupMessage(
             groupId,

@@ -13,6 +13,8 @@ import UsernameModal from "./UsernameModal";
 import PoliciesPanel from "./PoliciesPanel";
 import CampaignsPanel from "./CampaignsPanel";
 import DocumentModal from "./DocumentModal";
+import HandoverApprovalModal from "./HandoverApprovalModal";
+import { HandoverRecord } from "@/lib/groupApi";
 import {
   AlertCircle, Search, Phone, MoreVertical, ShieldCheck, Bell, ChevronDown,
   Menu, Users, Info, Coins, Plus, X, Check, Loader2, Calendar, FileText,
@@ -65,6 +67,9 @@ export default function ChatWindow() {
   const [customAmount, setCustomAmount] = useState("");
   const [walletOpLoading, setWalletOpLoading] = useState(false);
   const [walletSuccessMsg, setWalletSuccessMsg] = useState("");
+
+  // Handover Approval Modal state
+  const [selectedHandoverToApprove, setSelectedHandoverToApprove] = useState<HandoverRecord | null>(null);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -357,6 +362,27 @@ export default function ChatWindow() {
                   </div>
                 </div>
 
+                {/* Handover Consultation Action Header */}
+                {sessionId.startsWith("dm_handover_") && (
+                  <div className="bg-[#fffbeb] border-b border-[#fef3c7] px-3 sm:px-4 py-2 flex items-center justify-between z-10 text-xs shadow-2xs">
+                    <div className="flex items-center gap-2 text-[#92400e] font-medium min-w-0">
+                      <Sparkles size={15} className="text-[#f59e0b] shrink-0" />
+                      <span className="truncate">
+                        <strong>Handover Consultation</strong>: Custom policy structuring for client
+                      </span>
+                    </div>
+                    <button
+                      onClick={() => {
+                        const matchH = sessions.find((s) => s.id === sessionId)?.handoverMeta;
+                        if (matchH) setSelectedHandoverToApprove(matchH);
+                      }}
+                      className="px-3 py-1 bg-[#008069] hover:bg-[#006e5a] text-white font-bold text-[11px] rounded-lg shadow-xs transition-colors cursor-pointer shrink-0 ml-2"
+                    >
+                      Approve & Publish to Group
+                    </button>
+                  </div>
+                )}
+
                 {/* Messages Feed on WhatsApp Doodle Background */}
                 <div className="flex-1 overflow-y-auto px-3 md:px-6 py-3 whatsapp-chat-bg">
                   {error && (
@@ -527,6 +553,25 @@ export default function ChatWindow() {
             </div>
           </div>
         )}
+
+        {/* Handover Approval Modal */}
+        <HandoverApprovalModal
+          isOpen={Boolean(selectedHandoverToApprove)}
+          handover={selectedHandoverToApprove}
+          onClose={() => setSelectedHandoverToApprove(null)}
+          currentUserId={userId}
+          onApproved={(updated) => {
+            setSelectedHandoverToApprove(null);
+            refreshSessionList();
+            setMessages((prev) => [
+              ...prev,
+              {
+                role: "agent",
+                text: `🎉 **Custom policy successfully approved and published to the group!**\n\nThe tailored plan has been posted directly into the client's group chat.`,
+              },
+            ]);
+          }}
+        />
 
       </div>
     </div>
