@@ -111,14 +111,16 @@ export default function Message({ msg, userId, sessionId, onSend, senderLabel, s
   const isTyping = msg.role === "agent" && !msg.text && (!msg.artifacts || msg.artifacts.length === 0);
 
   // For user messages: strip the 📎 attachment line and extract the filename
-  const userAttachmentName = isCurrentUser
-    ? (msg.text.match(/\n?📎 (.+)$/) ?? [])[1] ?? msg.userAttachment?.name ?? null
-    : null;
-  const userDisplayText = isCurrentUser && userAttachmentName
+  const userAttachmentName =
+    (msg.text.match(/\n?📎 (.+)$/) ?? [])[1] ??
+    msg.userAttachment?.name ??
+    (msg.artifacts?.find((a) => !isAgentGeneratedArtifact(a))) ??
+    null;
+  const userDisplayText = userAttachmentName
     ? msg.text.replace(/\n?📎 .+$/, "").trim()
     : msg.text;
 
-  const { displayText, cards, bookingCards, bookingTable } = isCurrentUser
+  const { displayText, cards, bookingCards, bookingTable } = (isCurrentUser || msg.role === "user")
     ? { displayText: userDisplayText, cards: [], bookingCards: [], bookingTable: null }
     : parseContent(msg.text);
 
@@ -292,7 +294,7 @@ export default function Message({ msg, userId, sessionId, onSend, senderLabel, s
           )}
 
           {/* User-uploaded attachment chip */}
-          {isCurrentUser && showAttachmentChip && (
+          {(isCurrentUser || msg.role === "user") && showAttachmentChip && (
             <div className="mt-2 pt-1.5 border-t border-black/5">
               {attachmentIsImage ? (
                 // Render image preview

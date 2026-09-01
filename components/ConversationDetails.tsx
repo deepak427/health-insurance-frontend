@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { X, User, Calendar, FileText, Download, ChevronRight, ChevronDown, Shield, FileCheck, Zap, DollarSign } from "lucide-react";
 import { useChatContext } from "@/context/ChatContext";
 import { buildDownloadUrl, isAgentGeneratedArtifact, fetchTokenUsage, type TokenUsage } from "@/lib/api";
+import { getGroupMessages, GroupMessage, BUDDY_USER_ID } from "@/lib/groupApi";
 
 interface Props {
   isOpen?: boolean;
@@ -19,11 +20,23 @@ export default function ConversationDetails({ isOpen, onClose, isOpenMobile, onC
   const [tokenOpen, setTokenOpen] = useState(true);
   const [tokenUsage, setTokenUsage] = useState<TokenUsage | null>(null);
   const [tokenLoading, setTokenLoading] = useState(false);
+  const [groupMsgs, setGroupMsgs] = useState<GroupMessage[]>([]);
 
   const isGroup = !!activeGroupId;
   const activeGroup = groups.find((g) => g.id === activeGroupId);
   const effectiveUserId = isGroup ? `group_${activeGroupId}` : userId;
   const effectiveSessionId = isGroup ? `gsession_${activeGroupId}` : sessionId;
+
+  // Fetch group messages when in group mode so we ONLY display docs that belong to THIS group
+  useEffect(() => {
+    if (!isGroup || !activeGroupId) {
+      setGroupMsgs([]);
+      return;
+    }
+    getGroupMessages(activeGroupId)
+      .then((msgs) => setGroupMsgs(msgs || []))
+      .catch(() => setGroupMsgs([]));
+  }, [isGroup, activeGroupId, isOpen, isOpenMobile]);
 
   // Fetch token usage whenever the panel opens, session changes, or group changes
   useEffect(() => {
@@ -35,25 +48,52 @@ export default function ConversationDetails({ isOpen, onClose, isOpenMobile, onC
     });
   }, [isOpen, isOpenMobile, effectiveUserId, effectiveSessionId]);
 
-  // Agent-generated PDFs only
-  const agentDocs = Array.from(
-    new Set(messages.flatMap((m) => m.artifacts || []).filter(isAgentGeneratedArtifact))
-  );
-  // User-uploaded attachments deduplicated by name
-  const userDocs = Array.from(
-    new Map(
-      messages
-        .filter((m) => m.role === "user" && m.userAttachment?.name)
-        .map((m) => [
-          m.userAttachment!.name,
-          {
-            name: m.userAttachment!.name,
-            mimeType: m.userAttachment!.mimeType ?? "",
-            data: m.userAttachment!.data,
-          },
-        ])
-    ).values()
-  );
+  // Documents processing: scoped to group messages in group mode, or 1:1 messages in private mode
+  let agentDocs: string[] = [];
+  let userDocs: { name: string; mimeType: string; data?: string }[] = [];
+
+  if (isGroup) {
+    agentDocs = Array.from(
+      new Set(
+        groupMsgs
+          .flatMap((m) => m.artifacts || [])
+          .filter(isAgentGeneratedArtifact)
+      )
+    );
+
+    userDocs = Array.from(
+      new Map(
+        groupMsgs
+          .filter((m) => m.sender_id !== BUDDY_USER_ID && (m.artifacts?.length || m.msg_type === "artifact"))
+          .flatMap((m) => m.artifacts || [])
+          .filter((a) => !isAgentGeneratedArtifact(a))
+          .map((filename) => {
+            const ext = filename.split(".").pop()?.toLowerCase() || "";
+            const isImg = ["png", "jpg", "jpeg", "webp", "gif", "bmp"].includes(ext);
+            const mimeType = isImg ? `image/${ext === "jpg" ? "jpeg" : ext}` : "application/pdf";
+            return [filename, { name: filename, mimeType }];
+          })
+      ).values()
+    );
+  } else {
+    agentDocs = Array.from(
+      new Set(messages.flatMap((m) => m.artifacts || []).filter(isAgentGeneratedArtifact))
+    );
+    userDocs = Array.from(
+      new Map(
+        messages
+          .filter((m) => m.role === "user" && m.userAttachment?.name)
+          .map((m) => [
+            m.userAttachment!.name,
+            {
+              name: m.userAttachment!.name,
+              mimeType: m.userAttachment!.mimeType ?? "",
+              data: m.userAttachment!.data,
+            },
+          ])
+      ).values()
+    );
+  }
 
   const totalDocs = agentDocs.length + userDocs.length;
 

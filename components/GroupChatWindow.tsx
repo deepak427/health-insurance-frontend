@@ -21,8 +21,10 @@ import {
   Zap,
   Volume2,
   VolumeX,
+  FileText,
 } from "lucide-react";
 import { useChatContext } from "@/context/ChatContext";
+import { uploadArtifact } from "@/lib/api";
 import {
   getGroup,
   getGroupMessages,
@@ -186,10 +188,63 @@ export default function GroupChatWindow({ groupId, onToggleDetails, detailsOpen 
   const [pendingHandovers, setPendingHandovers] = useState<HandoverRecord[]>([]);
   const [selectedHandoverToApprove, setSelectedHandoverToApprove] = useState<HandoverRecord | null>(null);
 
+  // File / Attachment state for group chats
+  const [file, setFile] = useState<{ name: string; mimeType: string; data: string } | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
   const bottomRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
   const isStreamingRef = useRef(false);
+
+  function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const f = e.target.files?.[0];
+    if (!f) return;
+
+    if (f.type.startsWith("image/")) {
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        const img = new Image();
+        img.onload = () => {
+          const maxDim = 1280;
+          let w = img.width;
+          let h = img.height;
+          if (w > maxDim || h > maxDim) {
+            if (w > h) {
+              h = Math.round((h * maxDim) / w);
+              w = maxDim;
+            } else {
+              w = Math.round((w * maxDim) / h);
+              h = maxDim;
+            }
+          }
+          const canvas = document.createElement("canvas");
+          canvas.width = w;
+          canvas.height = h;
+          const ctx = canvas.getContext("2d");
+          if (ctx) {
+            ctx.drawImage(img, 0, 0, w, h);
+            const compressedUrl = canvas.toDataURL("image/jpeg", 0.85);
+            const base64 = compressedUrl.split(",")[1];
+            setFile({ name: f.name.replace(/\.[^/.]+$/, ".jpg"), mimeType: "image/jpeg", data: base64 });
+            return;
+          }
+          const base64 = (ev.target?.result as string).split(",")[1];
+          setFile({ name: f.name, mimeType: f.type, data: base64 });
+        };
+        img.src = ev.target?.result as string;
+      };
+      reader.readAsDataURL(f);
+    } else {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const base64 = (reader.result as string).split(",")[1];
+        setFile({ name: f.name, mimeType: f.type, data: base64 });
+      };
+      reader.readAsDataURL(f);
+    }
+    e.target.value = "";
+  }
 
   // Group ADK synthetic session for artifact URLs
   const { userId: groupUserId, sessionId: groupSessionId } = getGroupSessionIdentity(groupId);
@@ -371,14 +426,36 @@ export default function GroupChatWindow({ groupId, onToggleDetails, detailsOpen 
   }
 
   // ── Smart Trigger & Handover Routing ─────────────────────────────────────────
-  async function handleSend(textToSend?: string) {
-    const text = (textToSend || inputText).trim();
-    if (!text || isStreamingRef.current) return;
+  async function handleSend(
+    textToSend?: string,
+    fileToSend?: { name: string; mimeType: string; data: string }
+  ) {
+    const activeFile = fileToSend || file;
+    const rawText = (textToSend || inputText).trim();
+    if (!rawText && !activeFile) return;
+    if (isStreamingRef.current) return;
 
     if (!textToSend) setInputText("");
+    setFile(null);
     setMentionQuery(null);
 
     const senderName = username || userId;
+    const text = rawText || (activeFile ? `📎 ${activeFile.name}` : "");
+
+    // If file is attached, upload artifact to group session
+    if (activeFile) {
+      try {
+        await uploadArtifact(
+          groupUserId,
+          groupSessionId,
+          activeFile.name,
+          activeFile.mimeType,
+          activeFile.data
+        );
+      } catch (err) {
+        console.warn("Group artifact upload error:", err);
+      }
+    }
 
     // Detect human mentions in message
     const members = group?.members || [];
@@ -404,15 +481,20 @@ export default function GroupChatWindow({ groupId, onToggleDetails, detailsOpen 
       }
     });
 
+    const postedText =
+      activeFile && rawText && !rawText.includes(`📎 ${activeFile.name}`)
+        ? `${rawText}\n📎 ${activeFile.name}`
+        : text;
+
     // 1. Post human message immediately to SQLite
     try {
       const newMsg = await postGroupMessage(
         groupId,
         userId,
-        text,
+        postedText,
         senderName,
-        "text",
-        undefined,
+        activeFile ? "artifact" : "text",
+        activeFile ? [activeFile.name] : undefined,
         mentions
       );
       setMessages((prev) => [...prev, newMsg]);
@@ -512,11 +594,19 @@ export default function GroupChatWindow({ groupId, onToggleDetails, detailsOpen 
       currentGroup?.has_buddy && (hasBuddyMention || !hasHumanMention);
 
     if (shouldBuddyRespond) {
-      triggerBuddyResponse(text, senderName);
+      triggerBuddyResponse(
+        postedText,
+        senderName,
+        activeFile ? { mimeType: activeFile.mimeType, data: activeFile.data } : undefined
+      );
     }
   }
 
-  async function triggerBuddyResponse(queryText: string, senderName: string) {
+  async function triggerBuddyResponse(
+    queryText: string,
+    senderName: string,
+    inlineData?: { mimeType: string; data: string }
+  ) {
     isStreamingRef.current = true;
     setIsTypingBuddy(true);
     setLiveBuddyResponse({ role: "agent", text: "", artifacts: [] });
@@ -530,7 +620,8 @@ export default function GroupChatWindow({ groupId, onToggleDetails, detailsOpen 
         group?.name || "Group",
         userId,
         senderName,
-        queryText
+        queryText,
+        inlineData
       );
 
       for await (const chunk of stream) {
@@ -1104,30 +1195,80 @@ export default function GroupChatWindow({ groupId, onToggleDetails, detailsOpen 
       )}
 
       {/* ── Message Input Bar ──────────────────────────────────────────────── */}
-      <div className="bg-[#f0f2f5] p-3 flex items-end gap-2 border-t border-[#e9edef] z-20">
-        <textarea
-          ref={textareaRef}
-          rows={1}
-          placeholder={isMuted ? "Message group (Dolphin Buddy is muted)..." : `Message group or tag @${BUDDY_DISPLAY_NAME}...`}
-          value={inputText}
-          onChange={handleInputChange}
-          onKeyDown={(e) => {
-            if (e.key === "Enter" && !e.shiftKey) {
-              e.preventDefault();
-              handleSend();
-            }
-          }}
-          className="flex-1 max-h-32 min-h-[40px] px-4 py-2.5 bg-white rounded-2xl text-sm border-none focus:outline-hidden focus:ring-1 focus:ring-[#008069]/40 resize-none text-[#111b21] placeholder-[#8696a0]"
-        />
+      <div className="bg-[#f0f2f5] p-2.5 sm:p-3 border-t border-[#e9edef] z-20 flex flex-col">
+        {/* Selected file preview pill */}
+        {file && (
+          <div className="flex items-center gap-2 bg-white border border-[#e9edef] rounded-xl px-3 py-1.5 mb-2 shadow-2xs w-fit max-w-xs animate-in fade-in slide-in-from-bottom-1">
+            {file.mimeType.startsWith("image/") ? (
+              <img
+                src={`data:${file.mimeType};base64,${file.data}`}
+                alt={file.name}
+                className="w-7 h-7 object-cover rounded-md border border-gray-200"
+              />
+            ) : (
+              <div className="w-7 h-7 rounded-md bg-red-50 text-red-600 flex items-center justify-center shrink-0">
+                <FileText size={15} />
+              </div>
+            )}
+            <span className="text-xs font-semibold text-[#111b21] truncate max-w-[160px]">{file.name}</span>
+            <button
+              onClick={() => setFile(null)}
+              className="w-5 h-5 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-500 flex items-center justify-center transition-colors cursor-pointer ml-1"
+              title="Remove attachment"
+            >
+              <X size={12} />
+            </button>
+          </div>
+        )}
 
-        <button
-          onClick={() => handleSend()}
-          disabled={!inputText.trim() || isTypingBuddy}
-          className="w-10 h-10 rounded-full bg-[#008069] hover:bg-[#006e5a] disabled:opacity-40 disabled:cursor-not-allowed text-white flex items-center justify-center transition-colors cursor-pointer shrink-0 shadow-2xs"
-          title="Send message"
-        >
-          {isTypingBuddy ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />}
-        </button>
+        <div className="flex items-end gap-1.5 sm:gap-2">
+          {/* Hidden File Input */}
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*,.pdf"
+            className="hidden"
+            onChange={handleFileChange}
+          />
+
+          {/* Attachment Button */}
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            className="p-2 sm:p-2.5 text-[#54656f] hover:text-[#111b21] hover:bg-black/5 rounded-full transition-colors cursor-pointer shrink-0"
+            title="Attach image or PDF document"
+          >
+            <Paperclip size={19} />
+          </button>
+
+          <textarea
+            ref={textareaRef}
+            rows={1}
+            placeholder={
+              isMuted
+                ? "Message group (Dolphin Buddy is muted)..."
+                : `Message group or tag @${BUDDY_DISPLAY_NAME}...`
+            }
+            value={inputText}
+            onChange={handleInputChange}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault();
+                handleSend();
+              }
+            }}
+            className="flex-1 max-h-32 min-h-[40px] px-4 py-2.5 bg-white rounded-2xl text-sm border-none focus:outline-hidden focus:ring-1 focus:ring-[#008069]/40 resize-none text-[#111b21] placeholder-[#8696a0]"
+          />
+
+          <button
+            onClick={() => handleSend()}
+            disabled={(!inputText.trim() && !file) || isTypingBuddy}
+            className="w-10 h-10 rounded-full bg-[#008069] hover:bg-[#006e5a] disabled:opacity-40 disabled:cursor-not-allowed text-white flex items-center justify-center transition-colors cursor-pointer shrink-0 shadow-2xs"
+            title="Send message"
+          >
+            {isTypingBuddy ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />}
+          </button>
+        </div>
       </div>
 
       {/* ── Handover Approval & Structuring Modal ──────────────────────────── */}
