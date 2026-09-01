@@ -217,7 +217,8 @@ export async function* streamBuddyGroupMessage(
   senderId: string,
   senderName: string,
   text: string,
-  inlineData?: { mimeType: string; data: string }
+  inlineData?: { mimeType: string; data: string },
+  memberNames?: string[]
 ): AsyncGenerator<{ text?: string; artifacts?: string[] }> {
   const { userId: groupUserId, sessionId: groupSessionId } = getGroupSessionIdentity(groupId);
 
@@ -242,7 +243,11 @@ export async function* streamBuddyGroupMessage(
   }
 
   // Inject group context prefix
-  const enhancedPrompt = `[Group: ${groupName} | ${senderName || senderId} asks]: ${text}`;
+  const membersPrefix =
+    memberNames && memberNames.length > 0
+      ? ` | Human Members: ${memberNames.map((m) => `@${m}`).join(", ")}`
+      : "";
+  const enhancedPrompt = `[Group: "${groupName}"${membersPrefix} | ${senderName || senderId} asks]: ${text}`;
   const parts: object[] = [{ text: enhancedPrompt }];
   if (inlineData) parts.push({ inlineData });
 

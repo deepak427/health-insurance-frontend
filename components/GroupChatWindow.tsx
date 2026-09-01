@@ -615,13 +615,18 @@ export default function GroupChatWindow({ groupId, onToggleDetails, detailsOpen 
     const accumulatedArtifacts: string[] = [];
 
     try {
+      const humanMemberNames = (group?.members || [])
+        .filter((m) => m.is_bot === 0 && m.user_id !== BUDDY_USER_ID)
+        .map((m) => m.display_name || m.user_id);
+
       const stream = streamBuddyGroupMessage(
         groupId,
         group?.name || "Group",
         userId,
         senderName,
         queryText,
-        inlineData
+        inlineData,
+        humanMemberNames
       );
 
       for await (const chunk of stream) {
@@ -646,7 +651,7 @@ export default function GroupChatWindow({ groupId, onToggleDetails, detailsOpen 
 
       // Check if Dolphin Buddy response is an escalation/tagging response (e.g. unlisted policy or manager escalation)
       const isEscalationResponse =
-        /tagging\s+(our\s+)?(underwriting|operations|team|senior|manager)|escalat|don't\s+have\s+standard\s+automated\s+catalog|unlisted\s+policy/i.test(
+        /tagging\s+(the\s+senior|our\s+)?(underwriting|operations|team|senior|manager)|escalat|don't\s+have\s+standard\s+automated\s+catalog|unlisted\s+policy/i.test(
           cleanedFinal
         );
 
@@ -662,14 +667,23 @@ export default function GroupChatWindow({ groupId, onToggleDetails, detailsOpen 
         : "Operations Team";
       const assigneeId = assigneeObj ? assigneeObj.user_id : undefined;
 
-      const currentMode = (group?.handover_mode || "internal") as "internal" | "external";
-
-      if (isEscalationResponse && assigneeObj && currentMode === "internal") {
+      if (isEscalationResponse && assigneeObj) {
         if (
           !cleanedFinal.includes(`@${assigneeName}`) &&
           !cleanedFinal.includes(`@${assigneeObj.user_id}`)
         ) {
-          cleanedFinal = `${cleanedFinal}\n\n🤝 **@${assigneeName}**, could you please review and share the policy details for @${senderName}?`;
+          if (
+            /tagging\s+(the\s+senior\s+operations\s+manager|our\s+underwriting\s+and\s+operations\s+team)/i.test(
+              cleanedFinal
+            )
+          ) {
+            cleanedFinal = cleanedFinal.replace(
+              /tagging\s+(the\s+senior\s+operations\s+manager|our\s+underwriting\s+and\s+operations\s+team)/i,
+              `tagging **@${assigneeName}**`
+            );
+          } else {
+            cleanedFinal = `${cleanedFinal}\n\n🤝 **@${assigneeName}**, could you please review the request above and assist with the details?`;
+          }
         }
       }
 
