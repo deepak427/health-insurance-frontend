@@ -73,6 +73,16 @@ export interface BookingTableProps {
 }
 
 function PolicyCard({ card, onChoose }: { card: PolicyCardData; onChoose: (p: string) => void }) {
+  const anyCard = card as any;
+  const name = card.name || anyCard.title || "Custom Structured Plan";
+  const company = card.company || anyCard.insurer;
+  const rawPremium = card.premium !== undefined ? card.premium : anyCard.price;
+  const premium = rawPremium ? String(rawPremium).replace("₹", "").trim() : undefined;
+  const sumInsured = card.sumInsured || anyCard.sum_insured;
+  const highlights = (card.highlights && card.highlights.length > 0) ? card.highlights : (anyCard.features || []);
+  const actionText = card.action || "Choose this plan";
+  const promptText = card.prompt || `I'd like to book the ${name} plan`;
+
   return (
     <div
       className="rounded-2xl border border-[#e5e7eb] bg-white shadow-2xs overflow-hidden flex flex-col justify-between hover:border-[#ff5722]/40 transition-all w-full sm:w-[280px] max-w-[340px]"
@@ -84,34 +94,34 @@ function PolicyCard({ card, onChoose }: { card: PolicyCardData; onChoose: (p: st
             <Shield size={18} className="text-[#ff5722]" />
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-black text-[#111827] leading-tight truncate">{card.name}</p>
-            {card.company && (
-              <p className="text-xs text-[#6b7280] truncate font-medium mt-0.5">{card.company}</p>
+            <p className="text-sm font-black text-[#111827] leading-tight truncate">{name}</p>
+            {company && (
+              <p className="text-xs text-[#6b7280] truncate font-medium mt-0.5">{company}</p>
             )}
           </div>
         </div>
 
         {/* Premium & Sum Insured */}
-        {(card.premium !== undefined || card.sumInsured) && (
+        {(premium !== undefined || sumInsured) && (
           <div className="flex items-center gap-2.5 px-4 pb-3 flex-wrap">
-            {card.premium !== undefined && (
+            {premium !== undefined && (
               <div className="flex items-center gap-0.5 bg-[#f0fdf4] border border-[#bbf7d0] px-2.5 py-1 rounded-xl">
                 <IndianRupee size={13} className="text-[#15803d] shrink-0" />
-                <span className="text-sm font-black text-[#15803d]">{card.premium}</span>
+                <span className="text-sm font-black text-[#15803d]">{premium}</span>
               </div>
             )}
-            {card.sumInsured && (
+            {sumInsured && (
               <span className="text-xs font-bold text-[#4b5563] bg-[#f3f4f6] px-2.5 py-1 rounded-xl">
-                Cover: {card.sumInsured}
+                Cover: {sumInsured}
               </span>
             )}
           </div>
         )}
 
         {/* Highlights */}
-        {card.highlights && card.highlights.length > 0 && (
+        {highlights && highlights.length > 0 && (
           <div className="flex flex-col gap-1.5 px-4 pb-3.5">
-            {card.highlights.map((h, j) => (
+            {highlights.map((h: string, j: number) => (
               <div key={j} className="flex items-start gap-2">
                 <CheckCircle2 size={14} className="text-[#00a86b] mt-0.5 shrink-0" />
                 <span className="text-xs text-[#374151] leading-tight font-medium">{h}</span>
@@ -124,10 +134,10 @@ function PolicyCard({ card, onChoose }: { card: PolicyCardData; onChoose: (p: st
       {/* Action CTA */}
       <div className="p-2.5 border-t border-[#f1f5f9] bg-[#f9fafb]">
         <button
-          onClick={() => onChoose(card.prompt || `I'd like to book the ${card.name} plan`)}
+          onClick={() => onChoose(promptText)}
           className="w-full text-xs font-bold text-white bg-[#ff5722] hover:bg-[#f4511e] py-2.5 rounded-xl transition-all text-center shadow-2xs cursor-pointer"
         >
-          {card.action || "Choose this plan"}
+          {actionText}
         </button>
       </div>
     </div>
