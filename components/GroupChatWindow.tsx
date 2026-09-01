@@ -198,6 +198,14 @@ function isCustomPolicyRequest(query: string, otherMembers?: GroupMember[]): boo
     "you dont understand",
     "not what i asked",
     "wrong response",
+    // Unlisted / New / Offline Policies
+    "new policy",
+    "new plan",
+    "unlisted policy",
+    "offline policy",
+    "share new policy",
+    "special plan",
+    "special policy",
   ];
   return keywords.some((k) => lower.includes(k));
 }
