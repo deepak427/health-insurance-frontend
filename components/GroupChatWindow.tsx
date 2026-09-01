@@ -101,24 +101,10 @@ function deduplicateRepeatedText(text: string): string {
   return text;
 }
 
-function isCustomPolicyRequest(query: string, otherMembers?: GroupMember[]): boolean {
+function isEscalationOrUnlistedRequest(query: string, otherMembers?: GroupMember[]): boolean {
   const lower = query.toLowerCase();
 
-  // Root stems and regex patterns (covering typos like cutomiz/customis/etc.)
-  const regexPatterns = [
-    /\b(custom|cutom|custm)i[zs]/i, // customization, customisation, cutomization, customize, etc.
-    /\b(custom|cutom|tailor|bespoke)\s+(policy|plan|quote|rate|pricing|terms|riders?)\b/i,
-    /\b(special|extra|manager|agent)\s+(discount|rate|approval|pricing|terms)\b/i,
-    /\b(hand\s*over|escalat|assign|transfer)\b/i,
-    /\b(human\s+agent|talk\s+to\s+human|need\s+human|agent\s+help|real\s+person)\b/i,
-    /\b(pre-?existing|extreme\s+sports?|adventure\s+sports?)\s+(cover|approval|riders?)\b/i,
-  ];
-
-  if (regexPatterns.some((pattern) => pattern.test(lower))) {
-    return true;
-  }
-
-  // Check if user specifically asks a fellow human member to handle/help/customize
+  // Check if user specifically asks a fellow human member to handle/help/check
   if (otherMembers && otherMembers.length > 0) {
     for (const m of otherMembers) {
       if (m.is_bot) continue;
@@ -133,81 +119,29 @@ function isCustomPolicyRequest(query: string, otherMembers?: GroupMember[]): boo
     }
   }
 
-  const keywords = [
-    // Customization & Pricing
-    "custom policy",
-    "custom quote",
-    "customized quote",
-    "custom plan",
-    "custom pricing",
-    "special discount",
-    "manual quote",
-    "custom riders",
-    "extreme sports",
-    "adventure sports",
-    "need customization",
-    "need customizations",
-    "customize quote",
-    "special rate",
-    "group discount approval",
-    "pre-existing condition approval",
-    "tailored policy",
-    "customization",
-    "customizations",
-    "cutomization",
-    "cutomizations",
-    "customise",
-    "customises",
-    // Escalation & Higher Manager
-    "escalate",
-    "escalation",
-    "higher manager",
-    "senior manager",
-    "manager approval",
-    "talk to manager",
-    "speak to manager",
-    "speak with manager",
-    "connect to manager",
-    "call manager",
-    "supervisor",
-    "operations lead",
-    "team lead",
-    "higher authority",
-    // Human Assistance
-    "talk to human",
-    "human agent",
-    "real person",
-    "live agent",
-    "agent assistance",
-    "handover to human",
-    "handover",
-    "need human",
-    "transfer to agent",
-    "connect to agent",
-    // Complaints & Disputes
-    "file a complaint",
-    "complaint",
-    "claim dispute",
-    "dispute",
-    "grievance",
-    "not satisfied",
-    // AI Fallback / Confusion
-    "ai doesn't understand",
-    "ai don't understand",
-    "you don't understand",
-    "you dont understand",
-    "not what i asked",
-    "wrong response",
-    // Unlisted / New / Offline Policies
-    "new policy",
-    "new plan",
-    "unlisted policy",
-    "offline policy",
-    "share new policy",
-    "special plan",
-    "special policy",
+  const escalationPatterns = [
+    /\b(escalat|supervisor|operations\s+lead|team\s+lead|higher\s+authority)\b/i,
+    /\b(talk|speak|connect|transfer)\s+to\s+(manager|higher|senior|human|agent|person|executive)\b/i,
+    /\b(human\s+agent|real\s+person|live\s+agent|need\s+human|agent\s+assistance)\b/i,
+    /\b(complaint|dispute|claim\s+dispute|grievance|not\s+satisfied)\b/i,
+    /\b(ai\s+doesn't\s+understand|you\s+don't\s+understand|not\s+what\s+i\s+asked|wrong\s+response)\b/i,
+    /\b(new|unlisted|offline|special|unknown)\s+(policy|plan|product|scheme|quote)\b/i,
+    /\b(tell\s+me\s+more\s+about|details\s+on|info\s+about)\s+.*\s+(policy|plan|product|scheme)\b/i,
+    /\b(apsara|share\s+new\s+policy)\b/i,
   ];
-  return keywords.some((k) => lower.includes(k));
+
+  return escalationPatterns.some((pattern) => pattern.test(lower));
+}
+
+function isCustomPolicyDiscountRequest(query: string): boolean {
+  const lower = query.toLowerCase();
+  const patterns = [
+    /\b(custom|cutom|custm)i[zs]/i, // customization, customisation, cutomization, customize, etc.
+    /\b(custom|cutom|tailor|bespoke)\s+(policy|plan|quote|rate|pricing|terms|riders?)\b/i,
+    /\b(special|extra|manager|agent|diwali|group)\s+(discount|rate|approval|pricing|terms)\b/i,
+    /\b(pre-?existing|extreme\s+sports?|adventure\s+sports?)\s+(cover|approval|riders?)\b/i,
+  ];
+  return patterns.some((pattern) => pattern.test(lower));
 }
 
 export default function GroupChatWindow({ groupId, onToggleDetails, detailsOpen }: Props) {
@@ -567,7 +501,7 @@ export default function GroupChatWindow({ groupId, onToggleDetails, detailsOpen 
         m.user_id !== BUDDY_USER_ID
     );
 
-    if (currentGroup?.has_buddy && isCustomPolicyRequest(text, otherHumans)) {
+    if (currentGroup?.has_buddy) {
       // Find if user specifically named or tagged any member (e.g. "prakhar can do", "@prakhar")
       let assigneeObj = otherHumans.find((m) =>
         new RegExp(`@?${m.user_id}\\b|@?${m.display_name}\\b`, "i").test(text)
@@ -578,42 +512,11 @@ export default function GroupChatWindow({ groupId, onToggleDetails, detailsOpen 
       const assigneeId = assigneeObj ? assigneeObj.user_id : "Agent_Support";
       const assigneeName = assigneeObj ? (assigneeObj.display_name || assigneeObj.user_id) : "Agent_Support";
 
-      const currentMode = (currentGroup?.handover_mode || "internal") as "internal" | "external";
+      // 2A. Universal Escalation / Unlisted Policy / Manager Requests -> ALWAYS tag colleague in group
+      if (isEscalationOrUnlistedRequest(text, otherHumans)) {
+        const announcement = `🤝 Got it **@${senderName}**! **@${assigneeName}**, could you please review the request above and assist with the details?`;
 
-      try {
-        // Collect recent conversation context so the assigned agent has full visibility in their DM
-        const recentMsgs = messages.slice(-6).map((m) => `${m.sender_name || m.sender_id}: ${m.content}`).join("\n");
-        const fullRequirement = recentMsgs ? `${text}\n\n[Recent Group Conversation Context:\n${recentMsgs}]` : text;
-
-        await createHandover({
-          group_id: groupId,
-          group_name: currentGroup?.name || "Group",
-          requester_id: userId,
-          requester_name: senderName,
-          assigned_to: assigneeId,
-          mode: currentMode,
-          requirement: fullRequirement,
-        });
-
-        if (currentMode === "external") {
-          // Subtle, professional client-facing message (does not expose internal backend escalation)
-          const announcement = `⏳ Got it, **@${senderName}**! Let me review the custom requirements and structure tailored options for you. I'll share the finalized plan here shortly!`;
-
-          const botMsg = await postGroupMessage(
-            groupId,
-            BUDDY_USER_ID,
-            announcement,
-            BUDDY_DISPLAY_NAME,
-            "bot_response",
-            undefined,
-            [userId]
-          );
-          setMessages((prev) => [...prev, botMsg]);
-          return;
-        } else {
-          // Internal Handover (Smoothly brings the assigned human agent into the group thread)
-          const announcement = `🤝 Got it **@${senderName}**! **@${assigneeName}**, could you review the custom requirements above and advise on the tailored terms?`;
-
+        try {
           const botMsg = await postGroupMessage(
             groupId,
             BUDDY_USER_ID,
@@ -625,9 +528,64 @@ export default function GroupChatWindow({ groupId, onToggleDetails, detailsOpen 
           );
           setMessages((prev) => [...prev, botMsg]);
           return;
+        } catch (err) {
+          console.error("Escalation post error:", err);
         }
-      } catch (err) {
-        console.error("Handover creation error:", err);
+      }
+
+      // 2B. Custom Policy / Discount Structuring -> Handover Mode dependent
+      if (isCustomPolicyDiscountRequest(text)) {
+        const currentMode = (currentGroup?.handover_mode || "internal") as "internal" | "external";
+
+        try {
+          // Collect recent conversation context so the assigned agent has full visibility in their DM
+          const recentMsgs = messages.slice(-6).map((m) => `${m.sender_name || m.sender_id}: ${m.content}`).join("\n");
+          const fullRequirement = recentMsgs ? `${text}\n\n[Recent Group Conversation Context:\n${recentMsgs}]` : text;
+
+          await createHandover({
+            group_id: groupId,
+            group_name: currentGroup?.name || "Group",
+            requester_id: userId,
+            requester_name: senderName,
+            assigned_to: assigneeId,
+            mode: currentMode,
+            requirement: fullRequirement,
+          });
+
+          if (currentMode === "external") {
+            // Subtle, professional client-facing message (does not expose internal backend escalation)
+            const announcement = `⏳ Got it, **@${senderName}**! Let me review the custom requirements and structure tailored options for you. I'll share the finalized plan here shortly!`;
+
+            const botMsg = await postGroupMessage(
+              groupId,
+              BUDDY_USER_ID,
+              announcement,
+              BUDDY_DISPLAY_NAME,
+              "bot_response",
+              undefined,
+              [userId]
+            );
+            setMessages((prev) => [...prev, botMsg]);
+            return;
+          } else {
+            // Internal Handover (Smoothly brings the assigned human agent into the group thread)
+            const announcement = `🤝 Got it **@${senderName}**! **@${assigneeName}**, could you review the custom requirements above and advise on the tailored terms?`;
+
+            const botMsg = await postGroupMessage(
+              groupId,
+              BUDDY_USER_ID,
+              announcement,
+              BUDDY_DISPLAY_NAME,
+              "bot_response",
+              undefined,
+              [assigneeId, userId]
+            );
+            setMessages((prev) => [...prev, botMsg]);
+            return;
+          }
+        } catch (err) {
+          console.error("Handover creation error:", err);
+        }
       }
     }
 
@@ -684,15 +642,49 @@ export default function GroupChatWindow({ groupId, onToggleDetails, detailsOpen 
       }
 
       // Finalize: save Dolphin Buddy response into group messages table
-      const cleanedFinal = deduplicateRepeatedText(accumulatedText);
+      let cleanedFinal = deduplicateRepeatedText(accumulatedText);
+
+      // Check if Dolphin Buddy response is an escalation/tagging response (e.g. unlisted policy or manager escalation)
+      const isEscalationResponse =
+        /tagging\s+(our\s+)?(underwriting|operations|team|senior|manager)|escalat|don't\s+have\s+standard\s+automated\s+catalog|unlisted\s+policy/i.test(
+          cleanedFinal
+        );
+
+      const otherHumans = (group?.members || []).filter(
+        (m) =>
+          m.is_bot === 0 &&
+          m.user_id.toLowerCase() !== userId.toLowerCase() &&
+          m.user_id !== BUDDY_USER_ID
+      );
+      const assigneeObj = otherHumans[0];
+      const assigneeName = assigneeObj
+        ? assigneeObj.display_name || assigneeObj.user_id
+        : "Operations Team";
+      const assigneeId = assigneeObj ? assigneeObj.user_id : undefined;
+
+      const currentMode = (group?.handover_mode || "internal") as "internal" | "external";
+
+      if (isEscalationResponse && assigneeObj && currentMode === "internal") {
+        if (
+          !cleanedFinal.includes(`@${assigneeName}`) &&
+          !cleanedFinal.includes(`@${assigneeObj.user_id}`)
+        ) {
+          cleanedFinal = `${cleanedFinal}\n\n🤝 **@${assigneeName}**, could you please review and share the policy details for @${senderName}?`;
+        }
+      }
+
       if (cleanedFinal || accumulatedArtifacts.length > 0) {
+        const mentions: string[] = [userId];
+        if (assigneeId && isEscalationResponse) mentions.push(assigneeId);
+
         const botMsg = await postGroupMessage(
           groupId,
           BUDDY_USER_ID,
           cleanedFinal,
           BUDDY_DISPLAY_NAME,
           "bot_response",
-          accumulatedArtifacts
+          accumulatedArtifacts,
+          mentions
         );
         setMessages((prev) => [...prev, botMsg]);
       }
