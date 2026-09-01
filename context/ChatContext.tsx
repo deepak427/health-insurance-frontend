@@ -164,7 +164,9 @@ export function ChatProvider({ children }: { children: ReactNode }) {
         })
       );
 
-      const activeAdk = adkResults.filter((s): s is ChatSessionMeta => s !== null);
+      const activeAdk = adkResults
+        .filter((s): s is ChatSessionMeta => s !== null)
+        .filter((s) => !s.id.startsWith("dm_handover_"));
       const existingIds = new Set(activeAdk.map((s) => s.id));
       const campSessions: ChatSessionMeta[] = [];
 
@@ -300,6 +302,23 @@ export function ChatProvider({ children }: { children: ReactNode }) {
           } else {
             setSessionReadyRaw(null);
           }
+        } else if (sid.startsWith("dm_handover_")) {
+          const pending = await listPendingHandovers(uid).catch(() => []);
+          const hMatch = pending.find((h) => (h.dm_session_id || `dm_handover_${h.id}`) === sid);
+          if (hMatch) {
+            const intro =
+              `📋 **Custom Policy Handover Request**\n\n` +
+              `**Client:** @${hMatch.requester_name} in *"${hMatch.group_name}"*\n\n` +
+              `**Requirement & Context:**\n${hMatch.requirement}\n\n` +
+              `Hey @${name || uid}! How would you like to customize this policy for @${hMatch.requester_name}?\n` +
+              `You can chat with me here in natural language (e.g. *"Add extreme sports cover, give 10% discount, make premium ₹1,500"*), ` +
+              `and when you're satisfied with the terms, click **Approve & Publish to Group** above!`;
+
+            setMessages([{ role: "agent", text: intro }]);
+            setSessionReadyRaw(true);
+          } else {
+            setSessionReadyRaw(null);
+          }
         } else {
           setSessionReadyRaw(null);
         }
@@ -396,14 +415,15 @@ export function ChatProvider({ children }: { children: ReactNode }) {
 
       // If it's a handover DM consultation session and events are empty
       if (loadedMessages.length === 0 && sid.startsWith("dm_handover_")) {
-        const hMatch = sessions.find((s) => s.id === sid)?.handoverMeta;
+        const pending = await listPendingHandovers(userId).catch(() => []);
+        const hMatch = pending.find((h) => (h.dm_session_id || `dm_handover_${h.id}`) === sid);
         if (hMatch) {
           const intro =
             `📋 **Custom Policy Handover Request**\n\n` +
             `**Client:** @${hMatch.requester_name} in *"${hMatch.group_name}"*\n\n` +
             `**Requirement & Context:**\n${hMatch.requirement}\n\n` +
             `Hey @${username || userId}! How would you like to customize this policy for @${hMatch.requester_name}?\n` +
-            `You can tell me in natural language (e.g. *"Add extreme sports cover, give 10% discount, make premium ₹1,500"*), ` +
+            `You can chat with me here in natural language (e.g. *"Add extreme sports cover, give 10% discount, make premium ₹1,500"*), ` +
             `and when you're satisfied with the terms, click **Approve & Publish to Group** above!`;
 
           loadedMessages = [{

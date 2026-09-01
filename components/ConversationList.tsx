@@ -367,30 +367,6 @@ export default function ConversationList({ onNewChat, isOpenMobile, onCloseMobil
         </div>
       )}
 
-      {/* Pending Handover Consultation Alert Card */}
-      {pendingHandovers.length > 0 && (
-        <div className="mx-3 my-2 p-3 bg-[#fffbeb] border border-[#fef3c7] rounded-xl shrink-0 shadow-2xs">
-          <div className="flex items-start justify-between gap-2">
-            <div className="flex items-center gap-1.5 text-xs font-bold text-[#92400e]">
-              <Sparkles size={14} className="text-[#f59e0b]" />
-              <span>Handover Action Required</span>
-            </div>
-            <span className="text-[10px] bg-[#f59e0b] text-white px-1.5 py-0.2 rounded-full font-black">
-              {pendingHandovers.length}
-            </span>
-          </div>
-          <p className="text-[11px] text-[#78350f] mt-1 line-clamp-2">
-            <strong>@{pendingHandovers[0].requester_name}</strong> in <em>{pendingHandovers[0].group_name}</em>: &quot;{pendingHandovers[0].requirement}&quot;
-          </p>
-          <button
-            onClick={() => setSelectedHandover(pendingHandovers[0])}
-            className="w-full mt-2 py-1.5 bg-[#d97706] hover:bg-[#b45309] text-white font-bold text-xs rounded-lg transition-colors cursor-pointer text-center shadow-2xs"
-          >
-            Review & Structure Quote
-          </button>
-        </div>
-      )}
-
       {/* WhatsApp Thread List */}
       <div className="flex-1 overflow-y-auto divide-y divide-[#f0f2f5]">
         {filtered.length === 0 ? (
