@@ -14,7 +14,7 @@ import PoliciesPanel from "./PoliciesPanel";
 import CampaignsPanel from "./CampaignsPanel";
 import DocumentModal from "./DocumentModal";
 import HandoverApprovalModal from "./HandoverApprovalModal";
-import { HandoverRecord } from "@/lib/groupApi";
+import { HandoverRecord, listPendingHandovers } from "@/lib/groupApi";
 import {
   AlertCircle, Search, Phone, MoreVertical, ShieldCheck, Bell, ChevronDown,
   Menu, Users, Info, Coins, Plus, X, Check, Loader2, Calendar, FileText,
@@ -70,6 +70,16 @@ export default function ChatWindow() {
 
   // Handover Approval Modal state
   const [selectedHandoverToApprove, setSelectedHandoverToApprove] = useState<HandoverRecord | null>(null);
+  const [pendingHandovers, setPendingHandovers] = useState<HandoverRecord[]>([]);
+
+  useEffect(() => {
+    if (!userId) return;
+    listPendingHandovers(userId).then(setPendingHandovers).catch(() => {});
+    const interval = setInterval(() => {
+      listPendingHandovers(userId).then(setPendingHandovers).catch(() => {});
+    }, 3000);
+    return () => clearInterval(interval);
+  }, [userId]);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -143,7 +153,15 @@ export default function ChatWindow() {
       // loads the artifact from storage via its own genai.Client call.
       const inlineData = undefined;
 
-      for await (const chunk of streamMessage(userId, sessionId, userMessageText, inlineData)) {
+      let textToSend = userMessageText;
+      if (sessionId.startsWith("dm_handover_")) {
+        const hMatch = sessions.find((s) => s.id === sessionId)?.handoverMeta;
+        if (hMatch) {
+          textToSend = `[HANDOVER CONSULTATION MODE | Client: @${hMatch.requester_name} in "${hMatch.group_name}" | Context & History:\n${hMatch.requirement}]\n\n[Assigned Agent Instructions]: ${userMessageText}`;
+        }
+      }
+
+      for await (const chunk of streamMessage(userId, sessionId, textToSend, inlineData)) {
         setMessages((prev) => {
           const updated = [...prev];
           const last = updated[updated.length - 1];
@@ -274,6 +292,24 @@ export default function ChatWindow() {
             </div>
           </div>
         </header>
+
+        {/* Top Pending Handover Alert Banner for Assigned Agent */}
+        {pendingHandovers.length > 0 && (
+          <div className="bg-[#fffbeb] border-b border-[#fef3c7] px-4 py-2 flex items-center justify-between z-20 text-xs shadow-2xs shrink-0">
+            <div className="flex items-center gap-2 text-[#92400e] font-medium min-w-0">
+              <span className="w-2 h-2 rounded-full bg-[#f59e0b] animate-ping shrink-0" />
+              <span className="truncate">
+                <strong>{pendingHandovers.length} Pending Handover Request{pendingHandovers.length > 1 ? "s" : ""}</strong>: @{pendingHandovers[0].requester_name} requested custom policy in &quot;{pendingHandovers[0].group_name}&quot;
+              </span>
+            </div>
+            <button
+              onClick={() => setSelectedHandoverToApprove(pendingHandovers[0])}
+              className="px-3 py-1 bg-[#d97706] hover:bg-[#b45309] text-white font-bold text-[11px] rounded-lg shadow-xs transition-colors cursor-pointer shrink-0 ml-2"
+            >
+              Review & Structure Quote
+            </button>
+          </div>
+        )}
 
         {/* ── Main Workspace: Threads (Col 2) + Chat (Col 3) + Details (Col 4) ── */}
         <div className="flex flex-1 min-h-0 overflow-hidden">

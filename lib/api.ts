@@ -219,7 +219,10 @@ export function eventsToMessages(events: ADKEvent[]): ChatMessage[] {
           userAttachment = { name, mimeType, data: inlineObj.data };
         }
 
-        const msgText = text || (userAttachment ? `📎 ${userAttachment.name}` : "");
+        let msgText = text || (userAttachment ? `📎 ${userAttachment.name}` : "");
+        if (msgText.startsWith("[HANDOVER CONSULTATION MODE")) {
+          msgText = msgText.replace(/^\[HANDOVER CONSULTATION MODE[\s\S]*?\[Assigned Agent Instructions\]:\s*/i, "").trim();
+        }
         if (msgText || userAttachment) {
           msgs.push({ role: "user", text: msgText, userAttachment });
         }
@@ -264,7 +267,10 @@ export function sessionPreview(events: ADKEvent[]): string {
       if (isFunctionResponse) continue;
       const text = ev.content.parts?.find((p) => p.text)?.text;
       if (text) {
-        const clean = text.replace(/\n?📎 .+$/, "").trim();
+        let clean = text.replace(/\n?📎 .+$/, "").trim();
+        if (clean.startsWith("[HANDOVER CONSULTATION MODE")) {
+          clean = clean.replace(/^\[HANDOVER CONSULTATION MODE[\s\S]*?\[Assigned Agent Instructions\]:\s*/i, "").trim();
+        }
         return (clean || "Conversation").slice(0, 60) + (clean.length > 60 ? "…" : "");
       }
     }

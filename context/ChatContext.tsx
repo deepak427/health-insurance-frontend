@@ -194,21 +194,6 @@ export function ChatProvider({ children }: { children: ReactNode }) {
         }
       }
 
-      // Merge handover DM consultation sessions
-      const handoverSessions: ChatSessionMeta[] = pendingHandovers.map((h) => {
-        const sid = h.dm_session_id || `dm_handover_${h.id}`;
-        const title = `🤝 Handover: @${h.requester_name} (${h.group_name})`;
-        savePreview(sid, title);
-        return {
-          id: sid,
-          preview: title,
-          lastUpdateTime: Math.floor(new Date(h.created_at).getTime() / 1000),
-          unreadCount: sid === sessionId ? 0 : 1,
-          isHandover: true,
-          handoverMeta: h,
-        };
-      });
-
       // Merge groups into session list
       const groupSessions: ChatSessionMeta[] = groupList.map((g) => ({
         id: g.id,
@@ -219,7 +204,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
         groupMeta: g,
       }));
 
-      const merged = [...handoverSessions, ...groupSessions, ...campSessions, ...activeAdk].sort(
+      const merged = [...groupSessions, ...campSessions, ...activeAdk].sort(
         (a, b) => b.lastUpdateTime - a.lastUpdateTime
       );
       setSessions(merged);
@@ -287,22 +272,8 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       setUserId(uid);
       setSessionId(sid);
       getSession(uid, sid).then(async (existing) => {
-        if (existing && existing.events.length > 0) {
-          setMessages(eventsToMessages(existing.events));
-          setSessionReadyRaw(true);
-        } else if (existing) {
-          setSessionReadyRaw(true);
-        } else if (sid.startsWith("session_camp_")) {
-          // Check campaign msg fallback
-          const campMsgs = await fetchUserCampaignMessages(uid).catch(() => []);
-          const match = campMsgs.find((c) => c.session_id === sid);
-          if (match) {
-            setMessages([{ role: "agent", text: `📢 **${match.title}**\n\n${match.message}` }]);
-            setSessionReadyRaw(true);
-          } else {
-            setSessionReadyRaw(null);
-          }
-        } else if (sid.startsWith("dm_handover_")) {
+        let loaded = existing && existing.events.length > 0 ? eventsToMessages(existing.events) : [];
+        if (sid.startsWith("dm_handover_")) {
           const pending = await listPendingHandovers(uid).catch(() => []);
           const hMatch = pending.find((h) => (h.dm_session_id || `dm_handover_${h.id}`) === sid);
           if (hMatch) {
@@ -314,7 +285,24 @@ export function ChatProvider({ children }: { children: ReactNode }) {
               `You can chat with me here in natural language (e.g. *"Add extreme sports cover, give 10% discount, make premium ₹1,500"*), ` +
               `and when you're satisfied with the terms, click **Approve & Publish to Group** above!`;
 
-            setMessages([{ role: "agent", text: intro }]);
+            const hasIntro = loaded.length > 0 && loaded[0].text.includes("Custom Policy Handover Request");
+            if (!hasIntro) {
+              loaded = [{ role: "agent", text: intro }, ...loaded];
+            }
+          }
+        }
+
+        if (loaded.length > 0) {
+          setMessages(loaded);
+          setSessionReadyRaw(true);
+        } else if (existing) {
+          setSessionReadyRaw(true);
+        } else if (sid.startsWith("session_camp_")) {
+          // Check campaign msg fallback
+          const campMsgs = await fetchUserCampaignMessages(uid).catch(() => []);
+          const match = campMsgs.find((c) => c.session_id === sid);
+          if (match) {
+            setMessages([{ role: "agent", text: `📢 **${match.title}**\n\n${match.message}` }]);
             setSessionReadyRaw(true);
           } else {
             setSessionReadyRaw(null);
@@ -413,8 +401,8 @@ export function ChatProvider({ children }: { children: ReactNode }) {
         }
       }
 
-      // If it's a handover DM consultation session and events are empty
-      if (loadedMessages.length === 0 && sid.startsWith("dm_handover_")) {
+      // If it's a handover DM consultation session
+      if (sid.startsWith("dm_handover_")) {
         const pending = await listPendingHandovers(userId).catch(() => []);
         const hMatch = pending.find((h) => (h.dm_session_id || `dm_handover_${h.id}`) === sid);
         if (hMatch) {
@@ -426,10 +414,10 @@ export function ChatProvider({ children }: { children: ReactNode }) {
             `You can chat with me here in natural language (e.g. *"Add extreme sports cover, give 10% discount, make premium ₹1,500"*), ` +
             `and when you're satisfied with the terms, click **Approve & Publish to Group** above!`;
 
-          loadedMessages = [{
-            role: "agent",
-            text: intro,
-          }];
+          const hasIntro = loadedMessages.length > 0 && loadedMessages[0].text.includes("Custom Policy Handover Request");
+          if (!hasIntro) {
+            loadedMessages = [{ role: "agent", text: intro }, ...loadedMessages];
+          }
           savePreview(sid, `🤝 Handover: @${hMatch.requester_name} (${hMatch.group_name})`);
         }
       }

@@ -124,7 +124,7 @@ function isCustomPolicyRequest(query: string, otherMembers?: GroupMember[]): boo
       if (m.is_bot) continue;
       const name = (m.display_name || m.user_id).toLowerCase();
       const memberActionRegex = new RegExp(
-        `\\b${name}\\b.*\\b(can|will|do|help|handle|check|structure|look)\\b|\\b(ask|let|tag|handover|assign)\\b.*\\b${name}\\b`,
+        `\\b${name}\\b.*\\b(can|will|do|help|handle|check|structure|look|take over|manage)\\b|\\b(ask|let|tag|handover|assign|escalate to|transfer to)\\b.*\\b${name}\\b`,
         "i"
       );
       if (memberActionRegex.test(lower)) {
@@ -134,20 +134,17 @@ function isCustomPolicyRequest(query: string, otherMembers?: GroupMember[]): boo
   }
 
   const keywords = [
+    // Customization & Pricing
     "custom policy",
     "custom quote",
     "customized quote",
     "custom plan",
     "custom pricing",
     "special discount",
-    "manager approval",
     "manual quote",
     "custom riders",
     "extreme sports",
     "adventure sports",
-    "talk to human",
-    "human agent",
-    "agent assistance",
     "need customization",
     "need customizations",
     "customize quote",
@@ -155,15 +152,52 @@ function isCustomPolicyRequest(query: string, otherMembers?: GroupMember[]): boo
     "group discount approval",
     "pre-existing condition approval",
     "tailored policy",
-    "handover to human",
-    "handover",
-    "need human",
     "customization",
     "customizations",
     "cutomization",
     "cutomizations",
     "customise",
     "customises",
+    // Escalation & Higher Manager
+    "escalate",
+    "escalation",
+    "higher manager",
+    "senior manager",
+    "manager approval",
+    "talk to manager",
+    "speak to manager",
+    "speak with manager",
+    "connect to manager",
+    "call manager",
+    "supervisor",
+    "operations lead",
+    "team lead",
+    "higher authority",
+    // Human Assistance
+    "talk to human",
+    "human agent",
+    "real person",
+    "live agent",
+    "agent assistance",
+    "handover to human",
+    "handover",
+    "need human",
+    "transfer to agent",
+    "connect to agent",
+    // Complaints & Disputes
+    "file a complaint",
+    "complaint",
+    "claim dispute",
+    "dispute",
+    "grievance",
+    "not satisfied",
+    // AI Fallback / Confusion
+    "ai doesn't understand",
+    "ai don't understand",
+    "you don't understand",
+    "you dont understand",
+    "not what i asked",
+    "wrong response",
   ];
   return keywords.some((k) => lower.includes(k));
 }
@@ -757,19 +791,19 @@ export default function GroupChatWindow({ groupId, onToggleDetails, detailsOpen 
           {/* Handover Mode Switcher Pill */}
           <button
             onClick={handleToggleHandoverMode}
-            className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold border transition-all cursor-pointer shadow-2xs ${
+            className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-black border transition-all cursor-pointer shadow-2xs ${
               group?.handover_mode === "external"
                 ? "bg-[#eef2ff] border-[#c7d2fe] text-[#4338ca] hover:bg-[#e0e7ff]"
                 : "bg-[#ecfdf5] border-[#a7f3d0] text-[#065f46] hover:bg-[#d1fae5]"
             }`}
-            title="Click to toggle between Internal and External Handover mode"
+            title={`Handover Mode: ${group?.handover_mode === "external" ? "External (E)" : "Internal (I)"}. Click to toggle.`}
           >
             <span
               className={`w-2 h-2 rounded-full ${
                 group?.handover_mode === "external" ? "bg-[#6366f1] animate-pulse" : "bg-[#00a86b] animate-pulse"
               }`}
             />
-            <span>{group?.handover_mode === "external" ? "External Handover" : "Internal Handover"}</span>
+            <span>{group?.handover_mode === "external" ? "E" : "I"}</span>
           </button>
 
           <button
@@ -833,8 +867,8 @@ export default function GroupChatWindow({ groupId, onToggleDetails, detailsOpen 
                 <span className="flex items-center gap-2">
                   <Sparkles size={14} className="text-[#ff5722]" /> Handover Mode
                 </span>
-                <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-gray-100 uppercase">
-                  {group?.handover_mode || "internal"}
+                <span className="text-[10px] font-black px-2 py-0.5 rounded bg-gray-100 uppercase">
+                  {group?.handover_mode === "external" ? "E" : "I"}
                 </span>
               </button>
               <button
