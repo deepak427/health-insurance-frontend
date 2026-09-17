@@ -9,7 +9,7 @@
  *
  * Features:
  *  - Displays full message history (inbound + outbound) polled every 3 s
- *  - Shows card-marker text as plain text (the formatter already cleaned it)
+ *  - Renders outbound agent messages with full card UI (policy cards, booking cards, etc.)
  *  - Mute / unmute AI toggle in the header
  *  - Manual reply input (only shown when AI is muted, always available)
  *  - WhatsApp-style bubble layout
@@ -24,6 +24,7 @@ import {
   WhatsAppConversation,
 } from "@/lib/api";
 import { useChatContext } from "@/context/ChatContext";
+import Message from "@/components/Message";
 import {
   BotOff,
   Bot,
@@ -266,41 +267,39 @@ export default function WhatsAppChatWindow({ conversation, onMuteChange }: Props
 
               {dayMsgs.map((msg) => {
                 const isOutbound = msg.direction === "outbound";
+
+                // Outbound AI/agent messages: use the full Message component so
+                // embedded card markers (<!--POLICY_CARDS:...-->, etc.) are
+                // parsed and rendered as rich UI cards — same as normal web chat.
+                if (isOutbound) {
+                  return (
+                    <div key={msg.id} className="mb-1.5">
+                      <Message
+                        msg={{ role: "agent", text: msg.text }}
+                        userId={conversation.user_id}
+                        sessionId={conversation.session_id}
+                        onSend={(prompt) => {
+                          setReplyText(prompt);
+                          inputRef.current?.focus();
+                        }}
+                        senderLabel={msg.sender_label || "Buddy"}
+                      />
+                    </div>
+                  );
+                }
+
+                // Inbound (user) messages: plain WhatsApp-style bubble
                 return (
                   <div
                     key={msg.id}
-                    className={`flex mb-1.5 ${isOutbound ? "justify-end" : "justify-start"}`}
+                    className="flex mb-1.5 justify-start"
                   >
-                    <div
-                      className={`max-w-[75%] sm:max-w-[65%] rounded-lg px-3 py-2 shadow-[0_1px_0.5px_rgba(11,20,26,0.13)] text-[14px] leading-relaxed ${
-                        isOutbound
-                          ? "bg-[#d9fdd3] text-[#111b21] rounded-tr-none"
-                          : "bg-white text-[#111b21] rounded-tl-none"
-                      }`}
-                    >
-                      {/* Sender label (outbound only, to show who replied) */}
-                      {isOutbound && msg.sender_label && msg.sender_label !== "Buddy" && (
-                        <p className="text-[11px] font-bold text-[#008069] mb-0.5">
-                          {msg.sender_label}
-                        </p>
-                      )}
-                      {/* Buddy label on outbound AI messages */}
-                      {isOutbound && msg.sender_label === "Buddy" && (
-                        <p className="text-[11px] font-bold text-[#008069] mb-0.5 flex items-center gap-1">
-                          <Bot size={11} />
-                          Buddy
-                        </p>
-                      )}
-
+                    <div className="max-w-[75%] sm:max-w-[65%] rounded-lg px-3 py-2 shadow-[0_1px_0.5px_rgba(11,20,26,0.13)] text-[14px] leading-relaxed bg-white text-[#111b21] rounded-tl-none">
                       {/* Message text — preserve line breaks */}
                       <p className="whitespace-pre-wrap break-words">{msg.text}</p>
 
                       {/* Timestamp */}
-                      <p
-                        className={`text-[11px] mt-1 text-right ${
-                          isOutbound ? "text-[#667781]" : "text-[#667781]"
-                        }`}
-                      >
+                      <p className="text-[11px] mt-1 text-right text-[#667781]">
                         {formatTime(msg.created_at)}
                       </p>
                     </div>
