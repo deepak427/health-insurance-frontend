@@ -9,6 +9,7 @@ import ConversationDetails from "./ConversationDetails";
 import Message from "./Message";
 import ChatInput from "./ChatInput";
 import GroupChatWindow from "./GroupChatWindow";
+import WhatsAppChatWindow from "./WhatsAppChatWindow";
 import UsernameModal from "./UsernameModal";
 import PoliciesPanel from "./PoliciesPanel";
 import CampaignsPanel from "./CampaignsPanel";
@@ -44,6 +45,10 @@ export default function ChatWindow() {
     ensureSession,
     refreshSessionList,
     setUsername,
+    activeWhatsAppPhone,
+    whatsappConversations,
+    setActiveWhatsAppPhone,
+    refreshWhatsAppConversations,
   } = useChatContext();
 
   const bottomRef = useRef<HTMLDivElement>(null);
@@ -325,8 +330,22 @@ export default function ChatWindow() {
               onCloseMobile={() => setListOpen(false)}
             />
 
-            {/* Column 3: Chat Stream (Group or 1:1) */}
-            {activeGroupId ? (
+            {/* Column 3: Chat Stream (WhatsApp | Group | 1:1) */}
+            {activeWhatsAppPhone ? (
+              (() => {
+                const conv = whatsappConversations.find((c) => c.phone === activeWhatsAppPhone);
+                return conv ? (
+                  <WhatsAppChatWindow
+                    conversation={conv}
+                    onMuteChange={() => refreshWhatsAppConversations()}
+                  />
+                ) : (
+                  <div className="flex flex-col flex-1 items-center justify-center text-[#667781] text-sm">
+                    Loading conversation…
+                  </div>
+                );
+              })()
+            ) : activeGroupId ? (
               <GroupChatWindow
                 groupId={activeGroupId}
                 onToggleDetails={() => setDetailsOpen((v) => !v)}

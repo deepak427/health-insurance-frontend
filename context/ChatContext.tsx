@@ -1,7 +1,7 @@
 "use client";
 
 import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from "react";
-import { createSession, listSessions, getSession, deleteSession, eventsToMessages, sessionPreview, ADKSession, fetchWallet, fetchUserCampaignMessages, markCampaignMessagesSeen } from "@/lib/api";
+import { createSession, listSessions, getSession, deleteSession, eventsToMessages, sessionPreview, ADKSession, fetchWallet, fetchUserCampaignMessages, markCampaignMessagesSeen, listWhatsAppConversations, WhatsAppConversation } from "@/lib/api";
 import { listGroups, deleteGroup, GroupItem, listPendingHandovers, HandoverRecord } from "@/lib/groupApi";
 import { getUsername, getOrCreateSession, newSession, setActiveSession } from "@/lib/session";
 import type { Msg } from "@/components/Message";
@@ -34,6 +34,11 @@ interface ChatContextValue {
   activeGroupId: string | null;
   setActiveGroupId: (id: string | null) => void;
   refreshGroups: () => Promise<void>;
+  // WhatsApp
+  whatsappConversations: WhatsAppConversation[];
+  activeWhatsAppPhone: string | null;
+  setActiveWhatsAppPhone: (phone: string | null) => void;
+  refreshWhatsAppConversations: () => Promise<void>;
   walletBalance: number;
   unreadCount: number;
   previewDoc: PreviewDocument | null;
@@ -95,6 +100,8 @@ export function ChatProvider({ children }: { children: ReactNode }) {
   const [sessions, setSessions] = useState<ChatSessionMeta[]>([]);
   const [groups, setGroups] = useState<GroupItem[]>([]);
   const [activeGroupId, setActiveGroupId] = useState<string | null>(null);
+  const [whatsappConversations, setWhatsappConversations] = useState<WhatsAppConversation[]>([]);
+  const [activeWhatsAppPhone, setActiveWhatsAppPhone] = useState<string | null>(null);
   const [walletBalance, setWalletBalance] = useState<number>(0);
   const [previewDoc, setPreviewDoc] = useState<PreviewDocument | null>(null);
 
@@ -131,6 +138,15 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       console.warn("Failed to refresh groups:", err);
     }
   }, [userId]);
+
+  const refreshWhatsAppConversations = useCallback(async () => {
+    try {
+      const convs = await listWhatsAppConversations();
+      setWhatsappConversations(convs);
+    } catch {
+      // ignore — WhatsApp may not be configured yet
+    }
+  }, []);
 
   const refreshSessionList = useCallback(async (uid?: string) => {
     const id = uid || userId;
@@ -314,6 +330,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       refreshSessionList(uid);
       refreshWallet(uid);
       checkCampaignMessages(uid);
+      refreshWhatsAppConversations();
     }
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -323,9 +340,10 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     const interval = setInterval(() => {
       checkCampaignMessages(userId);
       refreshSessionList(userId);
+      refreshWhatsAppConversations();
     }, 3000);
     return () => clearInterval(interval);
-  }, [userId, checkCampaignMessages, refreshSessionList]);
+  }, [userId, checkCampaignMessages, refreshSessionList, refreshWhatsAppConversations]);
 
   const setUsername = useCallback((name: string) => {
     import("@/lib/session").then(({ setUsername: save }) => save(name));
@@ -355,6 +373,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
   const handleNewChat = useCallback(() => {
     if (!userId) return;
     setActiveGroupId(null);
+    setActiveWhatsAppPhone(null);
     const { sessionId: sid } = newSession(userId);
     setSessionId(sid);
     setMessages([]);
@@ -365,13 +384,23 @@ export function ChatProvider({ children }: { children: ReactNode }) {
   const switchSession = useCallback(async (sid: string) => {
     if (!userId) return;
 
+    // Sentinel used when a WhatsApp conversation is selected — just clear other active states
+    if (sid === "__wa__") {
+      setActiveGroupId(null);
+      setMessages([]);
+      setError(null);
+      return;
+    }
+
     if (sid.startsWith("grp_")) {
       setActiveGroupId(sid);
+      setActiveWhatsAppPhone(null);
       setSessions((prev) => prev.map((s) => s.id === sid ? { ...s, unreadCount: 0 } : s));
       return;
     }
 
     setActiveGroupId(null);
+    setActiveWhatsAppPhone(null);
     setActiveSession(sid);
     setSessionId(sid);
     setMessages([]);
@@ -484,6 +513,10 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       activeGroupId,
       setActiveGroupId,
       refreshGroups,
+      whatsappConversations,
+      activeWhatsAppPhone,
+      setActiveWhatsAppPhone,
+      refreshWhatsAppConversations,
       walletBalance,
       unreadCount: totalUnreadCount,
       previewDoc,

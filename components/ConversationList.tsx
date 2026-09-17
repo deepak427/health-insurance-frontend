@@ -1,9 +1,10 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { Plus, MoreVertical, Pencil, Trash2, Check, Search, BellOff, MessageSquarePlus, Filter, X, Users, Sparkles } from "lucide-react";
+import { Plus, MoreVertical, Pencil, Trash2, Check, Search, BellOff, MessageSquarePlus, Filter, X, Users, Sparkles, Smartphone, BotOff, Bot } from "lucide-react";
 import { useChatContext } from "@/context/ChatContext";
 import type { ChatSessionMeta } from "@/context/ChatContext";
+import type { WhatsAppConversation } from "@/lib/api";
 import CreateGroupModal from "./CreateGroupModal";
 import HandoverApprovalModal from "./HandoverApprovalModal";
 import { listPendingHandovers, HandoverRecord } from "@/lib/groupApi";
@@ -219,7 +220,7 @@ function SessionRow({ s, isActive, onSwitch, onRename, onDelete }: {
 }
 
 export default function ConversationList({ onNewChat, isOpenMobile, onCloseMobile }: Props) {
-  const { userId, sessionId, activeGroupId, sessions, switchSession, removeSession, renameSession, refreshSessionList } = useChatContext();
+  const { userId, sessionId, activeGroupId, sessions, switchSession, removeSession, renameSession, refreshSessionList, whatsappConversations, activeWhatsAppPhone, setActiveWhatsAppPhone } = useChatContext();
   const [search, setSearch] = useState("");
   const [activeFilter, setActiveFilter] = useState<"all" | "unread" | "groups">("all");
   const [showNotificationBanner, setShowNotificationBanner] = useState(true);
@@ -369,22 +370,101 @@ export default function ConversationList({ onNewChat, isOpenMobile, onCloseMobil
 
       {/* WhatsApp Thread List */}
       <div className="flex-1 overflow-y-auto divide-y divide-[#f0f2f5]">
-        {filtered.length === 0 ? (
+        {filtered.length === 0 && whatsappConversations.length === 0 ? (
           <div className="flex flex-col items-center justify-center p-8 text-center text-[#667781]">
             <p className="text-sm font-medium">{search ? "No chats found" : "No conversations yet"}</p>
             <p className="text-xs mt-1">Click + or New Group to begin.</p>
           </div>
         ) : (
-          filtered.map((s) => (
-            <SessionRow
-              key={s.id}
-              s={s}
-              isActive={s.isGroup ? s.id === activeGroupId : s.id === sessionId && !activeGroupId}
-              onSwitch={() => { switchSession(s.id); onCloseMobile?.(); }}
-              onRename={(name) => renameSession(s.id, name)}
-              onDelete={() => removeSession(s.id)}
-            />
-          ))
+          <>
+            {filtered.map((s) => (
+              <SessionRow
+                key={s.id}
+                s={s}
+                isActive={s.isGroup ? s.id === activeGroupId : s.id === sessionId && !activeGroupId && !activeWhatsAppPhone}
+                onSwitch={() => { switchSession(s.id); onCloseMobile?.(); }}
+                onRename={(name) => renameSession(s.id, name)}
+                onDelete={() => removeSession(s.id)}
+              />
+            ))}
+
+            {/* WhatsApp Conversations Section */}
+            {whatsappConversations.length > 0 && (
+              <>
+                <div className="px-4 py-2 bg-[#f0f2f5] flex items-center gap-2">
+                  <Smartphone size={13} className="text-[#25d366]" />
+                  <span className="text-[11px] font-bold text-[#54656f] uppercase tracking-wide">
+                    WhatsApp
+                  </span>
+                  <span className="ml-auto text-[10px] text-[#667781]">
+                    {whatsappConversations.length} contact{whatsappConversations.length !== 1 ? "s" : ""}
+                  </span>
+                </div>
+                {whatsappConversations
+                  .filter((c) => {
+                    if (!search) return true;
+                    const name = (c.display_name || c.phone).toLowerCase();
+                    return name.includes(search.toLowerCase());
+                  })
+                  .map((conv) => {
+                    const isActive = conv.phone === activeWhatsAppPhone;
+                    const displayName = conv.display_name || conv.phone;
+                    const lastMsg = conv.last_message;
+                    const lastText = lastMsg
+                      ? lastMsg.text.replace(/<!--.*?-->/gs, "").trim().slice(0, 50)
+                      : "No messages yet";
+                    const lastTime = lastMsg
+                      ? timeLabel(Math.floor(new Date(lastMsg.created_at).getTime() / 1000))
+                      : "";
+
+                    return (
+                      <div
+                        key={conv.phone}
+                        onClick={() => {
+                          setActiveWhatsAppPhone(conv.phone);
+                          // Clear other active states
+                          switchSession("__wa__");
+                          onCloseMobile?.();
+                        }}
+                        className={`group relative flex items-center gap-3.5 px-3.5 py-3 cursor-pointer transition-colors border-b border-[#f0f2f5] ${
+                          isActive ? "bg-[#f0f2f5]" : "hover:bg-[#f5f6f6] bg-white"
+                        }`}
+                      >
+                        {/* WhatsApp Avatar */}
+                        <div className="w-12 h-12 rounded-full bg-[#25d366] text-white flex items-center justify-center font-bold text-sm shrink-0 shadow-sm">
+                          <Smartphone size={20} />
+                        </div>
+
+                        <div className="flex-1 min-w-0 flex flex-col justify-center">
+                          <div className="flex items-center justify-between gap-1">
+                            <p className="text-[15px] font-semibold text-[#111b21] truncate leading-tight flex items-center gap-1.5">
+                              {displayName}
+                              <span className="text-[10px] font-bold px-1 py-0.5 rounded-full bg-[#25d366] text-white shrink-0">
+                                WA
+                              </span>
+                            </p>
+                            <span className="text-[12px] text-[#667781] shrink-0">{lastTime}</span>
+                          </div>
+
+                          <div className="flex items-center justify-between gap-1 mt-0.5">
+                            <p className="text-xs text-[#667781] truncate">{lastText}</p>
+                            {conv.ai_muted === 1 ? (
+                              <span className="flex items-center gap-0.5 text-[10px] text-[#856404] bg-[#fff3cd] px-1.5 py-0.5 rounded-full shrink-0 font-semibold">
+                                <BotOff size={9} /> Muted
+                              </span>
+                            ) : (
+                              <span className="flex items-center gap-0.5 text-[10px] text-[#065f46] bg-[#d1fae5] px-1.5 py-0.5 rounded-full shrink-0 font-semibold">
+                                <Bot size={9} /> AI On
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+              </>
+            )}
+          </>
         )}
       </div>
 

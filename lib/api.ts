@@ -575,3 +575,85 @@ export async function markCampaignMessagesSeen(userId: string, messageIds?: stri
     body: JSON.stringify({ message_ids: messageIds }),
   });
 }
+
+// ── WhatsApp API ──────────────────────────────────────────────────────────────
+
+export interface WhatsAppMessage {
+  id: number;
+  phone: string;
+  direction: "inbound" | "outbound";
+  sender_label: string | null;
+  text: string;
+  wa_message_id: string | null;
+  created_at: string;
+}
+
+export interface WhatsAppConversation {
+  phone: string;
+  user_id: string;
+  session_id: string;
+  display_name: string | null;
+  ai_muted: number; // 0 | 1
+  created_at: string;
+  updated_at: string;
+  last_message: WhatsAppMessage | null;
+}
+
+export async function listWhatsAppConversations(): Promise<WhatsAppConversation[]> {
+  try {
+    const res = await fetch(`${BASE_URL}/whatsapp/conversations`);
+    if (!res.ok) return [];
+    const data = await res.json();
+    return data.conversations ?? [];
+  } catch {
+    return [];
+  }
+}
+
+export async function fetchWhatsAppMessages(
+  phone: string,
+  limit = 100
+): Promise<WhatsAppMessage[]> {
+  try {
+    const res = await fetch(
+      `${BASE_URL}/whatsapp/conversations/${encodeURIComponent(phone)}/messages?limit=${limit}`
+    );
+    if (!res.ok) return [];
+    const data = await res.json();
+    return data.messages ?? [];
+  } catch {
+    return [];
+  }
+}
+
+export async function muteWhatsAppConversation(
+  phone: string,
+  aiMuted: boolean
+): Promise<boolean> {
+  const res = await fetch(
+    `${BASE_URL}/whatsapp/conversations/${encodeURIComponent(phone)}/mute`,
+    {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ai_muted: aiMuted }),
+    }
+  );
+  return res.ok;
+}
+
+export async function sendWhatsAppReply(
+  phone: string,
+  text: string,
+  agentName?: string
+): Promise<boolean> {
+  const res = await fetch(
+    `${BASE_URL}/whatsapp/conversations/${encodeURIComponent(phone)}/reply`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ text, agent_name: agentName ?? "Agent" }),
+    }
+  );
+  return res.ok;
+}
+// ─────────────────────────────────────────────────────────────────────────────
