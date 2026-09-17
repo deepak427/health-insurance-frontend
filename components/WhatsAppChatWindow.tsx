@@ -288,20 +288,28 @@ export default function WhatsAppChatWindow({ conversation, onMuteChange }: Props
                   );
                 }
 
-                // Inbound (user) messages: plain WhatsApp-style bubble
+                // Inbound (customer) messages: right-aligned green bubble
+                // so it's visually distinct from Buddy's left-aligned white bubbles
                 return (
                   <div
                     key={msg.id}
-                    className="flex mb-1.5 justify-start"
+                    className="flex mb-1.5 justify-end"
                   >
-                    <div className="max-w-[75%] sm:max-w-[65%] rounded-lg px-3 py-2 shadow-[0_1px_0.5px_rgba(11,20,26,0.13)] text-[14px] leading-relaxed bg-white text-[#111b21] rounded-tl-none">
-                      {/* Message text — preserve line breaks */}
-                      <p className="whitespace-pre-wrap break-words">{msg.text}</p>
-
-                      {/* Timestamp */}
-                      <p className="text-[11px] mt-1 text-right text-[#667781]">
-                        {formatTime(msg.created_at)}
+                    <div className="max-w-[75%] sm:max-w-[65%] rounded-lg px-3 py-2 shadow-[0_1px_0.5px_rgba(11,20,26,0.13)] text-[14px] leading-relaxed bg-[#d9fdd3] text-[#111b21] rounded-tr-none">
+                      {/* Customer label */}
+                      <p className="text-[11px] font-bold text-[#25d366] mb-0.5">
+                        {conversation.display_name || conversation.phone}
                       </p>
+                      {/* Message text */}
+                      <p className="whitespace-pre-wrap break-words">{msg.text}</p>
+                      {/* Timestamp + WhatsApp read ticks */}
+                      <div className="flex items-center justify-end gap-1 mt-1">
+                        <span className="text-[11px] text-[#667781]">{formatTime(msg.created_at)}</span>
+                        <svg viewBox="0 0 18 11" width="16" height="11" className="text-[#53bdeb]">
+                          <path fill="currentColor" d="M17.394.57 6.23 11.733l-5.624-5.625 1.414-1.414 4.21 4.21L15.98-.844z"/>
+                          <path fill="currentColor" d="M11.394.57.23 11.733l1.414 1.414L12.808 1.984z" opacity=".4"/>
+                        </svg>
+                      </div>
                     </div>
                   </div>
                 );
