@@ -411,7 +411,7 @@ export default function ConversationList({ onNewChat, isOpenMobile, onCloseMobil
                     const displayName = conv.display_name || conv.phone;
                     const lastMsg = conv.last_message;
                     const lastText = lastMsg
-                      ? lastMsg.text.replace(/<!--.*?-->/gs, "").trim().slice(0, 50)
+                      ? lastMsg.text.replace(/<!--[\s\S]*?-->/g, "").trim().slice(0, 50)
                       : "No messages yet";
                     const lastTime = lastMsg
                       ? timeLabel(Math.floor(new Date(lastMsg.created_at).getTime() / 1000))
