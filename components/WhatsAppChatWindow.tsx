@@ -16,18 +16,177 @@ interface Props {
   onMuteChange?: (phone: string, muted: boolean) => void;
 }
 
-// Strip card markers and return plain text (mimics what WhatsApp users see)
+// Format agent message for WhatsApp display (mimics hip/whatsapp/formatter.py)
 function formatForWhatsApp(raw: string): string {
-  // Just remove all card markers — customer sees the text without UI components
-  return raw
-    .replace(/<!--POLICY_CARDS:([\s\S]*?)-->/g, "")
-    .replace(/<!--ADDON_CARDS:([\s\S]*?)-->/g, "")
-    .replace(/<!--VAS_CARDS:([\s\S]*?)-->/g, "")
-    .replace(/<!--CONFIRM_CARD:([\s\S]*?)-->/g, "")
-    .replace(/<!--BOOKING_CARDS:([\s\S]*?)-->/g, "")
-    .replace(/<!--BOOKINGS_TABLE:([\s\S]*?)-->/g, "")
-    .replace(/<!--BOOKING_TABLE:([\s\S]*?)-->/g, "")
-    .trim();
+  if (!raw) return "";
+
+  let result = raw;
+
+  // Policy cards → numbered list
+  result = result.replace(/<!--POLICY_CARDS:([\s\S]*?)-->/g, (_, json) => {
+    try {
+      const cards = JSON.parse(json.trim());
+      const arr = Array.isArray(cards) ? cards : [cards];
+      const lines = ["*Policy Options:*\n"];
+      arr.forEach((c, i) => {
+        const name = c.name || c.plan_name || "Plan";
+        const insurer = c.insurer || c.provider || "";
+        const premium = c.premium || c.price || "";
+        const cover = c.sum_insured || c.coverage || c.cover || "";
+        const features = c.features || c.highlights || [];
+        let line = `${i + 1}. *${name}*`;
+        if (insurer) line += ` — ${insurer}`;
+        if (premium) line += `\n   Premium: ${premium}`;
+        if (cover) line += ` | Cover: ${cover}`;
+        if (features && features.length > 0) {
+          line += "\n   " + features.slice(0, 3).join(" • ");
+        }
+        lines.push(line);
+      });
+      lines.push("\nReply with the number to select a plan.");
+      return "\n" + lines.join("\n");
+    } catch { return ""; }
+  });
+
+  // Addon cards → bullet list
+  result = result.replace(/<!--ADDON_CARDS:([\s\S]*?)-->/g, (_, json) => {
+    try {
+      const cards = JSON.parse(json.trim());
+      const arr = Array.isArray(cards) ? cards : [cards];
+      const lines = ["*Available Add-ons:*\n"];
+      arr.forEach((c) => {
+        const name = c.name || c.title || "Addon";
+        const price = c.price || c.premium || "";
+        const desc = c.description || c.desc || "";
+        let line = `• *${name}*`;
+        if (price) line += ` — ${price}`;
+        if (desc) line += `\n  ${desc}`;
+        lines.push(line);
+      });
+      lines.push("\nReply with the add-on name to apply it.");
+      return "\n" + lines.join("\n");
+    } catch { return ""; }
+  });
+
+  // VAS cards → bullet list
+  result = result.replace(/<!--VAS_CARDS:([\s\S]*?)-->/g, (_, json) => {
+    try {
+      const cards = JSON.parse(json.trim());
+      const arr = Array.isArray(cards) ? cards : [cards];
+      const lines = ["*Value Added Services:*\n"];
+      arr.forEach((c) => {
+        const name = c.name || c.title || "Service";
+        const price = c.price || c.cost || "";
+        const desc = c.description || c.desc || "";
+        let line = `• *${name}*`;
+        if (price) line += ` — ${price}`;
+        if (desc) line += `\n  ${desc}`;
+        lines.push(line);
+      });
+      lines.push("\nReply with the service name to add it.");
+      return "\n" + lines.join("\n");
+    } catch { return ""; }
+  });
+
+  // Confirm card → booking summary
+  result = result.replace(/<!--CONFIRM_CARD:([\s\S]*?)-->/g, (_, json) => {
+    try {
+      const data = JSON.parse(json.trim());
+      const c = Array.isArray(data) ? data[0] : data;
+      const policy = c.policy_name || c.plan || "Policy";
+      const insurer = c.insurer || "";
+      const dest = c.destination || "";
+      const dates = c.travel_dates || "";
+      const adults = c.num_adults || "";
+      const children = c.num_children || "";
+      const premium = c.premium || "";
+      const lines = ["📋 *Booking Confirmation Request*\n", `Plan: *${policy}*`];
+      if (insurer) lines.push(`Insurer: ${insurer}`);
+      if (dest) lines.push(`Destination: ${dest}`);
+      if (dates) lines.push(`Dates: ${dates}`);
+      if (adults || children) {
+        let pax = adults ? `${adults} adult(s)` : "";
+        if (children) pax += (pax ? ", " : "") + `${children} child(ren)`;
+        lines.push(`Travellers: ${pax}`);
+      }
+      if (premium) lines.push(`Premium: *${premium}*`);
+      lines.push("\nReply *Yes, confirm the booking* to proceed.");
+      return "\n" + lines.join("\n");
+    } catch { return ""; }
+  });
+
+  // Booking cards → block summaries
+  result = result.replace(/<!--BOOKING_CARDS:([\s\S]*?)-->/g, (_, json) => {
+    try {
+      const cards = JSON.parse(json.trim());
+      const arr = Array.isArray(cards) ? cards : [cards];
+      const blocks: string[] = [];
+      arr.forEach((c) => {
+        const ref = c.ref_number || c.ref || "";
+        const policy = c.policy_name || c.plan || "Policy";
+        const dest = c.destination || "";
+        const dates = c.travel_dates || c.dates || "";
+        const premium = c.premium || "";
+        const status = c.status || "";
+        const insurer = c.insurer || "";
+        const lines = [`📋 *Booking${ref ? " — " + ref : ""}*`];
+        if (policy) lines.push(`Plan: ${policy}`);
+        if (insurer) lines.push(`Insurer: ${insurer}`);
+        if (dest) lines.push(`Destination: ${dest}`);
+        if (dates) lines.push(`Dates: ${dates}`);
+        if (premium) lines.push(`Premium: ${premium}`);
+        if (status) lines.push(`Status: ${status}`);
+        blocks.push(lines.join("\n"));
+      });
+      return "\n" + blocks.join("\n\n");
+    } catch { return ""; }
+  });
+
+  // Booking table → plain text list
+  result = result.replace(/<!--BOOKING_TABLE:([\s\S]*?)-->/g, (_, json) => {
+    try {
+      const data = JSON.parse(json.trim());
+      const bookings = Array.isArray(data) ? data : [data];
+      if (bookings.length === 0) return "\nNo recent bookings found.";
+      const lines = ["*Recent Bookings:*\n"];
+      bookings.slice(0, 5).forEach((b) => {
+        const ref = b.ref_number || b.ref || "—";
+        const dest = b.destination || "—";
+        const dates = b.travel_dates || "—";
+        const premium = b.premium || "—";
+        const status = b.status || "—";
+        lines.push(`• ${ref} | ${dest} | ${dates} | ${premium} | ${status}`);
+      });
+      return "\n" + lines.join("\n");
+    } catch { return ""; }
+  });
+
+  // Also handle BOOKINGS_TABLE variant
+  result = result.replace(/<!--BOOKINGS_TABLE:([\s\S]*?)-->/g, (_, json) => {
+    try {
+      const data = JSON.parse(json.trim());
+      const bookings = Array.isArray(data) ? data : [data];
+      if (bookings.length === 0) return "\nNo recent bookings found.";
+      const lines = ["*Recent Bookings:*\n"];
+      bookings.slice(0, 5).forEach((b) => {
+        const ref = b.ref_number || b.ref || "—";
+        const dest = b.destination || "—";
+        const dates = b.travel_dates || "—";
+        const premium = b.premium || "—";
+        const status = b.status || "—";
+        lines.push(`• ${ref} | ${dest} | ${dates} | ${premium} | ${status}`);
+      });
+      return "\n" + lines.join("\n");
+    } catch { return ""; }
+  });
+
+  // Clean up any remaining HTML comments
+  result = result.replace(/<!--[\s\S]*?-->/g, "");
+
+  // Collapse 3+ blank lines into 2
+  result = result.replace(/\n{3,}/g, "\n\n");
+
+  return result.trim();
 }
 
 export default function WhatsAppChatWindow({ conversation, onMuteChange }: Props) {
