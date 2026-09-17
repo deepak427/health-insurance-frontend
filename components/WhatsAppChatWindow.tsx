@@ -189,6 +189,32 @@ function formatForWhatsApp(raw: string): string {
   return result.trim();
 }
 
+// Render WhatsApp-formatted text (converts *bold* to <strong>)
+function WhatsAppText({ text }: { text: string }) {
+  const parts: (string | React.ReactElement)[] = [];
+  let lastIndex = 0;
+  const boldRegex = /\*([^*]+)\*/g;
+  let match;
+  let key = 0;
+
+  while ((match = boldRegex.exec(text)) !== null) {
+    // Add text before the bold
+    if (match.index > lastIndex) {
+      parts.push(text.substring(lastIndex, match.index));
+    }
+    // Add bold text
+    parts.push(<strong key={key++} className="font-bold">{match[1]}</strong>);
+    lastIndex = boldRegex.lastIndex;
+  }
+
+  // Add remaining text
+  if (lastIndex < text.length) {
+    parts.push(text.substring(lastIndex));
+  }
+
+  return <>{parts}</>;
+}
+
 export default function WhatsAppChatWindow({ conversation, onMuteChange }: Props) {
   const { username } = useChatContext();
 
@@ -198,9 +224,11 @@ export default function WhatsAppChatWindow({ conversation, onMuteChange }: Props
   const [sending, setSending] = useState(false);
   const [muteLoading, setMuteLoading] = useState(false);
   const [sendError, setSendError] = useState<string | null>(null);
+  const [userScrolledUp, setUserScrolledUp] = useState(false);
 
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   const displayName = conversation.display_name || conversation.phone;
 
@@ -215,8 +243,22 @@ export default function WhatsAppChatWindow({ conversation, onMuteChange }: Props
     return () => clearInterval(interval);
   }, [loadMessages]);
 
-  useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages]);
+  // Only auto-scroll if user hasn't scrolled up manually
+  useEffect(() => {
+    if (!userScrolledUp) {
+      bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+    }
+  }, [messages, userScrolledUp]);
+
   useEffect(() => { setIsMuted(conversation.ai_muted === 1); }, [conversation.ai_muted]);
+
+  // Detect when user scrolls up (not at bottom)
+  function handleScroll() {
+    if (!scrollContainerRef.current) return;
+    const { scrollTop, scrollHeight, clientHeight } = scrollContainerRef.current;
+    const isAtBottom = scrollHeight - scrollTop - clientHeight < 100;
+    setUserScrolledUp(!isAtBottom);
+  }
 
   async function handleMuteToggle() {
     setMuteLoading(true);
@@ -317,7 +359,7 @@ export default function WhatsAppChatWindow({ conversation, onMuteChange }: Props
         </div>
       )}
 
-      <div className="flex-1 overflow-y-auto px-3 md:px-6 py-3 whatsapp-chat-bg">
+      <div ref={scrollContainerRef} onScroll={handleScroll} className="flex-1 overflow-y-auto px-3 md:px-6 py-3 whatsapp-chat-bg">
         {messages.length === 0 ? (
           <div className="flex items-center justify-center h-full text-[#667781] text-sm">
             No messages yet — waiting for this contact to send a message.
@@ -347,7 +389,9 @@ export default function WhatsAppChatWindow({ conversation, onMuteChange }: Props
                             {msg.sender_label || "Buddy"}
                           </p>
 
-                          <p className="text-[14px] leading-relaxed whitespace-pre-wrap break-words">{plainText}</p>
+                          <p className="text-[14px] leading-relaxed whitespace-pre-wrap break-words">
+                            <WhatsAppText text={plainText} />
+                          </p>
 
                           <p className="text-[11px] text-right text-[#4b5563] mt-1">{formatTime(msg.created_at)}</p>
                         </div>
