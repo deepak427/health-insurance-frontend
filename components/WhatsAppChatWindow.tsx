@@ -401,6 +401,7 @@ export default function WhatsAppChatWindow({ conversation, onMuteChange }: Props
                 }
 
 
+                // Inbound message from WhatsApp user
                 return (
                   <div key={msg.id} className="flex mb-2 justify-start items-end">
                     <div className="w-7 h-7 rounded-full bg-[#e9edef] text-[#54656f] flex items-center justify-center font-bold text-[11px] shrink-0 mr-1.5 mb-0.5">
@@ -408,7 +409,56 @@ export default function WhatsAppChatWindow({ conversation, onMuteChange }: Props
                     </div>
                     <div className="max-w-[75%] sm:max-w-[65%] bg-white text-[#111b21] rounded-lg rounded-tl-none px-3 py-2 shadow-[0_1px_0.5px_rgba(11,20,26,0.13)] text-[14px] leading-relaxed">
                       <p className="text-[11px] font-bold text-[#25d366] mb-0.5">{displayName}</p>
-                      <p className="whitespace-pre-wrap break-words">{msg.text}</p>
+                      
+                      {/* Check if message is a document attachment (starts with emoji) */}
+                      {(() => {
+                        const attachmentMatch = msg.text.match(/^(📷|📄|📎)\s+(.+)$/);
+                        if (attachmentMatch) {
+                          const [, emoji, filename] = attachmentMatch;
+                          const isImage = emoji === '📷';
+                          const isPDF = emoji === '📄';
+                          
+                          // Build download URL - WhatsApp files are stored with wa_ prefix
+                          const downloadUrl = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/download/my_agent/${conversation.user_id}/${conversation.session_id}/${filename}`;
+                          
+                          if (isImage) {
+                            // Render image preview
+                            return (
+                              <div className="rounded-lg overflow-hidden border border-black/10 bg-gray-50 max-w-[240px] mb-1">
+                                <img 
+                                  src={downloadUrl} 
+                                  alt={filename}
+                                  className="w-full h-auto object-contain cursor-pointer hover:opacity-90 transition-opacity"
+                                  onClick={() => window.open(downloadUrl, '_blank')}
+                                  style={{ maxHeight: '200px' }}
+                                />
+                                <div className="px-2 py-1 bg-[#f0f2f5] text-[11px] text-[#667781] flex items-center justify-between">
+                                  <span className="truncate flex-1">{filename}</span>
+                                  <a href={downloadUrl} download={filename} className="ml-2 text-[#008069] hover:underline">↓</a>
+                                </div>
+                              </div>
+                            );
+                          } else {
+                            // Render document chip
+                            return (
+                              <a
+                                href={downloadUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-[#f0f2f5] hover:bg-[#e9edef] border border-[#e9edef] transition-all mb-1 max-w-full"
+                              >
+                                <span className="text-lg">{emoji}</span>
+                                <span className="text-xs font-medium text-[#111b21] truncate flex-1">{filename}</span>
+                                <span className="text-[10px] text-[#667781]">View</span>
+                              </a>
+                            );
+                          }
+                        }
+                        
+                        // Regular text message
+                        return <p className="whitespace-pre-wrap break-words">{msg.text}</p>;
+                      })()}
+                      
                       <p className="text-[11px] mt-1 text-right text-[#667781]">{formatTime(msg.created_at)}</p>
                     </div>
                   </div>
