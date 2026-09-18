@@ -61,19 +61,28 @@ function formatForWhatsApp(raw: string): string {
         lines.push("\n[✅ Confirm]  [✏️ Modify]  [❌ Cancel]");
         return "\n" + lines.join("\n");
       } else {
-        // Interactive List preview for policy selection
-        const lines = ["🛡️ *Travel Insurance Plans*\n"];
-        arr.slice(0, 5).forEach((c, i) => {
+        // Carousel preview for policy selection
+        const lines = ["🛡️ *Travel Insurance Plans*"];
+        lines.push("_Swipe to explore options_ ◀️ 💳 ▶️\n");
+        
+        // Show first 3 cards as carousel preview
+        arr.slice(0, 3).forEach((c, i) => {
           const name = c.name || c.plan_name || "Plan";
           const premium = c.premium || c.price || "";
           const cover = c.sumInsured || c.sum_insured || c.coverage || c.cover || "";
-          let line = `${i + 1}. ${name}`;
-          if (premium) line += ` — ₹${premium}`;
-          if (cover) line += ` | ${cover}`;
-          lines.push(line);
+          const insurer = c.insurer || c.provider || "";
+          
+          lines.push(`📋 *Card ${i + 1}: ${name}*`);
+          if (insurer) lines.push(`   ${insurer}`);
+          if (premium) lines.push(`   💰 ₹${premium}`);
+          if (cover) lines.push(`   🛡️ ${cover}`);
+          if (i < Math.min(arr.length - 1, 2)) lines.push(""); // spacing between cards
         });
-        if (arr.length > 5) lines.push(`\n...and ${arr.length - 5} more options`);
-        lines.push("\n_Tap 'View Plans' to see all options_");
+        
+        if (arr.length > 3) {
+          lines.push(`\n_+ ${arr.length - 3} more plan${arr.length - 3 > 1 ? 's' : ''} available_`);
+        }
+        
         return "\n" + lines.join("\n");
       }
     } catch { return ""; }
