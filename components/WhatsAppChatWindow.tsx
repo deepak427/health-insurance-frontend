@@ -22,73 +22,102 @@ function formatForWhatsApp(raw: string): string {
 
   let result = raw;
 
-  // Policy cards → numbered list
+  // Policy cards → Check if it's confirm type or regular policy list
   result = result.replace(/<!--POLICY_CARDS:([\s\S]*?)-->/g, (_, json) => {
     try {
       const cards = JSON.parse(json.trim());
       const arr = Array.isArray(cards) ? cards : [cards];
-      const lines = ["*Policy Options:*\n"];
-      arr.forEach((c, i) => {
-        const name = c.name || c.plan_name || "Plan";
-        const insurer = c.insurer || c.provider || "";
-        const premium = c.premium || c.price || "";
-        const cover = c.sum_insured || c.coverage || c.cover || "";
-        const features = c.features || c.highlights || [];
-        let line = `${i + 1}. *${name}*`;
-        if (insurer) line += ` — ${insurer}`;
-        if (premium) line += `\n   Premium: ${premium}`;
-        if (cover) line += ` | Cover: ${cover}`;
-        if (features && features.length > 0) {
-          line += "\n   " + features.slice(0, 3).join(" • ");
+      const firstCard = arr[0];
+      
+      // Check if it's a confirm card
+      const isConfirm = firstCard?.type === "confirm" || firstCard?.destination || firstCard?.travelDates;
+      
+      if (isConfirm) {
+        // Interactive Buttons preview for confirmation
+        const c = firstCard;
+        const policy = c.name || c.policy_name || c.plan || "Policy";
+        const company = c.company || c.insurer || "";
+        const dest = c.destination || "";
+        const dates = c.travelDates || c.travel_dates || "";
+        const travellers = c.travellers || "";
+        const adults = c.num_adults || "";
+        const children = c.num_children || "";
+        const premium = c.premium || "";
+        const cover = c.sumInsured || c.sum_insured || "";
+        
+        const lines = ["📋 *Booking Confirmation*\n", `*Plan:* ${policy}`];
+        if (company) lines.push(`*Insurer:* ${company}`);
+        if (dest) lines.push(`*Destination:* ${dest}`);
+        if (dates) lines.push(`*Dates:* ${dates}`);
+        if (travellers) {
+          lines.push(`*Travellers:* ${travellers}`);
+        } else if (adults || children) {
+          let pax = adults ? `${adults} adult(s)` : "";
+          if (children) pax += (pax ? ", " : "") + `${children} child(ren)`;
+          if (pax) lines.push(`*Travellers:* ${pax}`);
         }
-        lines.push(line);
-      });
-      lines.push("\nReply with the number to select a plan.");
-      return "\n" + lines.join("\n");
+        if (cover) lines.push(`*Cover:* ${cover}`);
+        if (premium) lines.push(`\n*Total Premium:* ${premium}`);
+        lines.push("\n[✅ Confirm]  [✏️ Modify]  [❌ Cancel]");
+        return "\n" + lines.join("\n");
+      } else {
+        // Interactive List preview for policy selection
+        const lines = ["🛡️ *Travel Insurance Plans*\n"];
+        arr.slice(0, 5).forEach((c, i) => {
+          const name = c.name || c.plan_name || "Plan";
+          const premium = c.premium || c.price || "";
+          const cover = c.sumInsured || c.sum_insured || c.coverage || c.cover || "";
+          let line = `${i + 1}. ${name}`;
+          if (premium) line += ` — ₹${premium}`;
+          if (cover) line += ` | ${cover}`;
+          lines.push(line);
+        });
+        if (arr.length > 5) lines.push(`\n...and ${arr.length - 5} more options`);
+        lines.push("\n_Tap 'View Plans' to see all options_");
+        return "\n" + lines.join("\n");
+      }
     } catch { return ""; }
   });
 
-  // Addon cards → bullet list
+  // Addon cards → Interactive List preview
   result = result.replace(/<!--ADDON_CARDS:([\s\S]*?)-->/g, (_, json) => {
     try {
       const cards = JSON.parse(json.trim());
       const arr = Array.isArray(cards) ? cards : [cards];
-      const lines = ["*Available Add-ons:*\n"];
-      arr.forEach((c) => {
+      const lines = ["✨ *Available Add-ons*\n"];
+      arr.slice(0, 5).forEach((c) => {
         const name = c.name || c.title || "Addon";
         const price = c.price || c.premium || "";
-        const desc = c.description || c.desc || "";
-        let line = `• *${name}*`;
-        if (price) line += ` — ${price}`;
-        if (desc) line += `\n  ${desc}`;
+        let line = `• ${name}`;
+        if (price) line += ` — ₹${price}`;
         lines.push(line);
       });
-      lines.push("\nReply with the add-on name to apply it.");
+      if (arr.length > 5) lines.push(`\n...and ${arr.length - 5} more add-ons`);
+      lines.push("\n_Tap 'View Add-ons' to see all_");
       return "\n" + lines.join("\n");
     } catch { return ""; }
   });
 
-  // VAS cards → bullet list
+  // VAS cards → Interactive List preview
   result = result.replace(/<!--VAS_CARDS:([\s\S]*?)-->/g, (_, json) => {
     try {
       const cards = JSON.parse(json.trim());
       const arr = Array.isArray(cards) ? cards : [cards];
-      const lines = ["*Value Added Services:*\n"];
-      arr.forEach((c) => {
+      const lines = ["💼 *Value Added Services*\n"];
+      arr.slice(0, 5).forEach((c) => {
         const name = c.name || c.title || "Service";
         const price = c.price || c.cost || "";
-        const desc = c.description || c.desc || "";
-        let line = `• *${name}*`;
-        if (price) line += ` — ${price}`;
-        if (desc) line += `\n  ${desc}`;
+        let line = `• ${name}`;
+        if (price) line += ` — ₹${price}`;
         lines.push(line);
       });
-      lines.push("\nReply with the service name to add it.");
+      if (arr.length > 5) lines.push(`\n...and ${arr.length - 5} more services`);
+      lines.push("\n_Tap 'View Services' to explore_");
       return "\n" + lines.join("\n");
     } catch { return ""; }
   });
 
-  // Confirm card → booking summary
+  // Confirm card → Interactive Buttons preview
   result = result.replace(/<!--CONFIRM_CARD:([\s\S]*?)-->/g, (_, json) => {
     try {
       const data = JSON.parse(json.trim());
@@ -100,17 +129,17 @@ function formatForWhatsApp(raw: string): string {
       const adults = c.num_adults || "";
       const children = c.num_children || "";
       const premium = c.premium || "";
-      const lines = ["📋 *Booking Confirmation Request*\n", `Plan: *${policy}*`];
-      if (insurer) lines.push(`Insurer: ${insurer}`);
-      if (dest) lines.push(`Destination: ${dest}`);
-      if (dates) lines.push(`Dates: ${dates}`);
+      const lines = ["📋 *Booking Confirmation*\n", `*Plan:* ${policy}`];
+      if (insurer) lines.push(`*Insurer:* ${insurer}`);
+      if (dest) lines.push(`*Destination:* ${dest}`);
+      if (dates) lines.push(`*Dates:* ${dates}`);
       if (adults || children) {
         let pax = adults ? `${adults} adult(s)` : "";
         if (children) pax += (pax ? ", " : "") + `${children} child(ren)`;
-        lines.push(`Travellers: ${pax}`);
+        lines.push(`*Travellers:* ${pax}`);
       }
-      if (premium) lines.push(`Premium: *${premium}*`);
-      lines.push("\nReply *Yes, confirm the booking* to proceed.");
+      if (premium) lines.push(`\n*Total Premium:* ${premium}`);
+      lines.push("\n[✅ Confirm]  [✏️ Modify]  [❌ Cancel]");
       return "\n" + lines.join("\n");
     } catch { return ""; }
   });
