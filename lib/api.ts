@@ -656,4 +656,12 @@ export async function sendWhatsAppReply(
   );
   return res.ok;
 }
+
+export async function deleteWhatsAppConversation(phone: string): Promise<boolean> {
+  const res = await fetch(
+    `${BASE_URL}/whatsapp/conversations/${encodeURIComponent(phone)}`,
+    { method: "DELETE" }
+  );
+  return res.ok;
+}
 // ─────────────────────────────────────────────────────────────────────────────

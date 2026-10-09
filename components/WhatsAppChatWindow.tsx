@@ -5,15 +5,17 @@ import {
   fetchWhatsAppMessages,
   muteWhatsAppConversation,
   sendWhatsAppReply,
+  deleteWhatsAppConversation,
   WhatsAppMessage,
   WhatsAppConversation,
 } from "@/lib/api";
 import { useChatContext } from "@/context/ChatContext";
-import { BotOff, Bot, Send, Phone, MoreVertical, Loader2, Smartphone } from "lucide-react";
+import { BotOff, Bot, Send, Phone, MoreVertical, Loader2, Smartphone, Trash2 } from "lucide-react";
 
 interface Props {
   conversation: WhatsAppConversation;
   onMuteChange?: (phone: string, muted: boolean) => void;
+  onDelete?: (phone: string) => void;
 }
 
 // Format agent message for WhatsApp display (mimics hip/whatsapp/formatter.py)
@@ -253,7 +255,7 @@ function WhatsAppText({ text }: { text: string }) {
   return <>{parts}</>;
 }
 
-export default function WhatsAppChatWindow({ conversation, onMuteChange }: Props) {
+export default function WhatsAppChatWindow({ conversation, onMuteChange, onDelete }: Props) {
   const { username } = useChatContext();
 
   const [messages, setMessages] = useState<WhatsAppMessage[]>([]);
@@ -263,10 +265,27 @@ export default function WhatsAppChatWindow({ conversation, onMuteChange }: Props
   const [muteLoading, setMuteLoading] = useState(false);
   const [sendError, setSendError] = useState<string | null>(null);
   const [userScrolledUp, setUserScrolledUp] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
 
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+
+  // Close menu on outside click
+  useEffect(() => {
+    if (!menuOpen) return;
+    function handler(e: MouseEvent) {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setMenuOpen(false);
+        setConfirmDelete(false);
+      }
+    }
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [menuOpen]);
 
   const displayName = conversation.display_name || conversation.phone;
 
@@ -304,6 +323,13 @@ export default function WhatsAppChatWindow({ conversation, onMuteChange }: Props
     const ok = await muteWhatsAppConversation(conversation.phone, newMuted);
     if (ok) { setIsMuted(newMuted); onMuteChange?.(conversation.phone, newMuted); }
     setMuteLoading(false);
+  }
+
+  async function handleDelete() {
+    setDeleting(true);
+    const ok = await deleteWhatsAppConversation(conversation.phone);
+    setDeleting(false);
+    if (ok) onDelete?.(conversation.phone);
   }
 
   async function handleSend() {
@@ -384,9 +410,35 @@ export default function WhatsAppChatWindow({ conversation, onMuteChange }: Props
           <button className="w-9 h-9 hidden sm:flex items-center justify-center rounded-full hover:bg-black/5 transition-colors">
             <Phone size={18} />
           </button>
-          <button className="w-9 h-9 flex items-center justify-center rounded-full hover:bg-black/5 transition-colors">
-            <MoreVertical size={18} />
-          </button>
+          <div className="relative" ref={menuRef}>
+            <button
+              onClick={() => { setMenuOpen((v) => !v); setConfirmDelete(false); }}
+              className="w-9 h-9 flex items-center justify-center rounded-full hover:bg-black/5 transition-colors"
+            >
+              <MoreVertical size={18} />
+            </button>
+            {menuOpen && (
+              <div className="absolute right-0 top-10 z-50 w-48 bg-white rounded-xl border border-[#e9edef] shadow-xl overflow-hidden py-1.5 animate-in fade-in zoom-in-95 duration-100">
+                {!confirmDelete ? (
+                  <button
+                    onClick={() => setConfirmDelete(true)}
+                    className="flex items-center gap-2.5 w-full px-4 py-2.5 text-xs font-semibold text-[#667781] hover:bg-red-50 hover:text-red-600"
+                  >
+                    <Trash2 size={14} /> Delete chat
+                  </button>
+                ) : (
+                  <button
+                    onClick={handleDelete}
+                    disabled={deleting}
+                    className="flex items-center gap-2.5 w-full px-4 py-2.5 text-xs font-bold text-red-600 bg-red-50 hover:bg-red-100"
+                  >
+                    {deleting ? <Loader2 size={14} className="animate-spin" /> : <Trash2 size={14} />}
+                    Confirm Delete
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
         </div>
       </div>
 

@@ -1,10 +1,11 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { Plus, MoreVertical, Pencil, Trash2, Check, Search, BellOff, MessageSquarePlus, Filter, X, Users, Sparkles, Smartphone, BotOff, Bot } from "lucide-react";
+import { Plus, MoreVertical, Pencil, Trash2, Check, Search, BellOff, MessageSquarePlus, Filter, X, Users, Sparkles, Smartphone, BotOff, Bot, Loader2 } from "lucide-react";
 import { useChatContext } from "@/context/ChatContext";
 import type { ChatSessionMeta } from "@/context/ChatContext";
 import type { WhatsAppConversation } from "@/lib/api";
+import { deleteWhatsAppConversation } from "@/lib/api";
 import CreateGroupModal from "./CreateGroupModal";
 import HandoverApprovalModal from "./HandoverApprovalModal";
 import { listPendingHandovers, HandoverRecord } from "@/lib/groupApi";
@@ -219,6 +220,116 @@ function SessionRow({ s, isActive, onSwitch, onRename, onDelete }: {
   );
 }
 
+// WhatsApp conversation row with delete menu
+function WaConversationRow({ conv, isActive, onSelect, onDeleted }: {
+  conv: WhatsAppConversation;
+  isActive: boolean;
+  onSelect: () => void;
+  onDeleted: () => void;
+}) {
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!menuOpen) return;
+    function handler(e: MouseEvent) {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setMenuOpen(false);
+        setConfirmDelete(false);
+      }
+    }
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [menuOpen]);
+
+  async function handleDelete(e: React.MouseEvent) {
+    e.stopPropagation();
+    setDeleting(true);
+    const ok = await deleteWhatsAppConversation(conv.phone);
+    setDeleting(false);
+    if (ok) onDeleted();
+  }
+
+  const displayName = conv.display_name || conv.phone;
+  const lastMsg = conv.last_message;
+  const lastText = lastMsg
+    ? lastMsg.text.replace(/<!--[\s\S]*?-->/g, "").trim().slice(0, 50)
+    : "No messages yet";
+  const lastTime = lastMsg
+    ? timeLabel(Math.floor(new Date(lastMsg.created_at).getTime() / 1000))
+    : "";
+
+  return (
+    <div
+      onClick={onSelect}
+      className={`group relative flex items-center gap-3.5 px-3.5 py-3 cursor-pointer transition-colors border-b border-[#f0f2f5] ${
+        isActive ? "bg-[#f0f2f5]" : "hover:bg-[#f5f6f6] bg-white"
+      }`}
+    >
+      <div className="w-12 h-12 rounded-full bg-[#25d366] text-white flex items-center justify-center font-bold text-sm shrink-0 shadow-sm">
+        <Smartphone size={20} />
+      </div>
+
+      <div className="flex-1 min-w-0 flex flex-col justify-center">
+        <div className="flex items-center justify-between gap-1">
+          <p className="text-[15px] font-semibold text-[#111b21] truncate leading-tight flex items-center gap-1.5">
+            {displayName}
+            <span className="text-[10px] font-bold px-1 py-0.5 rounded-full bg-[#25d366] text-white shrink-0">WA</span>
+          </p>
+          <span className="text-[12px] text-[#667781] shrink-0">{lastTime}</span>
+        </div>
+        <div className="flex items-center justify-between gap-1 mt-0.5">
+          <p className="text-xs text-[#667781] truncate">{lastText}</p>
+          {conv.ai_muted === 1 ? (
+            <span className="flex items-center gap-0.5 text-[10px] text-[#856404] bg-[#fff3cd] px-1.5 py-0.5 rounded-full shrink-0 font-semibold">
+              <BotOff size={9} /> Muted
+            </span>
+          ) : (
+            <span className="flex items-center gap-0.5 text-[10px] text-[#065f46] bg-[#d1fae5] px-1.5 py-0.5 rounded-full shrink-0 font-semibold">
+              <Bot size={9} /> AI On
+            </span>
+          )}
+        </div>
+      </div>
+
+      {/* ··· Menu */}
+      <div className="relative shrink-0" ref={menuRef} onClick={(e) => e.stopPropagation()}>
+        <button
+          onClick={() => { setMenuOpen((v) => !v); setConfirmDelete(false); }}
+          className={`w-7 h-7 flex items-center justify-center rounded-full text-[#667781] hover:text-[#111b21] hover:bg-black/5 transition-all ${
+            menuOpen ? "opacity-100 bg-black/5" : "opacity-0 group-hover:opacity-100"
+          }`}
+        >
+          <MoreVertical size={16} />
+        </button>
+        {menuOpen && (
+          <div className="absolute right-0 top-8 z-50 w-44 bg-white rounded-xl border border-[#e9edef] shadow-xl overflow-hidden py-1.5 animate-in fade-in zoom-in-95 duration-100">
+            {!confirmDelete ? (
+              <button
+                onClick={(e) => { e.stopPropagation(); setConfirmDelete(true); }}
+                className="flex items-center gap-2.5 w-full px-4 py-2 text-xs font-semibold text-[#667781] hover:bg-red-50 hover:text-red-600"
+              >
+                <Trash2 size={14} /> Delete chat
+              </button>
+            ) : (
+              <button
+                onClick={handleDelete}
+                disabled={deleting}
+                className="flex items-center gap-2.5 w-full px-4 py-2 text-xs font-bold text-red-600 bg-red-50 hover:bg-red-100"
+              >
+                {deleting ? <Loader2 size={14} className="animate-spin" /> : <Trash2 size={14} />}
+                Confirm Delete
+              </button>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export default function ConversationList({ onNewChat, isOpenMobile, onCloseMobile }: Props) {
   const { userId, sessionId, activeGroupId, sessions, switchSession, removeSession, renameSession, refreshSessionList, whatsappConversations, activeWhatsAppPhone, setActiveWhatsAppPhone } = useChatContext();
   const [search, setSearch] = useState("");
@@ -418,48 +529,20 @@ export default function ConversationList({ onNewChat, isOpenMobile, onCloseMobil
                       : "";
 
                     return (
-                      <div
+                      <WaConversationRow
                         key={conv.phone}
-                        onClick={() => {
+                        conv={conv}
+                        isActive={isActive}
+                        onSelect={() => {
                           setActiveWhatsAppPhone(conv.phone);
-                          // Clear other active states
                           switchSession("__wa__");
                           onCloseMobile?.();
                         }}
-                        className={`group relative flex items-center gap-3.5 px-3.5 py-3 cursor-pointer transition-colors border-b border-[#f0f2f5] ${
-                          isActive ? "bg-[#f0f2f5]" : "hover:bg-[#f5f6f6] bg-white"
-                        }`}
-                      >
-                        {/* WhatsApp Avatar */}
-                        <div className="w-12 h-12 rounded-full bg-[#25d366] text-white flex items-center justify-center font-bold text-sm shrink-0 shadow-sm">
-                          <Smartphone size={20} />
-                        </div>
-
-                        <div className="flex-1 min-w-0 flex flex-col justify-center">
-                          <div className="flex items-center justify-between gap-1">
-                            <p className="text-[15px] font-semibold text-[#111b21] truncate leading-tight flex items-center gap-1.5">
-                              {displayName}
-                              <span className="text-[10px] font-bold px-1 py-0.5 rounded-full bg-[#25d366] text-white shrink-0">
-                                WA
-                              </span>
-                            </p>
-                            <span className="text-[12px] text-[#667781] shrink-0">{lastTime}</span>
-                          </div>
-
-                          <div className="flex items-center justify-between gap-1 mt-0.5">
-                            <p className="text-xs text-[#667781] truncate">{lastText}</p>
-                            {conv.ai_muted === 1 ? (
-                              <span className="flex items-center gap-0.5 text-[10px] text-[#856404] bg-[#fff3cd] px-1.5 py-0.5 rounded-full shrink-0 font-semibold">
-                                <BotOff size={9} /> Muted
-                              </span>
-                            ) : (
-                              <span className="flex items-center gap-0.5 text-[10px] text-[#065f46] bg-[#d1fae5] px-1.5 py-0.5 rounded-full shrink-0 font-semibold">
-                                <Bot size={9} /> AI On
-                              </span>
-                            )}
-                          </div>
-                        </div>
-                      </div>
+                        onDeleted={() => {
+                          refreshSessionList();
+                          if (isActive) setActiveWhatsAppPhone(null);
+                        }}
+                      />
                     );
                   })}
               </>

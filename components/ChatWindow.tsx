@@ -338,6 +338,10 @@ export default function ChatWindow() {
                   <WhatsAppChatWindow
                     conversation={conv}
                     onMuteChange={() => refreshWhatsAppConversations()}
+                    onDelete={(phone) => {
+                      refreshWhatsAppConversations();
+                      if (activeWhatsAppPhone === phone) setActiveWhatsAppPhone(null);
+                    }}
                   />
                 ) : (
                   <div className="flex flex-col flex-1 items-center justify-center text-[#667781] text-sm">
