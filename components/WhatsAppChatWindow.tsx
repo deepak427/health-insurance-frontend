@@ -6,11 +6,13 @@ import {
   muteWhatsAppConversation,
   sendWhatsAppReply,
   deleteWhatsAppConversation,
+  fetchWallet,
+  topupWallet,
   WhatsAppMessage,
   WhatsAppConversation,
 } from "@/lib/api";
 import { useChatContext } from "@/context/ChatContext";
-import { BotOff, Bot, Send, Phone, MoreVertical, Loader2, Smartphone, Trash2 } from "lucide-react";
+import { BotOff, Bot, Send, Phone, MoreVertical, Loader2, Smartphone, Trash2, Wallet, Plus } from "lucide-react";
 
 interface Props {
   conversation: WhatsAppConversation;
@@ -270,13 +272,20 @@ export default function WhatsAppChatWindow({ conversation, onMuteChange, onDelet
   const [deleting, setDeleting] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
+  // Wallet state
+  const [walletBalance, setWalletBalance] = useState<number | null>(null);
+  const [showTopup, setShowTopup] = useState(false);
+  const [topupAmount, setTopupAmount] = useState("");
+  const [topupLoading, setTopupLoading] = useState(false);
+  const [topupMsg, setTopupMsg] = useState("");
+
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   // Close menu on outside click
   useEffect(() => {
-    if (!menuOpen) return;
+    if (!menuOpen && !showTopup) return;
     function handler(e: MouseEvent) {
       if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
         setMenuOpen(false);
@@ -285,7 +294,7 @@ export default function WhatsAppChatWindow({ conversation, onMuteChange, onDelet
     }
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
-  }, [menuOpen]);
+  }, [menuOpen, showTopup]);
 
   const displayName = conversation.display_name || conversation.phone;
 
@@ -330,6 +339,27 @@ export default function WhatsAppChatWindow({ conversation, onMuteChange, onDelet
     const ok = await deleteWhatsAppConversation(conversation.phone);
     setDeleting(false);
     if (ok) onDelete?.(conversation.phone);
+  }
+
+  // Wallet
+  const waUserId = `wa_${conversation.phone}`;
+
+  useEffect(() => {
+    fetchWallet(waUserId).then((w) => setWalletBalance(w.balance));
+  }, [waUserId]);
+
+  async function handleTopup() {
+    const amt = parseFloat(topupAmount);
+    if (!amt || amt <= 0) return;
+    setTopupLoading(true);
+    try {
+      const res = await topupWallet(waUserId, amt);
+      setWalletBalance(res.balance);
+      setTopupMsg(`✓ Added ₹${amt.toLocaleString()}`);
+      setTopupAmount("");
+      setTimeout(() => setTopupMsg(""), 2500);
+    } catch { /* ignore */ }
+    setTopupLoading(false);
   }
 
   async function handleSend() {
@@ -395,6 +425,53 @@ export default function WhatsAppChatWindow({ conversation, onMuteChange, onDelet
           </div>
         </div>
         <div className="flex items-center gap-1 text-[#54656f]">
+          {/* Wallet balance + topup */}
+          <div className="relative">
+            <button
+              onClick={() => setShowTopup((v) => !v)}
+              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-full text-xs font-semibold border border-[#e9edef] bg-white text-[#111b21] hover:bg-[#f0f2f5] transition-all"
+              title="Wallet balance — click to top up"
+            >
+              <Wallet size={13} className="text-[#008069]" />
+              <span>₹{walletBalance !== null ? walletBalance.toLocaleString() : "—"}</span>
+              <Plus size={11} className="text-[#008069]" />
+            </button>
+            {showTopup && (
+              <div className="absolute right-0 top-10 z-50 w-56 bg-white rounded-xl border border-[#e9edef] shadow-xl p-3 animate-in fade-in zoom-in-95 duration-100">
+                <p className="text-xs font-bold text-[#111b21] mb-2">Top up wallet for this contact</p>
+                <div className="flex gap-1.5 mb-2">
+                  {[500, 1000, 2000, 5000].map((amt) => (
+                    <button
+                      key={amt}
+                      onClick={() => setTopupAmount(String(amt))}
+                      className="flex-1 py-1 rounded-lg bg-[#f0f2f5] text-[10px] font-bold text-[#111b21] hover:bg-[#d9fdd3] hover:text-[#008069] transition-colors"
+                    >
+                      {amt >= 1000 ? `${amt / 1000}k` : amt}
+                    </button>
+                  ))}
+                </div>
+                <div className="flex gap-1.5">
+                  <input
+                    type="number"
+                    placeholder="Custom amount"
+                    value={topupAmount}
+                    onChange={(e) => setTopupAmount(e.target.value)}
+                    onKeyDown={(e) => e.key === "Enter" && handleTopup()}
+                    className="flex-1 text-xs px-2 py-1.5 border border-[#e9edef] rounded-lg outline-none focus:border-[#008069]"
+                  />
+                  <button
+                    onClick={handleTopup}
+                    disabled={topupLoading || !topupAmount}
+                    className="px-3 py-1.5 rounded-lg bg-[#008069] text-white text-xs font-bold hover:bg-[#006e5a] disabled:opacity-50 transition-colors"
+                  >
+                    {topupLoading ? <Loader2 size={12} className="animate-spin" /> : "Add"}
+                  </button>
+                </div>
+                {topupMsg && <p className="text-[11px] text-[#008069] font-semibold mt-1.5">{topupMsg}</p>}
+              </div>
+            )}
+          </div>
+
           <button
             onClick={handleMuteToggle}
             disabled={muteLoading}
@@ -412,7 +489,7 @@ export default function WhatsAppChatWindow({ conversation, onMuteChange, onDelet
           </button>
           <div className="relative" ref={menuRef}>
             <button
-              onClick={() => { setMenuOpen((v) => !v); setConfirmDelete(false); }}
+              onClick={() => { setMenuOpen((v) => !v); setConfirmDelete(false); setShowTopup(false); }}
               className="w-9 h-9 flex items-center justify-center rounded-full hover:bg-black/5 transition-colors"
             >
               <MoreVertical size={18} />
